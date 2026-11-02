@@ -1,0 +1,20 @@
+# Source books, annotations, images, checkpoints and exports stay local.
+/data/
+
+# Dependencies, builds and development caches.
+node_modules/
+dist/
+.venv/
+.tools/
+.cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.tsbuildinfo
+*.sqlite3*
+
+# Local configuration and logs.
+.env
+.env.*
+!.env.example
+*.log

@@ -1,0 +1,9 @@
+# Project dependencies, including tests. Install inside a virtual environment.
+fastapi==0.135.3
+uvicorn==0.44.0
+pydantic==2.12.5
+python-multipart==0.0.26
+PyMuPDF==2.0
+openpyxl==3.1.5
+pytest==9.0.2
+httpx==0.28.1
