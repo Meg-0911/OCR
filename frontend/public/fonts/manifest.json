@@ -1,0 +1,38 @@
+{
+  "nom_release": "v5.19",
+  "hanamin_mirror_commit": "801aa43acbf9f5411f1131ec22dc3f75fda899e8",
+  "format": "woff2",
+  "subsetting": false,
+  "notes": "Complete glyph coverage retained. HanaMin fallback internal names changed for OFL compliance.",
+  "fonts": [
+    {
+      "file": "nom-na-tong.woff2",
+      "source_url": "https://github.com/nomfoundation/font/releases/download/v5.19/NomNaTong-Regular.ttf?download=1",
+      "source_sha256": "e017314d467498886f838c9dc442e87368760ab697c0c9df1246323e3471b2a3",
+      "woff2_sha256": "601fa2aa1b6a2b7aae42be58a85a5fae0097c2be72bea11680e3f5db6a5a369c",
+      "bytes": 6625664,
+      "codepoints": 32966,
+      "supplementary_codepoints": 17718
+    },
+    {
+      "file": "han-fallback-a.woff2",
+      "source_url": "https://raw.githubusercontent.com/googlefonts/chinese/801aa43acbf9f5411f1131ec22dc3f75fda899e8/fonts/HanaMin/HanaMinA.ttf",
+      "source_sha256": "7ca87559414474848fc513a8d8eb42d5b0f8194c30c2abdfbfedff5398ec88d7",
+      "woff2_sha256": "2ddd0cbd7f5b40edc6ac57c83b3f575c6ec65c1a3d182c91ef9e7a1cf699c51a",
+      "bytes": 7703808,
+      "codepoints": 41494,
+      "supplementary_codepoints": 5362
+    },
+    {
+      "file": "han-fallback-b.woff2",
+      "source_url": "https://raw.githubusercontent.com/googlefonts/chinese/801aa43acbf9f5411f1131ec22dc3f75fda899e8/fonts/HanaMin/HanaMinB.ttf",
+      "source_sha256": "829543436cdf7b4c6730e2af5806fa406f8ddf0d4b656e0cd49c58d4db1c8d3c",
+      "woff2_sha256": "988b6811ede47e99fba1cb335c14ac7c99a5e3ccef32f4a8f5fbf925b4267bbb",
+      "bytes": 12027412,
+      "codepoints": 60418,
+      "supplementary_codepoints": 60317
+    }
+  ],
+  "combined_codepoints": 107627,
+  "probe_characters": "天地玄黃漢字喃𠊛𡗶𠬠𡗺"
+}

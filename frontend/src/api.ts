@@ -1,4 +1,21 @@
-import type { Alignment, Book, Box, Category, Page, SourceFile, Workspace } from './types';
+import type {
+  Alignment,
+  Book,
+  BookLayout,
+  Box,
+  Category,
+  DictionaryEntry,
+  DictionaryLookup,
+  OCRJob,
+  OCRResult,
+  OCRSettings,
+  Page,
+  SourceFile,
+  TextReference,
+  Workspace,
+  BookSession,
+  PagePlan,
+} from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, init);
@@ -7,7 +24,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(
       typeof error.detail === 'string'
         ? error.detail
-        : 'Không thể xử lý yêu cầu. Vui lòng thử lại.',
+        : Array.isArray(error.detail)
+          ? error.detail
+              .map(
+                (item: { loc?: (string | number)[]; msg?: string }) =>
+                  `${item.loc?.filter((field) => field !== 'body').join('.') || 'Dữ liệu'}: ${item.msg || 'không hợp lệ'}`,
+              )
+              .join('; ')
+          : 'Không thể xử lý yêu cầu. Vui lòng thử lại.',
     );
   }
   return response.json();
@@ -18,22 +42,79 @@ function json(method: string, body: unknown): RequestInit {
 export const api = {
   workspace: () => request<Workspace>('/workspace'),
   pages: (book: string) => request<Page[]>(`/books/${book}/pages`),
+  patchPage: (
+    page: string,
+    patch: Partial<
+      Pick<
+        Page,
+        | 'source_text'
+        | 'target_text'
+        | 'boxes'
+        | 'vi_boxes'
+        | 'category'
+        | 'reading_direction'
+        | 'ocr_skip'
+      >
+    >,
+  ) => request<Page>(`/pages/${page}`, json('PATCH', patch)),
+  bookSession: (book: string) => request<BookSession>(`/books/${book}/session`),
+  saveSession: (book: string, state: BookSession) =>
+    request<BookSession>(`/books/${book}/session`, json('PUT', state)),
+  savePlan: (book: string, pages: PagePlan[]) =>
+    request<Page[]>(`/books/${book}/plan`, json('PUT', { pages })),
+  startWorkflow: (book: string, settings: OCRSettings, plan: PagePlan[]) =>
+    request<OCRJob>(`/books/${book}/workflow`, json('POST', { ...settings, plan })),
   sources: () => request<SourceFile[]>('/sources'),
+  syncSources: () => request<Workspace>('/sources/sync', { method: 'POST' }),
+  reference: (book: string) => request<TextReference | null>(`/books/${book}/reference`),
   importSource: (name: string) => request<Book>('/books/import', json('POST', { filename: name })),
   upload: async (file: File) => {
     const body = new FormData();
     body.append('file', file);
     return request<Book>('/books/upload', { method: 'POST', body });
   },
-  savePage: (page: Page, boxes: Box[], done: boolean, category: Category) =>
+  savePage: (
+    page: Page,
+    boxes: Box[],
+    done: boolean,
+    category: Category,
+    reading_direction: 1 | 2 = page.reading_direction,
+    texts: Partial<Pick<Page, 'source_text' | 'target_text' | 'vi_boxes'>> = {},
+  ) =>
     request<Page>(
       `/pages/${page.id}`,
-      json('PUT', { boxes, done, category, version: page.version }),
+      json('PUT', { boxes, done, category, version: page.version, reading_direction, ...texts }),
     ),
   duplicatePage: (page: string) => request<Page>(`/pages/${page}/duplicate`, { method: 'POST' }),
+  latestOCR: (page: string) => request<OCRResult | null>(`/pages/${page}/ocr`),
+  ocrJob: (book: string) => request<OCRJob | null>(`/books/${book}/ocr-job`),
+  bookLayout: (book: string) => request<BookLayout>(`/books/${book}/layout`),
+  saveBookLayout: (book: string, layout: BookLayout) =>
+    request<BookLayout>(`/books/${book}/layout`, json('PUT', layout)),
+  startOCRJob: (
+    book: string,
+    settings: OCRSettings,
+    start_page: number,
+    end_page: number,
+    include_unclassified: boolean,
+  ) =>
+    request<OCRJob>(
+      `/books/${book}/ocr-job`,
+      json('POST', { ...settings, start_page, end_page, include_unclassified }),
+    ),
+  controlOCRJob: (job: string, action: 'pause' | 'resume') =>
+    request<OCRJob>(`/ocr-jobs/${job}/${action}`, { method: 'POST' }),
+  lookupCharacter: (character: string) =>
+    request<DictionaryLookup>(`/dictionary/lookup?character=${encodeURIComponent(character)}`),
+  searchDictionary: (query: string) =>
+    request<DictionaryEntry[]>(`/dictionary/search?q=${encodeURIComponent(query)}`),
   alignments: (book: string) => request<Alignment[]>(`/books/${book}/alignments`),
   saveAlignments: (book: string, rows: Alignment[]) =>
     request<Alignment[]>(`/books/${book}/alignments`, json('PUT', { rows })),
   exportUrl: (book: string, format: 'csv' | 'xlsx' | 'labels') =>
     `/api/books/${book}/export?format=${format}`,
+  resultUrl: (
+    book: string,
+    file: 'summary.json' | 'pages.json' | 'alignments.json' | 'pairs.csv' | 'events.jsonl',
+  ) => `/api/books/${book}/results/${file}`,
 };

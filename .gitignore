@@ -1,5 +1,6 @@
 # Source books, annotations, images, checkpoints and exports stay local.
 /data/
+/backend/data/
 
 # Dependencies, builds and development caches.
 node_modules/

@@ -1,0 +1,2 @@
+# Optional build tool only; the application serves prebuilt WOFF2 files.
+fonttools[woff]==4.68.0

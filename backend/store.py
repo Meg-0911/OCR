@@ -4,19 +4,30 @@ import os
 import sqlite3
 import threading
 import unicodedata
-from contextlib import contextmanager
+import csv
+import time
 from datetime import datetime, timezone
+from contextlib import contextmanager
 from pathlib import Path
-from uuid import uuid4
 
 CATEGORIES = ("ch", "vi", "intro", "ref", "toc", "blank", "misc")
 PAIR_TARGET = 2000
-DEMO_SOURCE = ["天地玄黃宇宙洪荒", "日月盈昃辰宿列張", "寒來暑往秋收冬藏", "閏餘成歲律呂調陽", "雲騰致雨露結為霜", "金生麗水玉出崑岡"]
-DEMO_TARGET = ["Thiên địa huyền hoàng, vũ trụ hồng hoang.", "Nhật nguyệt doanh trắc, thần tú liệt trương.", "Hàn lai thử vãng, thu thâu đông tàng.", "Nhuận dư thành tuế, luật lữ điều dương.", "Vân đằng trí vũ, lộ kết vi sương.", "Kim sinh lệ thủy, ngọc xuất Côn Cương."]
 
 
-def ordered_boxes(boxes, category):
-    if category == "ch":
+def replace_file(temporary,target):
+    # Windows readers/antivirus can briefly hold a newly written snapshot open.
+    for attempt in range(6):
+        try:
+            os.replace(temporary,target)
+            return
+        except PermissionError:
+            if os.name!='nt' or attempt==5:
+                raise
+            time.sleep(.02*2**attempt)
+
+
+def ordered_boxes(boxes, category, reading_direction=1):
+    if category == "ch" and reading_direction == 1:
         return sorted(boxes, key=lambda b: (-max(p[0] for p in b["points"]), min(p[1] for p in b["points"])))
     return sorted(boxes, key=lambda b: (min(p[1] for p in b["points"]), min(p[0] for p in b["points"])))
 
@@ -24,7 +35,7 @@ def ordered_boxes(boxes, category):
 class Store:
     def __init__(self, root: Path):
         self.root = root
-        self.data = root / "data"
+        self.data = root / "backend" / "data"
         self.local = self.data / ".workspace"
         self.local.mkdir(parents=True, exist_ok=True)
         for directory in ("raw_data", "processed_images", "output_alignment"):
@@ -45,8 +56,41 @@ class Store:
               UNIQUE(book_id,number,category));
             CREATE TABLE IF NOT EXISTS alignments (
               book_id TEXT PRIMARY KEY REFERENCES books(id), rows TEXT NOT NULL DEFAULT '[]');
+            CREATE TABLE IF NOT EXISTS ocr_results (
+              id TEXT PRIMARY KEY, page_id TEXT NOT NULL REFERENCES pages(id),
+              version INTEGER NOT NULL, settings TEXT NOT NULL, result TEXT NOT NULL,
+              created_at TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS ocr_results_page ON ocr_results(page_id,created_at);
+            CREATE TABLE IF NOT EXISTS ocr_jobs (
+              id TEXT PRIMARY KEY, book_id TEXT NOT NULL REFERENCES books(id),
+              status TEXT NOT NULL, settings TEXT NOT NULL, error TEXT,
+              created_at TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS ocr_job_pages (
+              job_id TEXT NOT NULL REFERENCES ocr_jobs(id), page_id TEXT NOT NULL REFERENCES pages(id),
+              status TEXT NOT NULL DEFAULT 'pending', error TEXT,
+              PRIMARY KEY(job_id,page_id));
+            CREATE TABLE IF NOT EXISTS book_layouts (
+              book_id TEXT PRIMARY KEY REFERENCES books(id), profile TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS ui_sessions (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS reference_allocations (
+              page_id TEXT PRIMARY KEY REFERENCES pages(id), allocation TEXT NOT NULL);
             """)
-        self.seed()
+            if 'reading_direction' not in {row['name'] for row in db.execute('PRAGMA table_info(pages)')}:
+                db.execute('ALTER TABLE pages ADD COLUMN reading_direction INTEGER NOT NULL DEFAULT 1')
+            columns={row['name'] for row in db.execute('PRAGMA table_info(pages)')}
+            for column,default in (('source_text',"''"),('target_text',"''"),('vi_boxes',"'[]'")):
+                if column not in columns:
+                    db.execute(f'ALTER TABLE pages ADD COLUMN {column} TEXT NOT NULL DEFAULT {default}')
+            if 'ocr_skip' not in columns:
+                db.execute('ALTER TABLE pages ADD COLUMN ocr_skip INTEGER NOT NULL DEFAULT 0')
+            if 'target_origin' not in columns:
+                db.execute("ALTER TABLE pages ADD COLUMN target_origin TEXT NOT NULL DEFAULT ''")
+            if 'edited_fields' not in columns:
+                db.execute("ALTER TABLE pages ADD COLUMN edited_fields TEXT NOT NULL DEFAULT '[]'")
+            # Remove only the legacy seeded records; real books and edits stay intact.
+            db.execute('DELETE FROM alignments WHERE book_id IN (SELECT id FROM books WHERE demo=1)')
+            db.execute('DELETE FROM pages WHERE book_id IN (SELECT id FROM books WHERE demo=1)')
+            db.execute('DELETE FROM books WHERE demo=1')
         # Repair interrupted text-file writes from the committed SQLite checkpoint.
         for book in self.books():
             self.sync_labels(book["id"])
@@ -62,27 +106,14 @@ class Store:
         finally:
             db.close()
 
-    def seed(self):
-        with self.db() as db:
-            if db.execute("SELECT 1 FROM books WHERE id='demo'").fetchone():
-                return
-            db.execute("INSERT INTO books VALUES (?,?,?,?,?,?)", ("demo", "Thiên tự văn", "Thiên tự văn.pdf", None, 1, datetime.now(timezone.utc).isoformat()))
-            for number in range(1, 13):
-                category = "ch" if number % 2 else "vi"
-                boxes = []
-                for i, text in enumerate(DEMO_SOURCE if category == "ch" else DEMO_TARGET):
-                    x, y, w, h = (648 - i * 94, 185, 60, 660) if category == "ch" else (92, 220 + i * 105, 616, 70)
-                    boxes.append({"id": f"box-{i+1}", "transcription": text, "points": [[x,y],[x+w,y],[x+w,y+h],[x,y+h]]})
-                db.execute("INSERT INTO pages (id,book_id,number,category,status,boxes) VALUES (?,?,?,?,?,?)", (f"demo-{number}", "demo", number, category, "done" if number <= 3 else "pending", json.dumps(boxes, ensure_ascii=False)))
-            rows = [{"id":str(uuid4()), "sentence_id": f"Thiên tự văn.001.{i+1}", "source": source, "target": DEMO_TARGET[i], "reviewed": False} for i, source in enumerate(DEMO_SOURCE)]
-            db.execute("INSERT INTO alignments VALUES (?,?)", ("demo", json.dumps(rows, ensure_ascii=False)))
-
     def books(self):
         with self.db() as db:
-            return [dict(row) | {"demo":bool(row["demo"])} for row in db.execute("""
-            SELECT b.id,b.name,b.filename,b.demo,b.created_at,COUNT(p.id) AS pages,
-            SUM(CASE WHEN p.status='done' THEN 1 ELSE 0 END) AS done
-            FROM books b LEFT JOIN pages p ON b.id=p.book_id GROUP BY b.id ORDER BY b.demo,b.created_at DESC
+            return [dict(row) for row in db.execute("""
+            SELECT b.id,b.name,b.filename,b.created_at,COUNT(p.id) AS pages,
+            (SELECT id FROM pages WHERE book_id=b.id ORDER BY number,category LIMIT 1) AS first_page_id,
+            SUM(CASE WHEN p.status='done' AND p.ocr_skip=0 AND p.category!='blank' THEN 1 ELSE 0 END) AS done,
+            SUM(CASE WHEN p.ocr_skip=1 OR p.category='blank' THEN 1 ELSE 0 END) AS excluded
+            FROM books b LEFT JOIN pages p ON b.id=p.book_id GROUP BY b.id ORDER BY b.name COLLATE NOCASE
             """)]
 
     def book(self, book_id):
@@ -123,7 +154,10 @@ class Store:
     @staticmethod
     def page_dict(row):
         page = dict(row)
-        page["boxes"] = json.loads(page["boxes"])
+        page["boxes"] = ordered_boxes(json.loads(page["boxes"]), page['category'], page['reading_direction'])
+        page['vi_boxes']=json.loads(page['vi_boxes'])
+        page['ocr_skip']=bool(page['ocr_skip'])
+        page['edited_fields']=json.loads(page['edited_fields'])
         page["image_url"] = f"/api/pages/{page['id']}/image"
         return page
 
@@ -139,12 +173,116 @@ class Store:
     def book_dir(self, book_id):
         return self.local / "books" / book_id
 
+    def latest_ocr(self, page_id):
+        with self.db() as db:
+            row = db.execute('SELECT result FROM ocr_results WHERE page_id=? ORDER BY created_at DESC,rowid DESC LIMIT 1', (page_id,)).fetchone()
+        return json.loads(row['result']) if row else None
+
+    def save_ocr(self, result, settings, created_at):
+        with self.db() as db:
+            db.execute('''INSERT INTO ocr_results VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
+                settings=excluded.settings,result=excluded.result,created_at=excluded.created_at''', (
+                result['result_id'], result['page_id'], result['version'],
+                json.dumps(settings, sort_keys=True), json.dumps(result, ensure_ascii=False), created_at,
+            ))
+
+    def book_layout(self,book_id):
+        with self.db() as db:
+            row=db.execute('SELECT profile FROM book_layouts WHERE book_id=?',(book_id,)).fetchone()
+        return json.loads(row['profile']) if row else {'source_regions':[],'target_regions':[]}
+
+    def session(self,key):
+        with self.db() as db:
+            row=db.execute('SELECT value FROM ui_sessions WHERE key=?',(key,)).fetchone()
+        return json.loads(row['value']) if row else {}
+
+    def save_session(self,key,value):
+        with self.db() as db:
+            db.execute('INSERT INTO ui_sessions VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+                       (key,json.dumps(value,ensure_ascii=False)))
+
+    def apply_ocr_texts(self,result):
+        """Fill empty fields after each language, never replace an edit made during OCR."""
+        with self.lock:
+            page=self.page(result['page_id'])
+            if not page or page['ocr_skip'] or page['category']=='blank':
+                return
+            changes={}
+            if 'han' in result.get('completed_languages',[]) and not page['source_text'].strip() and 'source_text' not in page['edited_fields']:
+                changes['source_text']='\n'.join(result.get('text_lines',[]))
+            if 'vi' in result.get('completed_languages',[]) and not page['target_text'].strip() and 'target_text' not in page['edited_fields']:
+                changes['target_text']='\n'.join(result.get('vi_text_lines',[]))
+                if result.get('target_origin'):
+                    changes['target_origin']=result['target_origin']
+            changes={key:value for key,value in changes.items() if value.strip()}
+            if changes:
+                with self.db() as db:
+                    db.execute('UPDATE pages SET '+','.join(key+'=?' for key in changes)+",status='pending',version=version+1 WHERE id=?",
+                               (*changes.values(),page['id']))
+                self.sync_labels(page['book_id'])
+
+    def sync_results(self,book_id,event=None):
+        """Recoverable result snapshots and a small operational audit, separate from OCR history."""
+        with self.lock:
+            book=self.book(book_id)
+            if not book:
+                return
+            folder=self.data/'output_alignment'/book_id
+            folder.mkdir(parents=True,exist_ok=True)
+            pages=self.pages(book_id)
+            with self.db() as db:
+                alignment=db.execute('SELECT rows FROM alignments WHERE book_id=?',(book_id,)).fetchone()
+                job=db.execute('SELECT id,status,error,created_at FROM ocr_jobs WHERE book_id=? ORDER BY created_at DESC,rowid DESC LIMIT 1',(book_id,)).fetchone()
+                progress=[dict(row) for row in db.execute('SELECT page_id,status,error FROM ocr_job_pages WHERE job_id=?',(job['id'],))] if job else []
+                languages={row['page_id']:json.loads(row['result']).get('completed_languages',['han']) for row in db.execute(
+                    'SELECT r.page_id,r.result FROM ocr_results r JOIN pages p ON p.id=r.page_id WHERE p.book_id=? ORDER BY r.created_at,r.rowid',(book_id,))}
+            rows=json.loads(alignment['rows']) if alignment else []
+            seen={}; incomplete=duplicates=0
+            for row in rows:
+                key=(''.join(unicodedata.normalize('NFC',row['source']).split()),' '.join(unicodedata.normalize('NFC',row['target']).split()).casefold())
+                if not all(key):
+                    incomplete+=1
+                    continue
+                duplicates+=int(key in seen)
+                seen[key]=seen.get(key,False) or bool(row.get('reviewed'))
+            now=datetime.now(timezone.utc).isoformat()
+            summary={'book_id':book_id,'book':book['name'],'updated_at':now,'pages':len(pages),
+                     'excluded_pages':sum(p['ocr_skip'] or p['category']=='blank' for p in pages),
+                     'reviewed_pages':sum(p['status']=='done' for p in pages),
+                     'ocr_pages':sum(bool(languages.get(p['id'])) for p in pages),
+                     'pairs':len(seen),'reviewed_pairs':sum(seen.values()),'duplicate_pairs':duplicates,'incomplete_pairs':incomplete,
+                     'job':dict(job) if job else None,'job_pages':progress}
+            def write_json(path,value):
+                tmp=path.with_suffix(path.suffix+'.tmp')
+                tmp.write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf-8')
+                replace_file(tmp,path)
+            write_json(folder/'summary.json',summary)
+            write_json(folder/'pages.json',[{key:p[key] for key in ('id','number','category','ocr_skip','status','source_text','target_text','target_origin','version')} |
+                                           {'completed_languages':languages.get(p['id'],[])} for p in pages])
+            write_json(folder/'alignments.json',rows)
+            csv_path=folder/'pairs.csv'; tmp=csv_path.with_suffix('.csv.tmp')
+            with tmp.open('w',encoding='utf-8-sig',newline='') as stream:
+                writer=csv.writer(stream); writer.writerow(['img_id','sentence_id','SinoNom_Char','ChuQN_txt'])
+                writer.writerows([[r['sentence_id'].rsplit('.',1)[0]+'.jpg',r['sentence_id'],r['source'],r['target']] for r in rows])
+            replace_file(tmp,csv_path)
+            write_json(self.data/'output_alignment'/'summary.json',{'updated_at':now,**self.pair_stats()})
+            if event:
+                with (folder/'events.jsonl').open('a',encoding='utf-8') as stream:
+                    stream.write(json.dumps({'time':now,'event':event,'pairs':len(seen),'reviewed_pages':summary['reviewed_pages']},ensure_ascii=False)+'\n')
+
     def sync_labels(self, book_id):
         with self.lock:
             book = self.book(book_id)
             if not book:
                 return
             pages = self.pages(book_id)
+            text_path=self.book_dir(book_id)/'page_texts.json'
+            text_path.parent.mkdir(parents=True,exist_ok=True)
+            temporary=text_path.with_suffix('.tmp')
+            temporary.write_text(json.dumps([{'page_id':p['id'],'number':p['number'],'category':p['category'],
+                'source_text':p['source_text'],'target_text':p['target_text'],'vi_boxes':p['vi_boxes'],
+                'status':p['status']} for p in pages],ensure_ascii=False,indent=2),encoding='utf-8')
+            replace_file(temporary,text_path)
             for category in CATEGORIES:
                 folder = self.book_dir(book_id) / category
                 folder.mkdir(parents=True, exist_ok=True)
@@ -155,11 +293,12 @@ class Store:
                     if page["category"] != category:
                         continue
                     name = f"{category}/{book['name']}.{page['number']:03d}.jpg"
-                    boxes = [{"transcription":b["transcription"], "points":b["points"]} for b in ordered_boxes(page["boxes"], category)]
+                    boxes = [{"transcription":b["transcription"], "points":b["points"]} for b in ordered_boxes(page["boxes"], category, page['reading_direction']) if b['transcription'].strip()]
                     labels.append(name + "\t" + json.dumps(boxes, ensure_ascii=False))
                     states.append(name + "\t" + str(int(page["status"] == "done")))
                 for filename, lines in (("Label.txt", labels), ("fileState.txt", states)):
                     target = folder / filename
                     tmp = target.with_suffix(".tmp")
                     tmp.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
-                    os.replace(tmp, target)
+                    replace_file(tmp, target)
+            self.sync_results(book_id)

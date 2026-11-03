@@ -54,7 +54,7 @@ export default function AlignmentRow({
           onChange={(event) => onChange({ ...row, source: event.target.value, reviewed: false })}
           placeholder="Văn bản Hán Nôm…"
         />
-        <small className="unverified">Chưa đối chiếu từ điển</small>
+        <small className="unverified">Chưa kiểm chứng ngữ nghĩa</small>
       </div>
       <div>
         <textarea

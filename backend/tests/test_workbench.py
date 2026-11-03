@@ -35,42 +35,54 @@ def upload_book(client, name='Book with spaces.pdf'):
     return book, client.get(f"/api/books/{book['id']}/pages").json()
 
 
-def test_demo_is_explicit_and_folders_include_ref(workspace):
+def labelled_book(client):
+    book, pages = upload_book(client, 'Sách kiểm thử.pdf')
+    boxes = [{'id':str(i), 'transcription':f'字{i}', 'points':[[480-i*70,80],[520-i*70,80],[520-i*70,480],[480-i*70,480]]} for i in range(6)]
+    page = client.put(f"/api/pages/{pages[0]['id']}", json=page_payload(pages[0], category='ch', boxes=boxes)).json()
+    return book, page
+
+
+@pytest.fixture
+def annotated(workspace):
+    client,store,root = workspace
+    book,page = labelled_book(client)
+    return client,store,root,book,page
+
+
+def test_empty_workspace_and_real_pdf_folders_include_ref(workspace):
     client,store,_ = workspace
     data = client.get('/api/workspace').json()
     assert data['ocr_ready'] is False
-    assert data['books'][0]['demo'] is True
-    assert data['books'][0]['pages'] == 12
+    assert data['books'] == []
+    book,pages = upload_book(client)
     for category in CATEGORIES:
-        assert (store.book_dir('demo')/category).is_dir()
-    assert 'BẢN DỰNG MINH HỌA' in client.get('/api/pages/demo-5/image').text
+        assert (store.book_dir(book['id'])/category).is_dir()
+    assert client.get(pages[0]['image_url']).headers['content-type'] == 'image/jpeg'
 
 
-def test_save_resume_and_ppocrlabel_contract(workspace):
-    client,store,root = workspace
-    page = client.get('/api/books/demo/pages').json()[4]
+def test_save_resume_and_ppocrlabel_contract(annotated):
+    client,store,root,book,page = annotated
     page['boxes'][0]['transcription'] = '漢字𠊛'
-    response = client.put('/api/pages/demo-5',json=page_payload(page, done=True))
+    response = client.put(f"/api/pages/{page['id']}",json=page_payload(page, done=True))
     assert response.status_code == 200
     reloaded = Store(root)
-    assert reloaded.page('demo-5')['status'] == 'done'
-    assert reloaded.page('demo-5')['boxes'][0]['transcription'] == '漢字𠊛'
-    label_path = store.book_dir('demo')/'ch'/'Label.txt'
+    assert reloaded.page(page['id'])['status'] == 'done'
+    assert reloaded.page(page['id'])['boxes'][0]['transcription'] == '漢字𠊛'
+    label_path = store.book_dir(book['id'])/'ch'/'Label.txt'
     entries = {line.split('\t',1)[0]:json.loads(line.split('\t',1)[1]) for line in label_path.read_text(encoding='utf-8').splitlines()}
-    boxes = entries['ch/Thiên tự văn.005.jpg']
+    boxes = entries['ch/Sách kiểm thử.001.jpg']
     assert all(set(box)=={'transcription','points'} and len(box['points'])==4 for box in boxes)
     assert boxes[0]['points'][0][0] > boxes[-1]['points'][0][0]
-    assert 'ch/Thiên tự văn.005.jpg\t1' in (label_path.parent/'fileState.txt').read_text(encoding='utf-8')
+    assert 'ch/Sách kiểm thử.001.jpg\t1' in (label_path.parent/'fileState.txt').read_text(encoding='utf-8')
     label_path.write_text('interrupted write',encoding='utf-8')
     Store(root)
     assert label_path.read_text(encoding='utf-8').startswith('ch/')
 
 
-def test_stale_page_cannot_overwrite_newer_edits(workspace):
-    client,_,_ = workspace
-    page = client.get('/api/books/demo/pages').json()[4]
-    assert client.put('/api/pages/demo-5',json=page_payload(page)).status_code == 200
-    assert client.put('/api/pages/demo-5',json=page_payload(page)).status_code == 409
+def test_stale_page_cannot_overwrite_newer_edits(annotated):
+    client,_,_,_,page = annotated
+    assert client.put(f"/api/pages/{page['id']}",json=page_payload(page)).status_code == 200
+    assert client.put(f"/api/pages/{page['id']}",json=page_payload(page)).status_code == 409
 
 
 @pytest.mark.parametrize('points', [
@@ -81,18 +93,16 @@ def test_stale_page_cannot_overwrite_newer_edits(workspace):
     [[0,0],[30,30],[30,0],[0,30]],
     [[0,0],[0,0],[0,0],[0,0]],
 ])
-def test_invalid_boxes_are_rejected(workspace,points):
-    client,_,_ = workspace
-    page = client.get('/api/books/demo/pages').json()[4]
+def test_invalid_boxes_are_rejected(annotated,points):
+    client,_,_,_,page = annotated
     payload = page_payload(page,boxes=[{'id':'invalid','transcription':'text','points':points}])
-    assert client.put('/api/pages/demo-5',json=payload).status_code == 422
+    assert client.put(f"/api/pages/{page['id']}",json=payload).status_code == 422
 
 
-def test_cannot_complete_empty_transcription(workspace):
-    client,_,_ = workspace
-    page = client.get('/api/books/demo/pages').json()[4]
+def test_cannot_complete_empty_transcription(annotated):
+    client,_,_,_,page = annotated
     page['boxes'][0]['transcription'] = '  '
-    assert client.put('/api/pages/demo-5',json=page_payload(page,done=True)).status_code == 422
+    assert client.put(f"/api/pages/{page['id']}",json=page_payload(page,done=True)).status_code == 422
 
 
 def test_pdf_import_render_classification_and_bilingual_copy(workspace):
@@ -115,7 +125,7 @@ def test_pdf_import_render_classification_and_bilingual_copy(workspace):
     for category in ('ch','vi'):
         assert (store.book_dir(book['id'])/category/'Sách thử nghiệm.001.jpg').is_file()
     assert not (store.book_dir(book['id'])/'misc'/'Sách thử nghiệm.001.jpg').exists()
-    assert len(list((root/'data'/'raw_data').glob('*/*.pdf')))==1
+    assert len(list((root/'backend/data/raw_data').glob('*.pdf')))==1
 
 
 def test_bad_pdf_and_path_traversal_are_rejected(workspace):
@@ -124,15 +134,15 @@ def test_bad_pdf_and_path_traversal_are_rejected(workspace):
     assert client.post('/api/books/import',json={'filename':'../secret.pdf'}).status_code == 400
     assert client.post('/api/books/import',json={'filename':'..\\secret.pdf'}).status_code == 400
     assert client.post('/api/books/import',json={'filename':'absent.pdf'}).status_code == 404
-    assert not list((root/'data'/'.workspace').glob('upload-*'))
+    assert not list((root/'backend/data/.workspace').glob('upload-*'))
 
 
 def test_sources_are_local_and_import_keeps_name(workspace):
     client,_,root = workspace
-    (root/'data').mkdir(exist_ok=True)
+    folder = root/'backend/data/raw_data'
     pdf=pymupdf.open()
     pdf.new_page()
-    pdf.save(root/'data'/'Original Name.PDF')
+    pdf.save(folder/'Original Name.PDF')
     pdf.close()
     sources=client.get('/api/sources').json()
     assert sources[0]['name']=='Original Name.PDF'
@@ -142,19 +152,16 @@ def test_sources_are_local_and_import_keeps_name(workspace):
     assert client.post('/api/books/import',json={'filename':sources[0]['name']}).status_code==409
 
 
-def test_csv_and_xlsx_exact_schema_unicode_and_unverified_color(workspace):
-    client,_,_ = workspace
-    rows = client.get('/api/books/demo/alignments').json()
-    rows[0]['source']='漢字𠊛'
-    rows[0]['target']='=1+1'
-    rows[0]['reviewed']=True
-    assert client.put('/api/books/demo/alignments',json={'rows':rows}).status_code==200
-    csv_response=client.get('/api/books/demo/export?format=csv')
+def test_csv_and_xlsx_exact_schema_unicode_and_unverified_color(annotated):
+    client,_,_,book,_ = annotated
+    rows = [{'id':'1', 'sentence_id':f"{book['name']}.001.1", 'source':'漢字𠊛', 'target':'=1+1', 'reviewed':True}]
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':rows}).status_code==200
+    csv_response=client.get(f"/api/books/{book['id']}/export?format=csv")
     exported=list(csv.reader(io.StringIO(csv_response.content.decode('utf-8-sig'))))
     assert exported[0]==EXPORT_COLUMNS
-    assert exported[1]==['Thiên tự văn.001.jpg','Thiên tự văn.001.1','漢字𠊛','=1+1']
+    assert exported[1]==[f"{book['name']}.001.jpg",f"{book['name']}.001.1",'漢字𠊛','=1+1']
     assert len(exported)==len(rows)+1
-    workbook=load_workbook(io.BytesIO(client.get('/api/books/demo/export?format=xlsx').content))
+    workbook=load_workbook(io.BytesIO(client.get(f"/api/books/{book['id']}/export?format=xlsx").content))
     sheet=workbook.active
     assert [c.value for c in sheet[1]]==EXPORT_COLUMNS
     assert sheet['C2'].value=='漢字𠊛'
@@ -163,17 +170,17 @@ def test_csv_and_xlsx_exact_schema_unicode_and_unverified_color(workspace):
     assert sheet['D2'].font.color.rgb=='00C43838'
 
 
-def test_label_archive_and_alignment_validation(workspace):
-    client,_,_ = workspace
-    response=client.get('/api/books/demo/export?format=labels')
+def test_label_archive_and_alignment_validation(annotated):
+    client,_,_,book,_ = annotated
+    response=client.get(f"/api/books/{book['id']}/export?format=labels")
     with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
-        assert 'Thiên tự văn/ref/Label.txt' in archive.namelist()
-        assert 'Thiên tự văn/ch/fileState.txt' in archive.namelist()
+        assert f"{book['name']}/ref/Label.txt" in archive.namelist()
+        assert f"{book['name']}/ch/fileState.txt" in archive.namelist()
         assert all(not name.endswith('.jpg') for name in archive.namelist())
-    rows=client.get('/api/books/demo/alignments').json()
-    assert client.put('/api/books/demo/alignments',json={'rows':[rows[0],rows[0]]}).status_code==422
-    rows[0]['sentence_id']='Thiên tự văn.999.1'
-    assert client.put('/api/books/demo/alignments',json={'rows':rows}).status_code==422
+    rows=[{'id':'1', 'sentence_id':f"{book['name']}.001.1", 'source':'字', 'target':'Chữ', 'reviewed':False}]
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[rows[0],rows[0]]}).status_code==422
+    rows[0]['sentence_id']=f"{book['name']}.999.1"
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':rows}).status_code==422
     book,_=upload_book(client)
     assert client.get(f"/api/books/{book['id']}/export?format=csv").status_code==400
 
@@ -199,7 +206,7 @@ def save_counted_pairs(client, name, pairs):
     return book
 
 
-def test_pair_counter_excludes_demo_incomplete_and_duplicates_and_resumes(workspace):
+def test_pair_counter_excludes_incomplete_and_duplicates_and_resumes(workspace):
     client, _, root = workspace
     stats = client.get('/api/workspace').json()['pair_stats']
     assert stats == {

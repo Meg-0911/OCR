@@ -59,7 +59,7 @@ export default function PairProgress({
         Bổ sung tài liệu
       </button>
       <div className="pair-progress-rule">
-        Chỉ tính các cặp đã lưu, đủ hai vế; không tính dữ liệu minh họa và cặp trùng văn bản.
+        Chỉ tính các cặp đã lưu, đủ hai vế; không tính cặp trùng văn bản.
         {(stats.incomplete_pairs > 0 || stats.duplicate_pairs > 0) &&
           ` Đang bỏ qua ${number(stats.incomplete_pairs)} cặp thiếu nội dung và ${number(stats.duplicate_pairs)} cặp trùng.`}
       </div>

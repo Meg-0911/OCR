@@ -7,6 +7,9 @@ import re
 import shutil
 import sqlite3
 import zipfile
+import threading
+from contextlib import asynccontextmanager
+import asyncio
 from pathlib import Path
 from uuid import uuid4
 from datetime import datetime, timezone
@@ -14,14 +17,21 @@ from typing import Literal
 
 import pymupdf
 from fastapi import FastAPI, HTTPException, UploadFile
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from pydantic import BaseModel, Field, field_validator
 
-from .demo import manuscript
 from .store import CATEGORIES, Store, ordered_boxes
+from .ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
+from .sources import source_files, companion_text
+from .dictionary import Dictionary
+from .ocr_jobs import OCRJobs
+from .vietnamese_ocr import create_vietnamese_ocr
+from PIL import Image
+from . import bilingual
+from .reference_ocr import ReferenceOCR
 
 Category = Literal['ch', 'vi', 'intro', 'ref', 'toc', 'blank', 'misc']
 MAX_UPLOAD = 150 * 1024 * 1024
@@ -49,14 +59,97 @@ class BoxInput(BaseModel):
 
 
 class PageInput(BaseModel):
-    boxes: list[BoxInput] = Field(max_length=5000)
+    boxes: list[BoxInput] = Field(default_factory=list,max_length=5000)
+    vi_boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
+    source_text: str | None = Field(default=None,max_length=200000)
+    target_text: str | None = Field(default=None,max_length=200000)
     done: bool = False
     category: Category
     version: int = Field(ge=0)
+    reading_direction: Literal[1, 2] = 1
+    ocr_skip: bool | None = None
+
+
+class PagePatch(BaseModel):
+    source_text: str | None = Field(default=None,max_length=200000)
+    target_text: str | None = Field(default=None,max_length=200000)
+    boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
+    vi_boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
+    category: Category | None = None
+    reading_direction: Literal[1,2] | None = None
+    ocr_skip: bool | None = None
+
+
+class PagePlan(BaseModel):
+    page_id: str
+    category: Category
+    ocr_skip: bool = False
+
+
+class BookPlan(BaseModel):
+    pages: list[PagePlan] = Field(max_length=20000)
+
+
+class SessionInput(BaseModel):
+    page_id: str | None = None
+    alignment_page: str | None = None
+    view: Literal['overview','library','review','alignment','export'] = 'review'
 
 
 class ImportInput(BaseModel):
     filename: str
+
+
+def validate_regions(regions):
+    for region in regions or []:
+        left,top,right,bottom=region
+        if not all(math.isfinite(value) for value in region) or not 0<=left<right<=1 or not 0<=top<bottom<=1:
+            raise ValueError('Vùng mẫu phải có diện tích dương và tọa độ chuẩn hóa từ 0 đến 1.')
+    return regions
+
+
+class LayoutInput(BaseModel):
+    source_regions: list[tuple[float,float,float,float]] = Field(default_factory=list,max_length=100)
+    target_regions: list[tuple[float,float,float,float]] = Field(default_factory=list,max_length=100)
+
+    @field_validator('source_regions','target_regions')
+    @classmethod
+    def valid_regions(cls,regions):
+        return validate_regions(regions)
+
+
+class OCRSettings(BaseModel):
+    ocr_id: Literal[1, 2, 3, 4] = 1
+    lang_type: Literal[0, 1, 2] = 2
+    reading_direction: Literal[1, 2] = 1
+    epitaph: Literal[0, 1] = 0
+    tag: str | None = Field(default=None, max_length=200)
+    mode: Literal['han','vi','bilingual'] = 'han'
+    vi_psm: Literal[3,6,11] = 11
+    source_regions: list[tuple[float,float,float,float]] | None = Field(default=None,max_length=100)
+    target_regions: list[tuple[float,float,float,float]] | None = Field(default=None,max_length=100)
+
+    @field_validator('source_regions','target_regions')
+    @classmethod
+    def valid_regions(cls,regions):
+        return validate_regions(regions)
+
+
+class OCRInput(OCRSettings):
+    version: int = Field(ge=0)
+    force: bool = False
+
+
+class OCRBookInput(OCRSettings):
+    start_page: int = Field(default=1, ge=1)
+    end_page: int | None = Field(default=None, ge=1)
+    include_unclassified: bool = False
+    apply_texts: bool = True
+
+
+class WorkflowInput(OCRSettings):
+    mode: Literal['bilingual','han','vi'] = 'bilingual'
+    plan: list[PagePlan] = Field(default_factory=list,max_length=20000)
 
 
 class AlignmentInput(BaseModel):
@@ -71,11 +164,24 @@ class AlignmentsInput(BaseModel):
     rows: list[AlignmentInput] = Field(max_length=50000)
 
 
-def create_app(root: Path | None = None):
+def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None, ocr_transport=None, vi_provider=None):
     root = (root or Path(os.environ.get('CORPUS_ROOT', Path(__file__).resolve().parents[1]))).resolve()
     store = Store(root)
-    app = FastAPI(title='Nôm · Local Corpus Workbench', version='0.1.0')
+    @asynccontextmanager
+    async def lifespan(app):
+        yield
+        await asyncio.to_thread(jobs.close)
+
+    app = FastAPI(title='Nôm · Local Corpus Workbench', version='0.1.0', lifespan=lifespan)
     app.state.store = store
+    config = ocr_config if ocr_config is not None else KHNConfig.from_env(root / 'backend' / '.env')
+    ocr = KimHanNomOCR(config, transport=ocr_transport)
+    vietnamese=vi_provider or create_vietnamese_ocr(root)
+    raw_folder = store.data / 'raw_data'
+    source_errors = []
+    dictionary = Dictionary(store.data / 'dictionaries')
+    ocr_locks = {}
+    ocr_lock_guard = threading.Lock()
 
     def require_book(book_id):
         book = store.book(book_id)
@@ -96,7 +202,7 @@ def create_app(root: Path | None = None):
 
     def import_pdf(source: Path, filename: str):
         validate_filename(filename)
-        if any(b['filename'] == filename and not b['demo'] for b in store.books()):
+        if any(b['filename'].casefold() == filename.casefold() for b in store.books()):
             raise HTTPException(409, 'Sách này đã có trong tủ sách. Hãy mở sách hiện có để tiếp tục.')
         try:
             # Opening from bytes avoids leaked native file handles on malformed PDFs
@@ -111,21 +217,48 @@ def create_app(root: Path | None = None):
         except Exception as error:
             raise HTTPException(400, 'Không đọc được PDF hợp lệ, không có mật khẩu.') from error
         book_id = uuid4().hex
-        folder = store.data / 'raw_data' / book_id
-        folder.mkdir(parents=True)
-        destination = folder / filename
+        destination = raw_folder / filename
+        copy_source = source.resolve() != destination.resolve()
+        if copy_source and destination.exists():
+            raise HTTPException(409, 'File nguồn đã tồn tại. Quét lại thư mục để mở sách, không ghi đè PDF.')
         try:
-            shutil.copyfile(source, destination)
+            if copy_source:
+                shutil.copyfile(source, destination)
             with store.db() as db:
                 db.execute('INSERT INTO books VALUES (?,?,?,?,?,?)', (book_id, Path(filename).stem, filename, str(destination.relative_to(root)), 0, datetime.now(timezone.utc).isoformat()))
                 for i,(width,height) in enumerate(dimensions, start=1):
                     db.execute('INSERT INTO pages (id,book_id,number,category,width,height) VALUES (?,?,?,?,?,?)', (uuid4().hex, book_id, i, 'misc', width, height))
         except Exception:
-            destination.unlink(missing_ok=True)
-            folder.rmdir()
+            if copy_source:
+                destination.unlink(missing_ok=True)
             raise
         store.sync_labels(book_id)
         return next(b for b in store.books() if b['id'] == book_id)
+
+    def sync_sources():
+        with store.lock:
+            source_errors.clear()
+            known = {b['filename'].casefold():b for b in store.books()}
+            for source in source_files(raw_folder, '.pdf'):
+                existing = known.get(source.name.casefold())
+                if existing:
+                    # Repair paths from workspaces moved into backend/data/.
+                    with store.db() as db:
+                        db.execute('UPDATE books SET source=? WHERE id=?', (str(source.relative_to(root)), existing['id']))
+                    continue
+                try:
+                    book = import_pdf(source, source.name)
+                    known[source.name.casefold()] = book
+                except HTTPException as error:
+                    source_errors.append({'filename':source.name, 'message':str(error.detail)})
+
+    def book_summary(book):
+        source = root / require_book(book['id'])['source']
+        reference = companion_text(source) if source.is_file() and source.parent == raw_folder else None
+        return book | {'reference_file':reference.name if reference else None}
+
+    # Index every local PDF; no seeded data, fixed book count, copying or OCR calls.
+    sync_sources()
 
     def rendered_image(page):
         book = require_book(page['book_id'])
@@ -149,28 +282,85 @@ def create_app(root: Path | None = None):
 
     @app.get('/api/health')
     def health():
-        return {'status':'ok', 'ocr':'not_configured'}
+        return {'status':'ok', 'ocr':'configured' if config.ready else 'not_configured'}
 
     @app.get('/api/workspace')
     def workspace():
         return {
-            'books': store.books(),
+            'books': [book_summary(book) for book in store.books()],
             'pair_stats': store.pair_stats(),
-            'ocr_ready': False,
-            'storage': 'data/.workspace/workspace.sqlite3',
+            'ocr_ready': config.ready,
+            'storage': 'backend/data/.workspace/workspace.sqlite3',
+            'source_folder': 'backend/data/raw_data/',
+            'source_errors': source_errors,
+            'dictionary': dictionary.status(),
+            'vietnamese_ocr': vietnamese.status(),
+            'resume':store.session('current'),
         }
+
+    @app.get('/api/dictionary/status')
+    def dictionary_status():
+        return dictionary.status()
+
+    @app.get('/api/dictionary/lookup')
+    def dictionary_lookup(character: str):
+        try:
+            return dictionary.lookup(character)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from None
+
+    @app.get('/api/dictionary/search')
+    def dictionary_search(q: str):
+        try:
+            return dictionary.search(q)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from None
 
     @app.get('/api/sources')
     def sources():
-        folder = root / 'data'
-        return [{'name':p.name,'bytes':p.stat().st_size} for p in sorted(folder.glob('*')) if p.is_file() and p.suffix.lower()=='.pdf'] if folder.exists() else []
+        known = {b['filename'].casefold():b['id'] for b in store.books()}
+        return [{'name':p.name, 'bytes':p.stat().st_size, 'book_id':known.get(p.name.casefold()),
+                 'reference_file':ref.name if (ref := companion_text(p)) else None}
+                for p in source_files(raw_folder, '.pdf')]
+
+    @app.post('/api/sources/sync')
+    def refresh_sources():
+        sync_sources()
+        return workspace()
+
+    @app.get('/api/books/{book_id}/reference')
+    def reference_text(book_id: str):
+        book = require_book(book_id)
+        source = root / book['source']
+        reference = companion_text(source) if source.is_file() and source.parent == raw_folder else None
+        if not reference:
+            return None
+        try:
+            text = reference.read_text(encoding='utf-8-sig')
+        except UnicodeDecodeError:
+            raise HTTPException(422, 'File Quốc ngữ cần được lưu với mã hóa UTF-8.') from None
+        return {'filename':reference.name, 'text':text}
+
+    @app.get('/api/books/{book_id}/layout')
+    def get_layout(book_id: str):
+        require_book(book_id)
+        return store.book_layout(book_id)
+
+    @app.put('/api/books/{book_id}/layout')
+    def save_layout(book_id: str,data: LayoutInput):
+        require_book(book_id)
+        profile=data.model_dump()
+        with store.db() as db:
+            db.execute('INSERT INTO book_layouts VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET profile=excluded.profile',
+                       (book_id,json.dumps(profile)))
+        return profile
 
     @app.post('/api/books/import', status_code=201)
     def import_source(data: ImportInput):
         name = validate_filename(data.filename)
-        source = root / 'data' / name
-        if not source.is_file() or source.resolve().parent != (root/'data').resolve():
-            raise HTTPException(404, 'Không tìm thấy nguồn PDF trong data/.')
+        source = raw_folder / name
+        if not source.is_file() or source.resolve().parent != raw_folder.resolve():
+            raise HTTPException(404, 'Không tìm thấy nguồn PDF trong backend/data/raw_data/.')
         return import_pdf(source,name)
 
     @app.post('/api/books/upload', status_code=201)
@@ -183,7 +373,7 @@ def create_app(root: Path | None = None):
                 while chunk := file.file.read(1024*1024):
                     size += len(chunk)
                     if size > MAX_UPLOAD:
-                        raise HTTPException(413, 'PDF vượt giới hạn 150 MB. Với sách lớn, đặt file trong data/ rồi chọn nhập từ máy.')
+                        raise HTTPException(413, 'PDF vượt giới hạn 150 MB. Đặt file trong backend/data/raw_data/ rồi quét lại thư mục.')
                     output.write(chunk)
             return import_pdf(temporary, filename)
         finally:
@@ -198,8 +388,6 @@ def create_app(root: Path | None = None):
     @app.get('/api/pages/{page_id}/image')
     def image(page_id: str, thumbnail: bool = False):
         page = require_page(page_id)
-        if require_book(page['book_id'])['demo']:
-            return Response(manuscript(page['category'],page['number']),media_type='image/svg+xml')
         original = rendered_image(page)
         if thumbnail:
             thumb = original.with_suffix('.thumb.jpg')
@@ -217,28 +405,247 @@ def create_app(root: Path | None = None):
     def save_page(page_id: str, data: PageInput):
         with store.lock:
             page = require_page(page_id)
-            if any(x>page['width'] or y>page['height'] for box in data.boxes for x,y in box.points):
+            if any(x>page['width'] or y>page['height'] for box in [*data.boxes,*(data.vi_boxes or [])] for x,y in box.points):
                 raise HTTPException(422, 'Box vượt ra ngoài kích thước ảnh.')
             if len({b.id for b in data.boxes}) != len(data.boxes):
                 raise HTTPException(422, 'ID box bị trùng.')
-            if data.done and data.category in ('ch','vi','intro','ref','toc') and (not data.boxes or any(not b.transcription.strip() for b in data.boxes)):
-                raise HTTPException(422, 'Cần nhập văn bản cho các vùng trước khi hoàn thành.')
+            source_text=page['source_text'] if data.source_text is None else data.source_text
+            target_text=page['target_text'] if data.target_text is None else data.target_text
+            if data.done and data.category in ('ch','vi','intro','ref','toc') and not (source_text.strip() or target_text.strip() or (data.boxes and all(b.transcription.strip() for b in data.boxes))):
+                raise HTTPException(422, 'Trang chưa có văn bản để duyệt. Dùng kết quả OCR hoặc nhập chữ; không bắt buộc vẽ box.')
             boxes = [b.model_dump() for b in data.boxes]
             try:
                 with store.db() as db:
-                    result = db.execute('UPDATE pages SET boxes=?,status=?,category=?,version=version+1 WHERE id=? AND version=?', (json.dumps(boxes,ensure_ascii=False),'done' if data.done else 'pending',data.category,page_id,data.version))
+                    result = db.execute('UPDATE pages SET boxes=?,status=?,category=?,reading_direction=?,source_text=?,target_text=?,vi_boxes=?,version=version+1 WHERE id=? AND version=?',
+                        (json.dumps(boxes,ensure_ascii=False),'done' if data.done else 'pending',data.category,data.reading_direction,
+                         source_text,target_text,json.dumps([b.model_dump() for b in data.vi_boxes],ensure_ascii=False) if data.vi_boxes is not None else json.dumps(page['vi_boxes'],ensure_ascii=False),page_id,data.version))
                     if result.rowcount != 1:
                         raise HTTPException(409, 'Trang đã được cập nhật ở cửa sổ khác. Hãy tải lại trang trước khi lưu.')
+                    edited=set(page['edited_fields'])
+                    if data.source_text is not None and source_text!=page['source_text']:
+                        edited.add('source_text')
+                    if data.target_text is not None and target_text!=page['target_text']:
+                        edited.add('target_text')
+                    db.execute('UPDATE pages SET edited_fields=? WHERE id=?',(json.dumps(sorted(edited)),page_id))
             except sqlite3.IntegrityError as error:
                 raise HTTPException(409, 'Trang đã có trong nhóm này. Vui lòng chọn bản đã tồn tại.') from error
             updated = require_page(page_id)
-            if not require_book(page['book_id'])['demo']:
-                rendered_image(updated)
-                if page['category'] != updated['category']:
-                    old = store.book_dir(page['book_id']) / page['category'] / f"{require_book(page['book_id'])['name']}.{page['number']:03d}.jpg"
-                    old.unlink(missing_ok=True)
+            if data.ocr_skip is not None:
+                with store.db() as db:
+                    db.execute('UPDATE pages SET ocr_skip=? WHERE id=?',(int(data.ocr_skip),page_id))
+                updated=require_page(page_id)
+            rendered_image(updated)
+            if page['category'] != updated['category']:
+                old = store.book_dir(page['book_id']) / page['category'] / f"{require_book(page['book_id'])['name']}.{page['number']:03d}.jpg"
+                old.unlink(missing_ok=True)
             store.sync_labels(page['book_id'])
             return updated
+
+    @app.patch('/api/pages/{page_id}')
+    def patch_page(page_id: str,data: PagePatch):
+        # Field-level autosave permits editing one language while the other finishes OCR.
+        with store.lock:
+            page=require_page(page_id)
+            changes=data.model_dump(exclude_none=True)
+            if not changes:
+                return page
+            edited=set(page['edited_fields'])
+            edited.update(key for key in ('source_text','target_text') if key in changes and changes[key]!=page[key])
+            changes['edited_fields']=json.dumps(sorted(edited))
+            for key in ('boxes','vi_boxes'):
+                if key in changes:
+                    if any(x>page['width'] or y>page['height'] for box in changes[key] for x,y in box['points']):
+                        raise HTTPException(422,'Box vượt ra ngoài kích thước ảnh.')
+                    changes[key]=json.dumps(changes[key],ensure_ascii=False)
+            if 'ocr_skip' in changes:
+                changes['ocr_skip']=int(changes['ocr_skip'])
+            try:
+                with store.db() as db:
+                    db.execute('UPDATE pages SET '+','.join(key+'=?' for key in changes)+",status='pending',version=version+1 WHERE id=?",(*changes.values(),page_id))
+            except sqlite3.IntegrityError:
+                raise HTTPException(409,'Trang đã có trong nhóm này.') from None
+            store.sync_labels(page['book_id'])
+            return require_page(page_id)
+
+    @app.get('/api/books/{book_id}/session')
+    def book_session(book_id: str):
+        require_book(book_id)
+        return store.session('book:'+book_id)
+
+    @app.put('/api/books/{book_id}/session')
+    def save_book_session(book_id: str,data: SessionInput):
+        require_book(book_id)
+        for page_id in (data.page_id,data.alignment_page):
+            if page_id and require_page(page_id)['book_id']!=book_id:
+                raise HTTPException(422,'Vị trí trang không thuộc sách.')
+        state=data.model_dump()|{'book_id':book_id}
+        store.save_session('book:'+book_id,state)
+        store.save_session('current',state)
+        return state
+
+    @app.put('/api/books/{book_id}/plan')
+    def save_book_plan(book_id: str,data: BookPlan):
+        require_book(book_id)
+        with store.lock:
+            known={p['id'] for p in store.pages(book_id)}
+            if len({p.page_id for p in data.pages})!=len(data.pages) or any(p.page_id not in known for p in data.pages):
+                raise HTTPException(422,'Danh sách trang bị trùng hoặc không thuộc sách.')
+            try:
+                with store.db() as db:
+                    for page in data.pages:
+                        db.execute('UPDATE pages SET category=?,ocr_skip=?,version=version+1 WHERE id=? AND (category!=? OR ocr_skip!=?)',
+                                   (page.category,int(page.ocr_skip),page.page_id,page.category,int(page.ocr_skip)))
+            except sqlite3.IntegrityError:
+                raise HTTPException(409,'Trang bị trùng trong nhóm; giữ bản ngôn ngữ chính trước khi đổi nhãn.') from None
+            store.sync_labels(book_id)
+            store.sync_results(book_id,'save_page_plan')
+        return store.pages(book_id)
+
+    def recover_ocr(page_id):
+        page = require_page(page_id)
+        result = store.latest_ocr(page_id)
+        if result:
+            return result
+        # Recover JSON files written by earlier versions of the workbench.
+        folder = store.local / 'ocr' / page_id
+        for path in sorted(folder.glob('*.json'), key=lambda p:p.stat().st_mtime, reverse=True):
+            try:
+                archive = json.loads(path.read_text(encoding='utf-8'))
+                if archive.get('result'):
+                    result=archive['result']
+                    store.save_ocr(result,result['settings'],archive['created_at'])
+                    return result
+                result = normalize_result(archive['response'], page['width'], page['height']) | {
+                    'page_id':page_id, 'version':archive['version'], 'result_id':path.stem,
+                    'reading_direction':archive['settings']['reading_direction'], 'settings':archive['settings'],
+                }
+                store.save_ocr(result, archive['settings'], archive['created_at'])
+                return result
+            except (ValueError, KeyError, OCRError):
+                continue
+        return None
+
+    @app.get('/api/pages/{page_id}/ocr')
+    def latest_page_ocr(page_id: str):
+        return recover_ocr(page_id)
+
+    def reference_path(book_id):
+        book=require_book(book_id)
+        source=root/book['source']
+        return companion_text(source) if source.is_file() and source.parent==raw_folder else None
+
+    def target_provider(page):
+        reference=reference_path(page['book_id'])
+        return ReferenceOCR(store,page,reference) if reference else vietnamese
+
+    def effective_settings(book_id,data):
+        settings=data.model_dump(exclude={'version','force','start_page','end_page','include_unclassified','apply_texts'})
+        status=vietnamese.status()
+        settings['vi_engine']=status.get('cache_key',status['engine'])
+        reference=reference_path(book_id)
+        if reference:
+            status=ReferenceOCR(store,store.pages(book_id)[0],reference).status()
+            settings['vi_engine']=status['cache_key']
+        layout=store.book_layout(book_id)
+        for key in ('source_regions','target_regions'):
+            if settings.get(key) is None:
+                settings[key]=layout[key]
+        return json.loads(json.dumps(settings))
+
+    def run_page_ocr(page_id: str, data: OCRInput, background=False, apply_texts=True):
+        page = require_page(page_id)
+        if page['ocr_skip'] or page['category']=='blank' or (data.mode=='han' and page['category'] not in ('ch','intro','ref','toc')):
+            raise HTTPException(422, 'Chọn chế độ Nôm + Quốc ngữ cho trang song ngữ/chưa phân loại, hoặc phân loại trang Hán Nôm trước khi dùng chế độ chỉ Nôm.')
+        if not background and page['version'] != data.version:
+            raise HTTPException(409, 'Trang đã thay đổi. Hãy tải lại trước khi OCR.')
+        settings = effective_settings(page['book_id'],data)
+        cached = recover_ocr(page_id)
+        folder = store.local / 'ocr' / page_id
+        folder.mkdir(parents=True, exist_ok=True)
+        def checkpoint(result,responses,result_id):
+            created_at=datetime.now(timezone.utc).isoformat()
+            archive=folder/f'{result_id}.json'; temporary=archive.with_suffix('.tmp')
+            temporary.write_text(json.dumps({'page_id':page_id,'version':data.version,'created_at':created_at,
+                'settings':settings,'responses':responses,'response':responses.get('han',[{}])[0],
+                'result':result},ensure_ascii=False,indent=2),encoding='utf-8')
+            os.replace(temporary,archive)
+            if result is not None:
+                store.save_ocr(result,settings,created_at)
+                if background and apply_texts:
+                    store.apply_ocr_texts(result)
+        try:
+            result=bilingual.recognize(page,settings,data.force,cached=cached,
+                image_bytes=lambda:rendered_image(page).read_bytes(),han_provider=ocr,vi_provider=target_provider(page),save=checkpoint)
+        except OCRError as error:
+            raise HTTPException(error.status_code,str(error)) from None
+        if not background and require_page(page_id)['version'] != data.version:
+            raise HTTPException(409, 'Trang đã thay đổi trong lúc OCR. Kết quả gốc đã lưu trong backend/data/.workspace/ocr/; hãy tải lại trang.')
+        return result
+
+    @app.post('/api/pages/{page_id}/ocr')
+    def recognize_page(page_id: str, data: OCRInput):
+        with ocr_lock_guard:
+            lock = ocr_locks.setdefault(page_id,threading.Lock())
+        with lock:
+            return run_page_ocr(page_id, data)
+
+    def recognize_for_job(page_id,data):
+        with ocr_lock_guard:
+            lock=ocr_locks.setdefault(page_id,threading.Lock())
+        with lock:
+            result=run_page_ocr(page_id,OCRInput(**data),background=True,apply_texts=data.get('apply_texts',True))
+            if data.get('apply_texts',True):
+                store.apply_ocr_texts(result)
+        return result
+
+    jobs = OCRJobs(store, recognize_for_job,
+                   lambda page,settings:bilingual.needs_ocr(page,settings,recover_ocr(page['id'])))
+    app.state.ocr_jobs = jobs
+
+    @app.get('/api/books/{book_id}/ocr-job')
+    def latest_book_job(book_id: str):
+        require_book(book_id)
+        return jobs.latest(book_id)
+
+    @app.post('/api/books/{book_id}/ocr-job')
+    def start_book_job(book_id: str, data: OCRBookInput):
+        require_book(book_id)
+        if data.mode!='vi' and not config.ready:
+            raise HTTPException(503, 'Thiếu KHN_token trong backend/.env.')
+        if data.mode!='han' and not reference_path(book_id) and not vietnamese.status()['ready']:
+            raise HTTPException(503,'Chưa cài OCR Quốc ngữ. Cài backend/requirements.txt, chạy '+vietnamese.status()['setup']+' rồi thử lại.')
+        max_page = max(p['number'] for p in store.pages(book_id))
+        end_page = data.end_page or max_page
+        if not data.start_page <= end_page <= max_page:
+            raise HTTPException(422, 'Phạm vi trang không hợp lệ.')
+        # Include legacy JSON checkpoints before selecting pages to skip.
+        for page in store.pages(book_id):
+            recover_ocr(page['id'])
+        try:
+            return jobs.start(book_id, effective_settings(book_id,data) | {'apply_texts':data.apply_texts},
+                              data.start_page,end_page,data.include_unclassified)
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from None
+
+    @app.post('/api/books/{book_id}/workflow')
+    def start_workflow(book_id: str,data: WorkflowInput):
+        save_book_plan(book_id,BookPlan(pages=data.plan))
+        current=jobs.latest(book_id)
+        if current and current['status'] in ('running','pausing'):
+            return current
+        options=data.model_dump(exclude={'plan'})
+        return start_book_job(book_id,OCRBookInput(**options,include_unclassified=True,apply_texts=True))
+
+    @app.post('/api/ocr-jobs/{job_id}/{action}')
+    def control_book_job(job_id: str, action: Literal['pause','resume']):
+        if not jobs.get(job_id):
+            raise HTTPException(404, 'Không tìm thấy tác vụ OCR.')
+        try:
+            result=jobs.pause(job_id) if action=='pause' else jobs.resume(job_id)
+            store.sync_results(result['book_id'],'ocr_'+action)
+            return result
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from None
 
     @app.post('/api/pages/{page_id}/duplicate')
     def duplicate_page(page_id: str):
@@ -252,8 +659,7 @@ def create_app(root: Path | None = None):
                 if db.execute('SELECT 1 FROM pages WHERE book_id=? AND number=? AND category=?',(page['book_id'],page['number'],category)).fetchone():
                     raise HTTPException(409, 'Trang đã có bản ở nhóm ngôn ngữ còn lại.')
                 db.execute('INSERT INTO pages (id,book_id,number,category,width,height) VALUES (?,?,?,?,?,?)',(new_id,page['book_id'],page['number'],category,page['width'],page['height']))
-            if not require_book(page['book_id'])['demo']:
-                rendered_image(require_page(new_id))
+            rendered_image(require_page(new_id))
             store.sync_labels(page['book_id'])
             return require_page(new_id)
 
@@ -283,6 +689,7 @@ def create_app(root: Path | None = None):
             row['sentence_id'] = f"{prefix}.{counters[prefix]}"
         with store.db() as db:
             db.execute('INSERT INTO alignments VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET rows=excluded.rows',(book_id,json.dumps(rows,ensure_ascii=False)))
+        store.sync_results(book_id,'save_alignments')
         return rows
 
     @app.get('/api/books/{book_id}/export')
@@ -294,6 +701,7 @@ def create_app(root: Path | None = None):
             store.sync_labels(book_id)
             content = io.BytesIO()
             with zipfile.ZipFile(content,'w',zipfile.ZIP_DEFLATED) as archive:
+                archive.write(store.book_dir(book_id)/'page_texts.json',f"{book['name']}/page_texts.json")
                 for category in CATEGORIES:
                     if category in ('blank','misc'):
                         continue
@@ -333,6 +741,15 @@ def create_app(root: Path | None = None):
                 sheet.freeze_panes = 'A2'
                 workbook.save(path)
         return FileResponse(path,filename=path.name)
+
+    @app.get('/api/books/{book_id}/results/{filename}')
+    def result_file(book_id: str,filename: Literal['summary.json','pages.json','alignments.json','pairs.csv','events.jsonl']):
+        require_book(book_id)
+        store.sync_results(book_id)
+        path=store.data/'output_alignment'/book_id/filename
+        if not path.is_file():
+            raise HTTPException(404,'Chưa có sự kiện để tải.')
+        return FileResponse(path,filename=filename)
 
     dist = root / 'frontend' / 'dist'
     if dist.exists():
