@@ -83,7 +83,7 @@ def test_failed_book_job_resumes_only_unfinished_pages_after_restart(tmp_path):
         assert completed['status']=='completed' and completed['completed']==3
         assert len(resumed_calls)==2
         pages=client.get(f"/api/books/{book['id']}/pages").json()
-        assert all(p['boxes']==[] and p['status']=='pending' for p in pages)
+        assert all(p['boxes'] and p['status']=='pending' for p in pages)
         assert all(client.get(f"/api/pages/{p['id']}/ocr").json()['text_lines']==['天地'] for p in pages)
 
 

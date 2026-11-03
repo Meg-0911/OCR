@@ -2,6 +2,7 @@
 import json
 import re
 import sqlite3
+import unicodedata
 from contextlib import closing
 from pathlib import Path
 
@@ -105,3 +106,31 @@ class Dictionary:
             with closing(sqlite3.connect(f'{self.path.resolve().as_uri()}?mode=ro', uri=True)) as db:
                 found += [row[0] for row in db.execute("SELECT character FROM entries WHERE readings LIKE ? ESCAPE '\\' LIMIT 30", (f'%{escaped}%',))]
         return [self.lookup(char)['entry'] for char in dict.fromkeys(found)][:30]
+
+    def reverse_search(self, query):
+        query=query.strip()
+        if not query or len(query)>100:
+            raise ValueError('Nhập âm Quốc ngữ từ 1 đến 100 ký tự.')
+        words=[
+            unicodedata.normalize('NFC',word).casefold()
+            for word in re.findall(r'[^\W_]+',query,flags=re.UNICODE)
+        ]
+        if not words or len(words)>12:
+            raise ValueError('Nhập từ hoặc cụm tối đa 12 tiếng Quốc ngữ.')
+
+        readings={}
+        for entry in self._local():
+            for reading in entry.get('readings',[]):
+                for word in re.findall(r'[^\W_]+',reading,flags=re.UNICODE):
+                    key=unicodedata.normalize('NFC',word).casefold()
+                    readings.setdefault(key,set()).add(entry['character'])
+        if self.path.is_file():
+            with closing(sqlite3.connect(f'{self.path.resolve().as_uri()}?mode=ro', uri=True)) as db:
+                for character,value in db.execute("SELECT character,readings FROM entries WHERE readings!=''"):
+                    for word in re.findall(r'[^\W_]+',value,flags=re.UNICODE):
+                        key=unicodedata.normalize('NFC',word).casefold()
+                        readings.setdefault(key,set()).add(character)
+
+        return [{'syllable':syllable,
+                 'entries':[self.lookup(character)['entry'] for character in sorted(readings.get(syllable,()))[:30]]}
+                for syllable in words]

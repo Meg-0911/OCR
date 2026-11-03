@@ -49,7 +49,9 @@ def test_reference_is_attached_to_matching_pdf_and_never_separate_book(tmp_path)
     books = client.get('/api/workspace').json()['books']
     assert len(books) == 2
     book = next(book for book in books if book['filename'] == filename)
-    assert book['reference_file'] == reference.name
+    assert book['reference_file'] is None
+    assert client.get(f"/api/books/{book['id']}/reference").json() is None
+    assert client.put(f"/api/books/{book['id']}/text-sources/vi",json={'filename':reference.name,'text':text}).status_code==200
     assert client.get(f"/api/books/{book['id']}/reference").json() == {'filename':reference.name, 'text':text}
     assert client.get(f"/api/books/{book['id']}/alignments").json() == []
     assert client.get('/api/workspace').json()['pair_stats']['pairs'] == 0

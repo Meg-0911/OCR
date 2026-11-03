@@ -50,7 +50,7 @@ export default function BookLayoutPanel({
     try {
       setLayout(await api.saveBookLayout(bookId, layout));
       setMessage(
-        'Đã lưu vùng mẫu cho quyển. Các lượt OCR mới dùng mẫu này; bản hiệu đính và tác vụ đang chạy được giữ nguyên.',
+        'Đã lưu vùng mẫu cho quyển. Các lượt OCR mới dùng mẫu này; bản Gán nhãn và tác vụ đang chạy được giữ nguyên.',
       );
       onSaved();
     } catch (error) {

@@ -1,5 +1,7 @@
-export type Category = 'ch' | 'vi' | 'intro' | 'ref' | 'toc' | 'blank' | 'misc';
+export type Category = 'both' | 'ch' | 'vi' | 'intro' | 'ref' | 'toc' | 'blank' | 'misc';
 export type Box = { id: string; transcription: string; points: [number, number][] };
+export type Region = [number, number, number, number];
+export type TextSources = Partial<Record<'han' | 'vi', TextReference>>;
 export type Page = {
   id: string;
   book_id: string;
@@ -17,6 +19,9 @@ export type Page = {
   vi_boxes: Box[];
   ocr_skip: boolean;
   target_origin: string;
+  source_regions: Region[] | null;
+  target_regions: Region[] | null;
+  ocr_languages: ('han' | 'vi')[];
 };
 export type Book = {
   id: string;
@@ -56,6 +61,7 @@ export type Workspace = {
   resume?: BookSession;
 };
 export type BookSession = {
+  workflow_step?: 1 | 2 | 3 | 4;
   book_id?: string;
   page_id?: string | null;
   view?: 'overview' | 'library' | 'review' | 'alignment' | 'export';
@@ -70,6 +76,8 @@ export type SourceFile = {
 };
 export type TextReference = { filename: string; text: string };
 export type OCRSettings = {
+  font_type?: 0 | 1 | 2;
+  shared_reading_area?: boolean;
   ocr_id: 1 | 2 | 3 | 4;
   lang_type: 0 | 1 | 2;
   reading_direction: 1 | 2;
@@ -93,10 +101,12 @@ export type OCRResult = {
   vi_boxes?: Box[];
   vi_text_lines?: string[];
   completed_languages?: ('han' | 'vi')[];
+  requested_languages?: ('han' | 'vi')[];
 };
 export type BookLayout = {
   source_regions: [number, number, number, number][];
   target_regions: [number, number, number, number][];
+  reading_direction?: 1 | 2;
 };
 export type OCRJob = {
   id: string;
@@ -118,6 +128,7 @@ export type DictionaryEntry = {
   mandarin: string;
   variants: { character: string; kind: string; definitions: string[]; readings: string[] }[];
 };
+export type DictionaryReverseMatch = { syllable: string; entries: DictionaryEntry[] };
 export type DictionaryLookup = {
   query: string;
   found: boolean;

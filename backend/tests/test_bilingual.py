@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from backend.app import create_app
 from backend.ocr import KHNConfig, OCRError
 from backend.vietnamese_ocr import create_vietnamese_ocr, parse_tsv, clean_boxes
+from backend.store import Store
 
 
 def success(data):
@@ -45,6 +46,33 @@ def setup(tmp_path,vi=None):
     book=client.get('/api/workspace').json()['books'][0]
     page=client.get(f"/api/books/{book['id']}/pages").json()[0]
     return app,client,book,page,calls
+
+
+def test_startup_repairs_legacy_text_only_projection_but_preserves_manual_and_done_pages(tmp_path):
+    app,client,_,page,_=setup(tmp_path)
+    result=client.post(f"/api/pages/{page['id']}/ocr",json={'version':0,'mode':'han'}).json()
+    store=app.state.store
+    with store.db() as db:
+        db.execute('UPDATE pages SET source_text=?,boxes=? WHERE id=?',('天地玄黃','[]',page['id']))
+    assert Store(tmp_path).page(page['id'])['boxes']==result['boxes']
+    for edits,status,text,skip in ((['boxes'],'pending','天地玄黃',0),(['source_text'],'pending','天地玄黃',0),
+                                   ([], 'done','天地玄黃',0),([], 'pending','',0),([], 'pending','天地玄黃',1)):
+        with store.db() as db:
+            db.execute('UPDATE pages SET boxes=?,edited_fields=?,status=?,source_text=?,ocr_skip=? WHERE id=?',
+                       ('[]',json.dumps(edits),status,text,skip,page['id']))
+        assert Store(tmp_path).page(page['id'])['boxes']==[]
+    app.state.ocr_jobs.close()
+
+
+def test_unmapped_character_must_be_corrected_before_completion(tmp_path):
+    app,client,_,page,_=setup(tmp_path)
+    url=f"/api/pages/{page['id']}"
+    box={'id':'unknown','transcription':'□','points':[[10,10],[30,10],[30,40],[10,40]]}
+    payload={'version':0,'category':'both','source_text':'□','boxes':[box],'done':True}
+    assert client.put(url,json=payload).status_code==422
+    payload.update(source_text='𠊛',boxes=[dict(box,transcription='𠊛')])
+    assert client.put(url,json=payload).json()['status']=='done'
+    app.state.ocr_jobs.close()
 
 
 def test_text_only_bilingual_page_can_be_saved_completed_and_restored(tmp_path):
@@ -101,7 +129,7 @@ def test_book_template_crops_han_maps_coordinates_and_applies_text_without_boxes
     assert finished['status']=='completed',finished
     page=client.get(f"/api/books/{book['id']}/pages").json()[0]
     assert page['source_text']=='天地玄黃' and page['target_text']=='Thiên địa huyền hoàng.'
-    assert page['boxes']==[] and page['status']=='pending'
+    assert len(page['boxes'])==1 and page['status']=='pending'
     result=client.get(f"/api/pages/{page['id']}/ocr").json()
     assert result['boxes'][0]['points'][0]==[160,235]
     assert vi.regions==[[[0,.25,1,.5]]]
@@ -115,6 +143,7 @@ def test_old_han_only_result_does_not_skip_needed_vietnamese_in_new_job(tmp_path
     app,client,book,page,calls=setup(tmp_path,vi)
     page=client.put(f"/api/pages/{page['id']}",json={'version':0,'category':'ch','boxes':[]}).json()
     assert client.post(f"/api/pages/{page['id']}/ocr",json={'version':page['version'],'mode':'han'}).status_code==200
+    client.patch(f"/api/pages/{page['id']}",json={'category':'both'})
     job=client.post(f"/api/books/{book['id']}/ocr-job",json={'mode':'bilingual'}).json()
     app.state.ocr_jobs.futures[job['id']].result(timeout=10)
     assert len(calls)==1 and vi.calls==1
@@ -156,12 +185,13 @@ def test_empty_vi_result_is_not_marked_complete_and_han_checkpoint_survives(tmp_
 
 def test_previously_reviewed_han_only_page_can_add_vi_without_overwriting_edits(tmp_path):
     app,client,book,page,calls=setup(tmp_path)
-    page=client.put(f"/api/pages/{page['id']}",json={'version':0,'category':'ch','source_text':'Nôm đã hiệu đính','target_text':'','done':True}).json()
+    page=client.put(f"/api/pages/{page['id']}",json={'version':0,'category':'ch','source_text':'Nôm đã Gán nhãn','target_text':'','done':True}).json()
+    client.patch(f"/api/pages/{page['id']}",json={'category':'both'})
     job=client.post(f"/api/books/{book['id']}/ocr-job",json={'mode':'bilingual'}).json()
     app.state.ocr_jobs.futures[job['id']].result(timeout=10)
     updated=client.get(f"/api/books/{book['id']}/pages").json()[0]
-    assert updated['source_text']=='Nôm đã hiệu đính' and updated['target_text']=='Thiên địa huyền hoàng.'
-    assert updated['status']=='pending' and not calls
+    assert updated['source_text']=='Nôm đã Gán nhãn' and updated['target_text']=='Thiên địa huyền hoàng.'
+    assert updated['status']=='pending' and len(calls)==1 and updated['boxes']
     app.state.ocr_jobs.close()
 
 
@@ -183,4 +213,25 @@ def test_changing_vi_model_keeps_han_checkpoint_and_rereads_only_vi(tmp_path):
     assert result['completed_languages']==['han','vi']
     assert len(calls)==1 and vi.calls==2
     assert result['settings']['vi_engine']=='new-handwriting-model'
+    app.state.ocr_jobs.close()
+
+
+def test_rerunning_after_retagging_han_does_not_apply_cached_vi_checkpoint(tmp_path):
+    vi=LocalVI()
+    app,client,_,page,calls=setup(tmp_path,vi)
+    url=f"/api/pages/{page['id']}/ocr"
+    initial=client.post(url,json={'version':0,'mode':'bilingual'}).json()
+    app.state.store.apply_ocr_texts(initial)
+    page=client.patch(f"/api/pages/{page['id']}",json={'ocr_languages':['han']}).json()
+
+    result=client.post(url,json={'version':page['version'],'mode':'bilingual','force':True}).json()
+
+    assert result['requested_languages']==['han']
+    assert result['completed_languages']==['han']
+    assert result['cached_languages']==['han','vi']
+    assert len(calls)==2 and vi.calls==1
+    app.state.store.apply_ocr_texts(result)
+    updated=client.get(f"/api/books/{page['book_id']}/pages").json()[0]
+    assert updated['source_text']=='天地玄黃'
+    assert updated['target_text']=='Thiên địa huyền hoàng.'
     app.state.ocr_jobs.close()

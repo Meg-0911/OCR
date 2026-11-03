@@ -29,6 +29,9 @@ export default function ManuscriptViewer({
   zoom,
   onBoxes,
   onDrawn,
+  allowAltDraw = false,
+  readOnly = false,
+  showFullPageRegion = false,
 }: {
   page: Page;
   boxes: Box[];
@@ -39,6 +42,9 @@ export default function ManuscriptViewer({
   zoom: number;
   onBoxes: (boxes: Box[]) => void;
   onDrawn: () => void;
+  allowAltDraw?: boolean;
+  readOnly?: boolean;
+  showFullPageRegion?: boolean;
 }) {
   const svg = useRef<SVGSVGElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -47,6 +53,17 @@ export default function ManuscriptViewer({
   useEffect(() => {
     setImageError(false);
   }, [page.id]);
+  useEffect(() => {
+    if (!selected || !svg.current) return;
+    const frame = requestAnimationFrame(() => {
+      if (drag.current) return;
+      const box = Array.from(
+        svg.current?.querySelectorAll<SVGPolygonElement>('[data-box]') || [],
+      ).find((element) => element.dataset.box === selected);
+      box?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selected, page.id, zoom]);
   function position(event: PointerEvent<SVGSVGElement>): [number, number] {
     const rect = event.currentTarget.getBoundingClientRect();
     return [
@@ -56,12 +73,15 @@ export default function ManuscriptViewer({
   }
   function start(event: PointerEvent<SVGSVGElement>) {
     if (event.button !== 0) return;
+    if (readOnly && tool === 'draw') return;
     const point = position(event);
     const target = event.target as SVGElement;
     const box = boxes.find((b) => b.id === target.dataset.box);
-    if (tool === 'draw') drag.current = { kind: 'draw', start: point };
+    if (tool === 'draw' || (allowAltDraw && event.altKey && !readOnly))
+      drag.current = { kind: 'draw', start: point };
     else if (box) {
       setSelected(box.id);
+      if (readOnly) return;
       drag.current = {
         kind: target.dataset.corner !== undefined ? 'corner' : 'move',
         start: point,
@@ -174,6 +194,16 @@ export default function ManuscriptViewer({
               height={page.height}
               onError={() => setImageError(true)}
             />
+            {showBoxes && showFullPageRegion && (
+              <rect
+                x={2}
+                y={2}
+                width={page.width - 4}
+                height={page.height - 4}
+                className="reading-region-outline"
+                pointerEvents="none"
+              />
+            )}
             {showBoxes &&
               rendered.map((box, index) => {
                 const b = bounds(box),
@@ -207,6 +237,7 @@ export default function ManuscriptViewer({
                       </text>
                     </g>
                     {active &&
+                      !readOnly &&
                       box.points.map(([x, y], corner) => (
                         <rect
                           key={corner}

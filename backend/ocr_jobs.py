@@ -4,6 +4,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from uuid import uuid4
+from .ocr import OCRPaused
 
 
 class OCRJobs:
@@ -44,18 +45,17 @@ class OCRJobs:
                 if db.execute("SELECT 1 FROM ocr_jobs WHERE status IN ('running','pausing')").fetchone():
                     raise ValueError('Đang chạy một quyển khác. Tạm dừng hoặc đợi quyển đó xong trước.')
             pages = [p for p in self.store.pages(book_id) if start_page <= p['number'] <= end_page
+                     and p['status']!='done'
                      and not p.get('ocr_skip',False)
-                     and (p['category'] in (('ch','intro','ref','toc') if settings.get('mode','han')=='han' else ('ch','vi','intro','ref','toc')) or (include_unclassified and p['category']=='misc'))]
+                     and (p['category'] in (('ch','both','intro','ref','toc') if settings.get('mode','han')=='han' else ('ch','vi','both','intro','ref','toc')) or (include_unclassified and p['category']=='misc'))]
             if not pages:
-                raise ValueError('Không có trang Hán Nôm trong phạm vi. Phân loại trang hoặc chọn xử lý trang chưa phân loại.')
+                raise ValueError('Không có trang cần OCR trong phạm vi.')
             job_id = uuid4().hex
             with self.store.db() as db:
                 db.execute('INSERT INTO ocr_jobs VALUES (?,?,?,?,?,?)', (job_id,book_id,'running',json.dumps(settings),None,datetime.now(timezone.utc).isoformat()))
                 for page in pages:
                     skip = not self.needs_ocr(page,settings)
                     db.execute('INSERT INTO ocr_job_pages VALUES (?,?,?,NULL)', (job_id,page['id'],'skipped' if skip else 'pending'))
-                    if include_unclassified and page['category']=='misc' and not skip:
-                        db.execute("UPDATE pages SET category='ch',version=version+1 WHERE id=?", (page['id'],))
             self.store.sync_labels(book_id)
             initial = self.get(job_id)
             self.futures[job_id] = self.executor.submit(self._run, job_id)
@@ -77,6 +77,10 @@ class OCRJobs:
                 if db.execute("SELECT 1 FROM ocr_jobs WHERE status IN ('running','pausing')").fetchone():
                     raise ValueError('Đang chạy một quyển khác.')
                 db.execute("UPDATE ocr_job_pages SET status='pending',error=NULL WHERE job_id=? AND status IN ('failed','running')", (job_id,))
+                for item in job['pages']:
+                    page=self.store.page(item['page_id'])
+                    if page['status']!='done' and self.needs_ocr(page,job['settings']):
+                        db.execute("UPDATE ocr_job_pages SET status='pending',error=NULL WHERE job_id=? AND page_id=?",(job_id,page['id']))
                 db.execute("UPDATE ocr_jobs SET status='running',error=NULL WHERE id=?", (job_id,))
             initial = self.get(job_id)
             self.futures[job_id] = self.executor.submit(self._run, job_id)
@@ -98,6 +102,10 @@ class OCRJobs:
                 self._page_status(job_id, page['id'], 'running')
                 try:
                     self.recognize(page['id'], {'version':page['version'], **job['settings']})
+                except OCRPaused:
+                    self._page_status(job_id, page['id'], 'pending')
+                    self._status(job_id, 'paused')
+                    return
                 except Exception as error:
                     # Only controlled public messages may be persisted, never request headers.
                     message = getattr(error, 'detail', None) or 'Không hoàn tất OCR trang này. Kiểm tra kết nối/cấu hình rồi tiếp tục.'

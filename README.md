@@ -1,6 +1,6 @@
-﻿# Nôm Workspace — OCR và căn chỉnh Hán Nôm – Quốc ngữ
+# Nôm Workspace — OCR và căn chỉnh Hán Nôm – Quốc ngữ
 
-Ứng dụng chạy tại máy để chọn sách, gắn nhãn/bỏ qua trang, OCR toàn bộ quyển, hiệu đính từng chữ, tra từ điển và tạo ngữ liệu song song. Kết quả hiện dần khi từng phần hoàn tất; checkpoint theo ngôn ngữ/trang giúp dừng rồi tiếp tục đúng chỗ.
+Ứng dụng chạy tại máy để chọn sách, gắn nhãn/bỏ qua trang, OCR toàn bộ quyển, Gán nhãn từng chữ, tra từ điển và tạo ngữ liệu song song. Kết quả hiện dần khi từng phần hoàn tất; checkpoint theo ngôn ngữ/trang giúp dừng rồi tiếp tục đúng chỗ.
 
 ## 1. Bắt đầu nhanh trên máy hiện tại
 
@@ -123,7 +123,7 @@ py backend/setup_vietocr.py
 
 Script tải encoder/decoder ONNX, vocab và thông tin giấy phép vào `backend/.tools/vietocr/`, kiểm tra SHA256 và khóa revision `f1973b930f907c378f6e3152ce9d8658724b228a`. Nguồn: [model card chữ viết tay](https://huggingface.co/vudang449/vietocr-vietnamese-handwriting), [VietOCR gốc](https://github.com/pbcquoc/vietocr), giấy phép Apache-2.0. Chỉ bước tải cần Internet; lúc đọc Quốc ngữ không gọi dịch vụ ngoài, không cần API key. Không tự tải mô hình khi server đang xử lý sách.
 
-**Giới hạn đã kiểm tra:** VietOCR đọc được 11 dòng viết tay trên toàn trang PDF số 6 của Tiên Phả Dịch Lục, khoảng 11 giây trên CPU máy hiện tại. Vẫn sai từ, dấu và một số dòng lẫn chữ Nôm; cần hiệu đính, chưa đại diện cho mọi sách. Bộ tìm dòng phù hợp với các hàng ngang; nhiều cột, mực nhạt hoặc bố cục khác nhau có thể cần vùng mẫu cho quyển. Không tự coi kết quả OCR là nhãn chuẩn, không tự đánh dấu trang hoàn thành. Khi không có nội dung Quốc ngữ đủ dùng, tác vụ báo lỗi và giữ phần Nôm đã xong.
+**Giới hạn đã kiểm tra:** VietOCR đọc được 11 dòng viết tay trên toàn trang PDF số 6 của Tiên Phả Dịch Lục, khoảng 11 giây trên CPU máy hiện tại. Vẫn sai từ, dấu và một số dòng lẫn chữ Nôm; cần Gán nhãn, chưa đại diện cho mọi sách. Bộ tìm dòng phù hợp với các hàng ngang; nhiều cột, mực nhạt hoặc bố cục khác nhau có thể cần vùng mẫu cho quyển. Không tự coi kết quả OCR là nhãn chuẩn, không tự đánh dấu trang hoàn thành. Khi không có nội dung Quốc ngữ đủ dùng, tác vụ báo lỗi và giữ phần Nôm đã xong.
 
 Cấu hình trong `backend/.env` (Google Cloud Vision đã bỏ):
 
@@ -136,7 +136,7 @@ VI_OCR_THREADS=4
 
 Tesseract `vie+eng` là dự phòng khi VietOCR không tìm được dòng có nội dung. Trên máy này đã có sẵn. Để cài dự phòng trên Windows, cài 7-Zip rồi chạy `py backend/setup_vietnamese_ocr.py`; script chỉ giải nén Tesseract vào `backend/.tools/tesseract/`, không chạy trình cài hệ thống. Trên Ubuntu cài `tesseract-ocr`, `tesseract-ocr-vie`, `tesseract-ocr-eng`. Có thể đặt `TESSERACT_CMD` và `TESSDATA_DIR` nếu đường dẫn khác mặc định. Đặt `VI_OCR_PROVIDER=tesseract` nếu cần chủ động chuyển hẳn sang Tesseract cho tài liệu chữ in.
 
-VietOCR dùng luồng OCR toàn bộ quyển và cơ chế checkpoint theo từng phần. Đổi mô hình không làm mất phần Nôm đã lưu hoặc văn bản đã hiệu đính. Nội dung đã sửa vẫn được giữ khi chạy hoặc tiếp tục tác vụ; không tự thay thế văn bản bằng kết quả mới.
+VietOCR dùng luồng OCR toàn bộ quyển và cơ chế checkpoint theo từng phần. Đổi mô hình không làm mất phần Nôm đã lưu hoặc văn bản đã Gán nhãn. Nội dung đã sửa vẫn được giữ khi chạy hoặc tiếp tục tác vụ; không tự thay thế văn bản bằng kết quả mới.
 
 ### Font chữ Hán Nôm đã đóng gói
 
@@ -152,15 +152,13 @@ npm --prefix frontend run check:fonts
 
 Chuyển TTF sang WOFF2 toàn bộ bộ chữ có thể mất nhiều phút trên CPU. `npm run build` tự kiểm tra đủ font và checksum trước khi biên dịch. Trong Cài đặt có trạng thái tải font Nôm. Nếu thấy ô vuông, kiểm tra yêu cầu `/fonts/` trong trình duyệt và tải lại bằng Ctrl + F5.
 
-### Vùng mẫu dùng cho toàn bộ quyển — chỉ khi cần
+### Vùng đọc chung và trang cắt riêng
 
-1. Mở một trang đại diện. Mặc định có thể OCR cả trang, không cần bước này.
-2. Bật công cụ vẽ, vẽ/chọn một vùng trên ảnh rồi mở **Vùng mẫu cho cả quyển**.
-3. Bấm **Gán vùng đang chọn cho Nôm** hoặc **... Quốc ngữ**. Có thể gán nhiều vùng, phù hợp với cả bố cục chia nửa trang lẫn nhiều hàng Nôm trên/Quốc ngữ dưới.
-4. Bấm **Lưu mẫu cho toàn bộ quyển**. Mẫu dùng tọa độ tỷ lệ 0–1, nên áp dụng được khi kích thước ảnh các trang khác nhau. Chỉ giới hạn vùng đọc, không sao chép chữ hay nhãn giả sang các trang.
-5. Lưu nháp trang mẫu nếu vừa vẽ rồi mới chạy theo quyển. Có thể xóa box mẫu sau khi lưu profile; profile vẫn được giữ.
+Ở bước 2, chọn **Chiều đọc của sách**, rồi vẽ trực tiếp trên ảnh bằng **Vẽ vùng đọc**. Vùng đọc luôn áp dụng chung cho toàn PDF và cho các ngôn ngữ đã bật trong nhãn Hán/Nôm, Quốc ngữ ở phía trên. Không có bước chọn lại ngôn ngữ cho vùng đọc hoặc chọn phạm vi áp dụng. Khung nét đứt bao toàn ảnh cho biết mặc định đang đọc toàn trang. Vùng dùng tọa độ theo tỷ lệ ảnh, tự lưu ngay khi thả chuột và hiển thị trên mọi trang kế thừa.
 
-Các lượt OCR mới dùng mẫu đã lưu. Tác vụ đang chạy/tiếp tục giữ phạm vi mẫu đã chốt khi tạo tác vụ. Bản hiệu đính đã có không bị ghi đè. **Bỏ vùng mẫu → Lưu mẫu** trở về đọc tự động toàn trang. Với các trang có bố cục khác nhau nhiều, chia phạm vi hoặc hiệu chỉnh riêng, không áp một mẫu sai cho cả sách.
+Dùng **Cắt lại trang này** cho trang có bố cục khác. Vùng cắt riêng là ngoại lệ của trang đó; **Dùng vùng chung** khôi phục kế thừa toàn PDF. Trang bỏ qua không chạy OCR. Vùng đọc là chung cho hai engine, còn các nhãn ngôn ngữ quyết định engine nào chạy. Box ký tự do OCR trả về, được Gán nhãn ở bước 4. Không có nút Apply hoặc Lưu mẫu riêng.
+
+Vùng mới dùng cho lượt OCR tiếp theo. Tác vụ đang chạy giữ vùng chung đã chốt lúc bắt đầu; vùng riêng được đọc khi xử lý từng trang. Thay vùng khiến trang liên quan cần xác nhận lại. Văn bản và box đã sửa thủ công được giữ khi nhận kết quả mới.
 
 ## 3. Chuẩn bị và chia sách cho ba thành viên
 
@@ -186,70 +184,47 @@ backend/
 
 - Chỉ PDF là sách. File `.PDF` viết hoa cũng được nhận.
 - `Tiên Phả Dịch Lục_Dịch.txt` là Quốc ngữ đối chiếu của `Tiên Phả Dịch Lục, Nôm, 2 volumes_Y.pdf`, **không phải sách thứ 16**.
-- TXT được gắn khi tên tác phẩm khớp duy nhất sau khi bỏ hậu tố `_Dịch`, `_Y`, phần mô tả sau dấu phẩy và chuẩn hóa khoảng trắng. Nếu tên mơ hồ thì không tự đoán.
+- Tải TXT tại bước 1 **Thêm nội dung**, vào ô Hán/Nôm hoặc Quốc ngữ tương ứng. Tên TXT có thể tùy ý; không tự gắn file theo tên PDF.
 - Giữ TXT ở UTF-8. Các dấu `Page ...` trong TXT được giữ nguyên; chúng không tự tạo trang hay cặp căn chỉnh.
 - PDF có sẵn được đọc trực tiếp tại `raw_data/`, không sao chép thành một bộ nguồn khác. Tải PDF qua giao diện cũng lưu vào thư mục này.
 - Sau khi bắt đầu làm, giữ nguyên tên và nội dung PDF. Đổi tên sẽ có thể được nhận thành sách khác; thay nội dung cùng tên chưa có cơ chế cập nhật lại số trang/cache an toàn.
 - Quét lại không xóa nhãn hoặc tiến trình. PDF lỗi được báo riêng, các PDF hợp lệ vẫn được nhận.
 
 
-## 4. Luồng làm việc: chọn sách → gắn nhãn → lưu và OCR toàn bộ → hiệu đính
+## 4. Luồng làm việc trên một màn hình
 
-### Bước 1 — Chọn sách
+**Tủ sách** dùng để xem ảnh các trang sách và kết quả Hán Nôm/Quốc ngữ đã lưu. Bấm **Xem trang & kết quả**, tìm số trang rồi chọn trang để đọc; có thể chuyển trang tự do, kể cả trang chưa xác nhận hoặc chưa có kết quả.
 
-Vào **Tủ sách** hoặc chọn sách trong danh sách **Tài liệu đang làm việc**. Ứng dụng mở danh sách trang và ảnh PDF để đối chiếu. Mỗi trang có chung một ảnh và hai nội dung: **Hán / Nôm**, **Quốc ngữ**; không tạo hai bản sao trang theo ngôn ngữ.
+Để chạy OCR hoặc sửa văn bản, mở tab **Gán nhãn OCR** và chọn sách. Bước 1 để tải TXT tùy chọn. Bước 2 chỉ hiển thị ảnh gốc, nhãn và vùng quét; không có khung văn bản hay chọn nguồn OCR/TXT. Ở bước 4, văn bản xuất hiện cạnh ảnh; chọn **Ảnh + Hán Nôm** hoặc **Ảnh + Quốc ngữ** ở cột phải. Số trang là vị trí trong PDF, bắt đầu từ 1. Nút hai mũi tên mở ảnh toàn màn hình; bấm lại hoặc Esc để thoát. Nút phần trăm đưa ảnh về vừa chiều rộng.
 
-Số trang là **vị trí trong PDF, bắt đầu từ 1**, không phải số in trong bản chụp. Ví dụ ảnh `.006.jpg` là trang PDF thứ 6. Khi mở lại, ứng dụng khôi phục sách, trang và mục làm việc đã lưu gần nhất.
+Trong **Gán nhãn OCR**, có bốn bước chi tiết:
 
-### Bước 2 — Xem danh sách và gắn nhãn
+1. **Thêm nội dung**: tải TXT Hán/Nôm và/hoặc Quốc ngữ nếu có, mỗi ngôn ngữ một nguồn riêng. TXT tự lưu và có thể xem lại/thay tệp. Có thể tiếp tục mà không tải TXT; bước này không chạy OCR.
+2. **Gắn nhãn trang**: mặc định mọi trang mới là nội dung với cả Hán/Nôm và Quốc ngữ. Chuyển trang tự do để chỉnh ngoại lệ, không cần xác nhận từng trang. Nhãn, chiều đọc và vùng quét tự lưu; mở bước này không tự chạy OCR. Nhấn **Ctrl+A** để chọn các trang đang hiện, hoặc **Ctrl + nhấp** vào ảnh để chọn nhiều trang rồi đổi nhãn cùng lúc. Vùng chung hiển thị theo tỷ lệ trên mỗi trang, trừ trang có vùng riêng hoặc bỏ qua.
+3. **Lưu & OCR toàn bộ sách**: bấm **Tiếp tục: Lưu & OCR** ở bước 2 để lưu toàn bộ nhãn rồi khởi chạy OCR. Tiến trình OCR có thanh tiến trình, trạng thái từng trang và nút Tạm dừng/Tiếp tục. Có thể chuyển trang hoặc sang bước 4 trong lúc OCR đang chạy; kết quả tiếp tục được lưu theo từng trang. Trang đã có kết quả phù hợp sẽ được bỏ qua khi tiếp tục, không tự chạy lại.
+4. **Gán nhãn & hoàn thành**: sửa chữ theo box OCR trên ảnh, tra cứu chữ và bấm **Lưu & hoàn thành**. Dùng **Vẽ box chữ** để kéo thêm khung (hoặc giữ **Alt** rồi kéo trên ảnh), nhập chữ ở cột bên phải; **Chọn box chữ** để di chuyển hoặc kéo các góc chỉnh kích thước. **OCR lại trang** chạy lại riêng ảnh đang mở; kết quả mới nằm trong nháp để kiểm tra trước khi lưu. **Xóa box** hoặc phím Delete xóa box đang chọn cùng chữ tương ứng. Chỉnh sửa tự lưu; box mới phải được điền chữ trước khi hoàn thành. Vùng đọc chung vẫn thiết lập tại bước 2, TXT tải ở bước 1.
 
-Trong **Gắn nhãn và OCR toàn bộ sách**, xem ảnh từng trang, chọn nhãn và đánh dấu có OCR hay bỏ qua. Bấm số trang để mở ảnh lớn phía dưới. Có ô tìm số trang và nút **Gắn trang chưa phân loại là nội dung** để thao tác nhanh.
+Có thể chuyển giữa bốn bước bằng thanh phía trên. Bước 1 chỉ quản lý TXT đối chiếu; bước 2 dùng cột thiết lập gọn cho nhãn và vùng quét; bước 3 hiển thị thông tin xử lý; bước 4 hiển thị văn bản đối chiếu cạnh ảnh. Các mục chính Tủ sách, Gán nhãn OCR, Căn chỉnh song ngữ và Xuất dữ liệu chỉ dùng thanh sidebar.
 
-| Nhãn | Ý nghĩa |
-| --- | --- |
-| Hán Nôm (`ch`) | Nội dung chính, có thể chứa cả Nôm và Quốc ngữ trên cùng trang |
-| Quốc ngữ (`vi`) | Trang chủ yếu chứa Quốc ngữ |
-| Giới thiệu (`intro`), Chú thích (`ref`), Mục lục (`toc`) | Phân loại trang đặc biệt; tự quyết định có OCR bằng checkbox |
-| Trang trắng (`blank`) | Luôn bỏ qua OCR |
-| Chưa phân loại (`misc`) | Có thể gắn nhãn tiếp; nếu vẫn được chọn khi bắt đầu thì được xếp vào nội dung Hán Nôm |
+### Tag và OCR
 
-**Bỏ chọn Thực hiện OCR** để loại trang bìa, phụ bản hoặc bất kỳ trang nào không cần xử lý. Trang bị bỏ qua vẫn còn trong sách và giữ văn bản/nhãn cũ, nhưng không được đưa vào hàng đợi OCR mới. Nếu loại một trang còn đang chờ trong tác vụ, worker bỏ qua khi đến trang đó. Trang đã bắt đầu xử lý có thể hoàn tất lượt đang chạy.
+Trang mới mặc định là nội dung với cả **Hán/Nôm + Quốc ngữ**. Hai tag ngôn ngữ bật độc lập, phải giữ ít nhất một tag. Các tag giới thiệu, chú thích, mục lục, trang trắng hoặc khác độc lập với lựa chọn ngôn ngữ. **Bỏ qua OCR** loại trang khỏi xử lý; trang trắng luôn bỏ qua. Có thể gắn tag cho nhiều trang cùng lúc ở bước 2 bằng Ctrl+A hoặc Ctrl + nhấp. Trang `misc` cũ được chuyển sang nội dung song ngữ một lần khi nâng cấp schema.
 
-Nhãn được lưu tự động sau khoảng 0,8 giây và có bản nháp trình duyệt ngay khi sửa. Việc gắn nhãn tự động lưu **chưa gọi OCR**; nút Lưu nhãn & OCR ở bước sau là thao tác bắt đầu cả quyển.
+Bấm **OCR toàn sách** để chạy các trang còn cần xử lý, theo các ngôn ngữ đã bật. Nôm dùng Kim Hán Nôm, mặc định chữ Nôm, chiều đọc chọn ở bước 2 và kiểu thông thường tương ứng; Quốc ngữ dùng engine local. Kết quả lưu theo từng ngôn ngữ và xuất hiện ngay, kèm tọa độ box nhận dạng. OCR xử lý tuần tự và có thể tạm dừng/tiếp tục từ checkpoint.
 
-### Bước 3 — Lưu để bắt đầu OCR toàn bộ trang đã chọn
+### Gán nhãn và xác nhận
 
-Kiểm tra **Cấu hình OCR Nôm cho sách** rồi bấm **Lưu nhãn & OCR toàn bộ sách**. Đây là thao tác OCR chính; không cần bấm OCR ở từng trang, cũng không cần chọn khoảng trang.
+Di chuột hoặc chuyển focus tới dòng/ký tự ở cột phải để ảnh cuộn tới và tô sáng box OCR tương ứng. Với trang Nôm mực đen xen Quốc ngữ mực đỏ, ứng dụng tách nét mực và khoảng trống thực để lấy box ký tự, ghép các hàng sát nhau trước khi nhận dạng rồi ánh xạ về tọa độ ảnh gốc. Chỉ gán chữ khi số chữ OCR khớp số vùng ký tự; chỗ chưa ghép được hiện `□` và phải sửa trước khi hoàn thành. Không chia đều box dòng để giả lập tọa độ chữ. Nếu bố cục chưa tách được, giữ box dòng thực do engine trả về. Bấm nút tra cạnh ô chữ Nôm để tra từ điển và thay dị thể.
 
-- Kiểu 1: thông thường dọc; 2: hành chính; 3: ngoại cảnh; 4: thông thường ngang.
-- Chiều 1: dọc, phải → trái; chiều 2: ngang.
-- Loại chữ 0: chưa biết; 1: Hán; 2: Nôm.
-- Trang PDF thứ 6 của Tiên Phả Dịch Lục có các hàng chữ ngang, phù hợp với kiểu 4, chiều 2, chữ Nôm.
+Ảnh scan dùng cho OCR được dựng lại từ PDF ở độ phân giải cao hơn ảnh thu nhỏ; tọa độ được đổi về cùng hệ với ảnh hiển thị. Chiều đọc độc lập với loại mô hình Kim Hán Nôm: loại thông thường dùng `ocr_id=1`, không dùng `ocr_id=4` (y học) để chọn chiều ngang. Bản nâng cấp vô hiệu checkpoint OCR tự động của pipeline cũ khi tiếp tục; trang đã xác nhận và trường đã sửa tay vẫn được giữ.
 
-Nút này lưu các chỉnh sửa đang có và danh sách nhãn, rồi tạo tác vụ cho **toàn bộ các trang được chọn trong quyển**. Backend xử lý tuần tự để lưu checkpoint an toàn; “OCR toàn bộ” là phạm vi cả sách, không có nghĩa là gửi tất cả ảnh cùng lúc. Mỗi ngôn ngữ đã xong được ghi ngay vào SQLite/JSON và đưa vào ô văn bản còn trống, không đợi cả quyển xong. Giao diện lấy tiến trình khoảng mỗi 1,5 giây.
+Văn bản và vùng quét tự lưu; Ctrl + S lưu ngay văn bản. Tự lưu hoặc OCR xong vẫn là **Chưa xác nhận**. Bước 4 cho phép chuyển trang và trở lại các bước khác mà không cần xác nhận trang hiện tại; nháp được giữ khi đổi trang. Không thể xác nhận trang còn đang chờ/chạy trong tác vụ OCR đang hoạt động. Bộ đếm hoàn thành ở Tủ sách chỉ tính các trang đã xác nhận; đủ các trang nội dung thì hiện **Đã hoàn thành quyển**. Khi mở lại sách, bước đang làm được khôi phục; OCR tiếp tục bỏ qua kết quả đã hoàn tất phù hợp, còn **OCR lại trang** dùng khi cần chạy lại riêng một ảnh.
 
-Nôm dùng Kim Hán Nôm. Quốc ngữ dùng VietOCR local, trừ quyển có TXT đối chiếu thì lấy trực tiếp từ TXT. Không bắt buộc vẽ box. Vùng mẫu cho cả quyển vẫn là công cụ tùy chọn khi bố cục cần giới hạn vùng đọc.
+### Nguồn TXT hoặc OCR ngay cạnh ảnh
 
-Nếu thiếu token, mô hình hoặc dịch vụ gặp lỗi, nhãn vẫn được giữ; tác vụ dừng và hiển thị nguyên nhân để xử lý rồi tiếp tục. Không âm thầm gọi lại liên tục. Mỗi lần chỉ chạy một tác vụ OCR; vẫn được sửa các trang đã có kết quả.
+Tải hoặc thay TXT chỉ tại bước 1 **Thêm nội dung**. Ở bước 4, nếu ngôn ngữ đó đã có TXT, chọn **Nguồn đối chiếu: TXT đã tải** để xem lại. Hỗ trợ UTF-8, tối đa 2 MB; mỗi sách có thể lưu riêng hai bản TXT. Bản TXT được giữ nguyên làm tham chiếu phía trên bản Gán nhãn trong cùng cột. OCR vẫn chạy để lấy văn bản và bounding box; TXT không thay engine hoặc xóa kết quả OCR.
 
-### Bước 4 — Hiệu đính ngay khi từng phần xuất hiện
-
-1. Mở trang đã có kết quả, đối chiếu với ảnh bên cạnh.
-2. Trong **Hán / Nôm**, sửa văn bản và bấm từng chữ để tra từ điển, âm đọc, nghĩa và dị thể.
-3. Trong **Quốc ngữ**, sửa dấu, từ và đoạn tương ứng. Với TXT, duyệt lại bản ghép nháp theo số dòng Nôm.
-4. Có thể tiếp tục đổi nhãn hoặc bỏ qua trang. Box mặc định không bắt buộc; có thể vẽ thêm hoặc lấy box đã phát hiện trong **Box tùy chọn**, không chạy lại OCR.
-5. Văn bản tự lưu khoảng 0,8 giây sau khi ngừng nhập. Rời ô cũng lưu. Mỗi mục có nút **Lưu Hán / Nôm hiện tại**, **Lưu Quốc ngữ hiện tại**; chân trang còn nút lưu toàn trang và Ctrl + S.
-6. Khi đã đọc lại đầy đủ, bấm **Hoàn thành & tiếp theo**. OCR xong không tự đánh dấu đã duyệt; trang đã sửa vẫn được giữ khi các trang khác tiếp tục OCR.
-
-Lưu dùng từng trường: sửa Quốc ngữ không xóa kết quả Nôm vừa về và ngược lại. Worker chỉ điền ô còn trống; không ghi đè văn bản đã hiệu đính, kể cả khi bạn sửa ngay trong lúc trang đang chạy. Giao diện giữ phần đang gõ khi nhận tiến trình mới.
-
-### Quốc ngữ từ file TXT đi kèm
-
-`Tiên Phả Dịch Lục_Dịch.txt` là nguồn đối chiếu của PDF cùng tên, không phải sách mới. TXT hiện có hai mốc **Page 06**, **Page 178**, không có ranh giới cho mọi trang PDF.
-
-Theo cách ghép đã chọn, ứng dụng **trích văn bản nguyên gốc từ TXT**, ghép nháp theo số hàng/cột Nôm được phát hiện trên từng trang, giữ thứ tự trong mỗi mốc. Không chạy VietOCR cho Quốc ngữ của quyển này. Vị trí đã dùng được lưu trong bảng `reference_allocations` của SQLite; trang sau tiếp tục từ dòng chưa dùng, và mốc mới bắt đầu đoạn tương ứng. Không cắt chuỗi TXT theo số ký tự hoặc dịch từ Nôm để tạo đáp án.
-
-Nguồn được ghi dạng `txt-draft:<tên file>:<dòng đầu>-<dòng cuối>`. Đây là **ghép nháp cần duyệt**, không phải căn trang chuẩn: số dòng Nôm nhận sai, câu kéo qua trang hoặc bỏ qua trang có nội dung đều có thể làm lệch đoạn. Bạn sửa/tách/gộp trong phần hiệu đính và căn chỉnh. Khi hết đoạn TXT hoặc chưa xác định được số dòng Nôm, hệ thống dừng để kiểm tra, không tự lấy sang mốc khác. Không sửa nội dung file nguồn trong khi đang chạy sách.
+Nếu TXT có dấu `******* Page 06 *******` hoặc ký tự ngắt trang form feed, cột tham chiếu hiển thị phần có số trang tương ứng. Nếu không có ranh giới trang, hiển thị toàn TXT để người Gán nhãn tự đối chiếu; không tự chia theo số ký tự hay số dòng Nôm. Chuyển **Nguồn: OCR** để tập trung vào bản OCR. Nội dung TXT được lưu trong SQLite và dùng được sau khi mở lại ứng dụng.
 
 ## 5. Lưu, dừng và tiếp tục đúng chỗ đang làm
 
@@ -259,17 +234,17 @@ Nguồn được ghi dạng `txt-draft:<tên file>:<dòng đầu>-<dòng cuối>
 | --- | --- |
 | Nhãn và trang bỏ qua | Tự lưu vào SQLite; nháp trình duyệt ngay khi sửa |
 | Tiến trình OCR | Lưu sau mỗi ngôn ngữ và mỗi trang; trạng thái hàng đợi lưu trong SQLite |
-| Nội dung hai ngôn ngữ / box | Tự lưu từng trường, có nút lưu ngay và Ctrl + S |
+| Nội dung hai ngôn ngữ / box | Tự lưu từng trường và Ctrl + S |
 | Căn chỉnh | Tự lưu khoảng 1,2 giây sau chỉnh sửa; vẫn có nút Lưu căn chỉnh |
 | Vị trí làm việc | Lưu sách, trang và mục đang mở vào SQLite; khôi phục khi vào lại |
-| Ghép TXT | Lưu đoạn đã cấp cho từng trang, mốc và checksum nguồn |
+| Nguồn TXT | Lưu tên file và nguyên văn riêng cho Nôm/Quốc ngữ trong SQLite |
 | File kết quả | Tự cập nhật snapshot và thống kê sau lưu/OCR/căn chỉnh |
 
 Nếu mất kết nối trong khi sửa, bản nháp trình duyệt vẫn được giữ và trạng thái báo chưa lưu vào máy. Mở lại cùng trình duyệt để khôi phục và lưu tiếp. Không xóa dữ liệu trình duyệt hoặc sao lưu sang máy khác trước khi những bản nháp đó được ghi thành công vào backend.
 
 ### Dừng chủ động
 
-1. Bấm **Lưu và tạm dừng sau trang hiện tại**; đợi **Đã tạm dừng**. Lượt đang chạy được phép hoàn tất và ghi checkpoint.
+1. Bấm **Tạm dừng**; trạng thái chuyển sang **Đang dừng OCR**. Lượt nhận dạng đang gửi được phép hoàn tất và ghi checkpoint; tác vụ dừng trước ngôn ngữ hoặc trang kế tiếp. Khi **OCR tạm dừng**, có thể bấm **Tiếp tục OCR**; phần ngôn ngữ đã xong không bị gọi lại.
 2. Lưu các nội dung đang sửa/căn chỉnh hoặc đợi trạng thái đã lưu.
 3. Dừng server bằng Ctrl + C rồi mới tắt máy hoặc sao lưu.
 
@@ -280,7 +255,7 @@ Nếu mất kết nối trong khi sửa, bản nháp trình duyệt vẫn đư�
 1. Chạy backend từ cùng thư mục và cùng dữ liệu, bằng Python của môi trường đã cài.
 2. Ứng dụng khôi phục sách, trang và mục đang làm. Không nhập lại sách, không xóa `.workspace/`.
 3. Nếu tác vụ bị ngắt, nó hiển thị **Đã tạm dừng**. Bấm **Tiếp tục đúng phần chưa xong** để chạy phần còn lại.
-4. Những trang/ngôn ngữ đã có checkpoint không bị gọi lại. Bản hiệu đính được giữ. Nếu Nôm đã xong mà Quốc ngữ chưa xong, chỉ tiếp tục phần Quốc ngữ.
+4. Những trang/ngôn ngữ đã có checkpoint không bị gọi lại. Bản Gán nhãn được giữ. Nếu Nôm đã xong mà Quốc ngữ chưa xong, chỉ tiếp tục phần Quốc ngữ.
 
 Ứng dụng không tự gửi thêm ảnh ra dịch vụ ngoài khi server vừa khởi động. Nếu máy bị tắt đột ngột giữa một lượt chưa ghi checkpoint, phần đó có thể cần chạy lại; các phần đã ghi thành công vẫn được giữ. Lỗi token: cập nhật `.env`, khởi động lại rồi tiếp tục tác vụ cũ.
 
@@ -305,7 +280,7 @@ SQLite là dữ liệu chính. Các file trên là snapshot có thể dựng l�
 
 ### Cách dùng trên giao diện
 
-1. Trong cột hiệu đính, bên dưới mỗi ô văn bản có dòng **Bấm từng chữ để tra nghĩa và dị thể**.
+1. Trong cột Gán nhãn, bên dưới mỗi ô văn bản có dòng **Bấm từng chữ để tra nghĩa và dị thể**.
 2. Bấm chữ Hán/Nôm cần kiểm tra. Khung từ điển bên phải hiện chữ, mã Unicode, âm Việt, nghĩa và các dạng chữ khác nếu có.
 3. Có thể bấm dạng chữ khác để xem mục từ của nó. Đọc nhãn quan hệ: giản thể, phồn thể, dị thể cùng nghĩa, dị thể nghĩa chuyên biệt, v.v.
 4. Nếu muốn sửa bản OCR, bấm **Thay chữ đang chọn bằng ...**. Ứng dụng thay đúng vị trí chữ đã chọn, không thay hàng loạt các chữ giống nhau.
@@ -345,12 +320,12 @@ Không có bộ Nôm giả được nạp sẵn. Khi có dữ liệu/API Nôm, c
 
 ## 7. Căn chỉnh Hán Nôm và Quốc ngữ
 
-Sau khi OCR và lưu bản hiệu đính, mở **Căn chỉnh song ngữ**:
+Sau khi OCR và lưu bản Gán nhãn, mở **Căn chỉnh song ngữ**:
 
-1. Chọn trang Nôm làm nguồn.
-2. Khung **Nguồn đối chiếu của sách** ưu tiên hai văn bản Nôm/Quốc ngữ đã lưu trên cùng trang. Nếu chưa có Quốc ngữ trên trang thì dùng TXT đối chiếu của sách hoặc trang `vi` cũ. Có thể bấm **Tạo cặp nháp từ toàn bộ trang để tách/gộp sau**, hoặc chọn từng đoạn có nghĩa.
-3. Chọn đoạn tương ứng trong mỗi ô và bấm **Tạo cặp từ đoạn đã chọn**, hoặc **Thêm cặp** để nhập thủ công.
-4. Ghép câu bị đứt qua trang trước khi chia thành đơn vị có nghĩa. Có thể gộp hàng hoặc tách tại vị trí con trỏ ở hai vế. Một hàng có thể biểu diễn 1–n, n–1, n–m.
+1. Chọn trang Nôm làm nguồn; ảnh gốc hiện trong khung riêng phía trên hai văn bản để dễ đối chiếu, bấm **Mở ảnh kích thước đầy đủ** để xem lớn.
+2. Bấm **Tự căn toàn sách** để ghép theo cùng số trang và thứ tự dòng. Nguồn Quốc ngữ ưu tiên văn bản cùng trang, rồi trang `vi` tương ứng, rồi TXT có dấu trang hoặc form feed. TXT không có ranh giới trang chỉ tự căn khi sách có một trang; không tự chép toàn TXT vào mọi trang.
+3. Tự căn thay toàn bộ cặp hiện có sau khi xác nhận. Mỗi dòng dư ở một bên được giữ thành cặp chưa đủ vế để bổ sung thủ công; mọi cặp mới đều ở trạng thái chưa duyệt.
+4. Kiểm tra từng cặp trên ảnh và văn bản nguồn. Có thể gộp hàng hoặc tách tại vị trí con trỏ ở hai vế; tự ghép theo dòng chỉ là bản nháp, không xác nhận tương đồng ngữ nghĩa.
 5. Bấm **Lưu căn chỉnh**. Các `sentence_id` được đánh lại từ 1 theo trang, dạng `<Tên sách>.<trang ít nhất 3 số>.<thứ tự câu>`.
 6. Đánh dấu **Đã đọc lại** sau khi kiểm tra; dấu này quản lý lượt duyệt, không tự chứng minh tương đồng ngữ nghĩa.
 
@@ -377,7 +352,7 @@ Bộ đếm mục tiêu **2.000 cặp** chỉ tính hàng căn chỉnh đã lưu
 | Vị trí | Vai trò |
 | --- | --- |
 | `backend/data/raw_data/` | PDF nguồn, TXT Quốc ngữ đối chiếu |
-| `backend/data/.workspace/workspace.sqlite3` | Checkpoint sách/trang, bản hiệu đính, căn chỉnh, kết quả OCR và trạng thái tác vụ |
+| `backend/data/.workspace/workspace.sqlite3` | Checkpoint sách/trang, bản Gán nhãn, căn chỉnh, kết quả OCR và trạng thái tác vụ |
 | `backend/data/.workspace/ocr/<page_id>/<result_id>.json` | Phản hồi OCR gốc và tham số từng lượt; không lưu Authorization header |
 | `backend/data/.workspace/books/<book_id>/` | Ảnh/nhãn theo nhóm và `page_texts.json` giữ Nôm, Quốc ngữ, box Quốc ngữ nếu có |
 | `backend/data/processed_images/` | Cache ảnh/thumbnail dựng từ PDF |
@@ -420,7 +395,7 @@ Lệnh sau gửi ảnh trang 6 của sách chỉ định tới Kim Hán Nôm, d�
 py backend/check_ocr.py --live --pdf "Tiên Phả Dịch Lục, Nôm, 2 volumes_Y.pdf" --page 6 --ocr-id 4 --reading-direction 2
 ```
 
-Đây là lệnh kiểm tra riêng: in kết quả ra terminal, **không lập tác vụ theo quyển và không ghi checkpoint làm việc của trang**. Muốn giữ kết quả để hiệu đính/tiếp tục, chạy qua giao diện ứng dụng.
+Đây là lệnh kiểm tra riêng: in kết quả ra terminal, **không lập tác vụ theo quyển và không ghi checkpoint làm việc của trang**. Muốn giữ kết quả để Gán nhãn/tiếp tục, chạy qua giao diện ứng dụng.
 
 | Hiện tượng | Cách xử lý |
 | --- | --- |
@@ -454,7 +429,7 @@ Luồng giao diện chính dùng `/workflow` để OCR cả sách. Endpoint OCR 
 | --- | --- |
 | `GET /api/workspace` | Sách, bộ đếm, cấu hình OCR, trạng thái từ điển |
 | `POST /api/sources/sync` | Quét thêm PDF nguồn |
-| `GET /api/books/{book_id}/pages` | Trang và bản hiệu đính đã lưu |
+| `GET /api/books/{book_id}/pages` | Trang và bản Gán nhãn đã lưu |
 | `PUT /api/books/{book_id}/plan` | Lưu nhãn và trang bỏ qua, chưa bắt đầu OCR |
 | `POST /api/books/{book_id}/workflow` | Lưu nhãn và bắt đầu OCR toàn bộ trang được chọn trong sách |
 | `PATCH /api/pages/{page_id}` | Tự lưu từng trường để không ghi đè ngôn ngữ đang hoàn tất OCR |
@@ -464,10 +439,13 @@ Luồng giao diện chính dùng `/workflow` để OCR cả sách. Endpoint OCR 
 | `GET /api/pages/{page_id}/ocr` | Kết quả OCR đã lưu gần nhất; không gọi dịch vụ ngoài |
 | `POST /api/books/{book_id}/ocr-job` | Tạo tác vụ theo quyển/phạm vi |
 | `GET /api/books/{book_id}/ocr-job` | Tác vụ gần nhất và trạng thái từng trang |
-| `POST /api/ocr-jobs/{job_id}/pause` | Yêu cầu dừng sau trang hiện tại |
+| `POST /api/ocr-jobs/{job_id}/pause` | Yêu cầu dừng tại checkpoint ngôn ngữ/trang tiếp theo |
 | `POST /api/ocr-jobs/{job_id}/resume` | Tiếp tục phần chưa xong |
 | `GET /api/dictionary/lookup?character=漢` | Tra một chữ tại máy |
 | `GET /api/dictionary/search?q=hán` | Tìm chữ hoặc âm đọc Việt |
-| `GET /api/books/{book_id}/reference` | TXT đối chiếu của sách nếu có |
+| `GET /api/dictionary/reverse?q=thiên%20địa` | Tìm chữ theo từng tiếng Quốc ngữ; không dịch nghĩa cả cụm |
+| `GET /api/books/{book_id}/reference` | TXT Quốc ngữ đã tải lên nếu có |
+| `GET /api/books/{book_id}/text-sources` | Hai nguồn TXT đã tải cho sách |
+| `PUT /api/books/{book_id}/text-sources/{han hoặc vi}` | Lưu nguồn TXT theo ngôn ngữ |
 
 Schema đầy đủ ở **http://127.0.0.1:8000/docs**.

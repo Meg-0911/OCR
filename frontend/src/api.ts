@@ -6,6 +6,7 @@ import type {
   Category,
   DictionaryEntry,
   DictionaryLookup,
+  DictionaryReverseMatch,
   OCRJob,
   OCRResult,
   OCRSettings,
@@ -15,6 +16,8 @@ import type {
   Workspace,
   BookSession,
   PagePlan,
+  TextSources,
+  TextReference as UploadedText,
 } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -54,6 +57,9 @@ export const api = {
         | 'category'
         | 'reading_direction'
         | 'ocr_skip'
+        | 'source_regions'
+        | 'target_regions'
+        | 'ocr_languages'
       >
     >,
   ) => request<Page>(`/pages/${page}`, json('PATCH', patch)),
@@ -67,6 +73,9 @@ export const api = {
   sources: () => request<SourceFile[]>('/sources'),
   syncSources: () => request<Workspace>('/sources/sync', { method: 'POST' }),
   reference: (book: string) => request<TextReference | null>(`/books/${book}/reference`),
+  textSources: (book: string) => request<TextSources>(`/books/${book}/text-sources`),
+  saveTextSource: (book: string, language: 'han' | 'vi', source: UploadedText) =>
+    request<TextSources>(`/books/${book}/text-sources/${language}`, json('PUT', source)),
   importSource: (name: string) => request<Book>('/books/import', json('POST', { filename: name })),
   upload: async (file: File) => {
     const body = new FormData();
@@ -87,6 +96,11 @@ export const api = {
     ),
   duplicatePage: (page: string) => request<Page>(`/pages/${page}/duplicate`, { method: 'POST' }),
   latestOCR: (page: string) => request<OCRResult | null>(`/pages/${page}/ocr`),
+  recognizePage: (page: string, settings: OCRSettings & { version: number; force: boolean; reuse_saved_settings?: boolean }) =>
+    request<OCRResult>(`/pages/${page}/ocr`, json('POST', settings)),
+  recognizeBox: (page: string, box: Box, language: 'han' | 'vi', reading_direction: 1 | 2) =>
+    request<{ box_id: string; language: 'han' | 'vi'; text: string }>(`/pages/${page}/ocr-region`,
+      json('POST', { box, language, reading_direction })),
   ocrJob: (book: string) => request<OCRJob | null>(`/books/${book}/ocr-job`),
   bookLayout: (book: string) => request<BookLayout>(`/books/${book}/layout`),
   saveBookLayout: (book: string, layout: BookLayout) =>
@@ -108,6 +122,8 @@ export const api = {
     request<DictionaryLookup>(`/dictionary/lookup?character=${encodeURIComponent(character)}`),
   searchDictionary: (query: string) =>
     request<DictionaryEntry[]>(`/dictionary/search?q=${encodeURIComponent(query)}`),
+  reverseSearchDictionary: (query: string) =>
+    request<DictionaryReverseMatch[]>(`/dictionary/reverse?q=${encodeURIComponent(query)}`),
   alignments: (book: string) => request<Alignment[]>(`/books/${book}/alignments`),
   saveAlignments: (book: string, rows: Alignment[]) =>
     request<Alignment[]>(`/books/${book}/alignments`, json('PUT', { rows })),

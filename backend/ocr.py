@@ -18,6 +18,10 @@ class OCRError(Exception):
         self.status_code = status_code
 
 
+class OCRPaused(Exception):
+    """Stop at a durable language checkpoint without marking the page failed."""
+
+
 @dataclass(frozen=True)
 class KHNConfig:
     token: str = field(default='', repr=False)
@@ -82,7 +86,7 @@ class KimHanNomOCR:
             raise OCRError('Kim Hán Nôm trả thiếu trường data.')
         return body['data']
 
-    def recognize(self, image: bytes, *, ocr_id=1, lang_type=2, reading_direction=1, epitaph=0, tag=None):
+    def recognize(self, image: bytes, *, ocr_id=1, lang_type=2, reading_direction=1, epitaph=0, tag=None, font_type=0):
         if not self.config.ready:
             raise OCRError('Thiếu KHN_token trong backend/.env. Thêm token rồi khởi động lại.', 503)
         with httpx.Client(
@@ -97,6 +101,7 @@ class KimHanNomOCR:
             return self._post(client, 'image-ocr', json={
                 'file_name':name, 'ocr_id':ocr_id, 'lang_type':lang_type,
                 'reading_direction':reading_direction, 'epitaph':epitaph, 'tag':tag,
+                'font_type':font_type,
             })
 
 
@@ -146,7 +151,7 @@ def normalize_result(data: dict, width: int, height: int):
     if skipped:
         warnings.append(f'{skipped} vùng không đúng định dạng/tọa độ ảnh; xem JSON gốc để kiểm tra.')
     if texts and not boxes:
-        warnings.append('API chỉ trả văn bản hoặc không có box hợp lệ. Vẽ/chọn vùng trên ảnh rồi gán văn bản; không tự tạo tọa độ.')
+        warnings.append('API chỉ trả văn bản hoặc không có box hợp lệ. Kiểm tra ảnh/vùng đọc ở bước 2 rồi chạy lại OCR; chưa có tọa độ để đối chiếu từng chữ.')
     if boxes and len(texts) != len(regions):
         warnings.append('Số dòng văn bản và số box khác nhau. Cần kiểm tra từng vùng trước khi lưu.')
     if not texts and not boxes:

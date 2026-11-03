@@ -35,20 +35,34 @@ export default function AlignmentSources({
   return (
     <details className="alignment-sources" open>
       <summary>Nguồn đối chiếu của sách</summary>
+      {page && (
+        <div className="alignment-source-image-panel">
+          <div className="alignment-source-image-heading">
+            <strong>Ảnh gốc · trang {page.number}</strong>
+            <a href={page.image_url} target="_blank" rel="noreferrer">
+              Mở ảnh kích thước đầy đủ
+            </a>
+          </div>
+          <a
+            className="alignment-source-image"
+            href={page.image_url}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`Mở ảnh gốc trang ${page.number} kích thước đầy đủ`}
+          >
+            <img src={page.image_url} alt={`Ảnh gốc trang ${page.number}`} />
+          </a>
+        </div>
+      )}
       <div className="alignment-source-grid">
         <label>
           Hán Nôm · {page ? `trang ${page.number}` : 'chọn trang nguồn phía trên'}
-          {page && (
-            <a href={page.image_url} target="_blank" rel="noreferrer">
-              Mở ảnh gốc trang này
-            </a>
-          )}
           <textarea
             className="han-text"
             readOnly
             aria-label="Văn bản Hán Nôm đã lưu"
             value={sourceText}
-            placeholder="Chạy OCR, hiệu đính và lưu trang Hán Nôm trước khi chọn câu."
+            placeholder="Chạy OCR, Gán nhãn và lưu trang Hán Nôm trước khi chọn câu."
             onSelect={(event) => {
               const input = event.currentTarget;
               setSourceSelection(input.value.slice(input.selectionStart, input.selectionEnd));
@@ -92,8 +106,8 @@ export default function AlignmentSources({
         </label>
       </div>
       <p>
-        Chọn đoạn tương ứng trong mỗi ô rồi tạo cặp. TXT chỉ là nguồn đối chiếu của PDF; nội dung
-        không tự ghép theo số dòng hoặc dấu trang.
+        Tự căn toàn sách ghép theo số trang và thứ tự dòng; hãy kiểm tra lại trên ảnh vì đây chỉ là
+        gợi ý, không xác nhận tương đồng ngữ nghĩa.
       </p>
       <div className="alignment-source-selection">
         <button

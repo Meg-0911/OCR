@@ -123,7 +123,7 @@ class VietnameseOCR:
         warnings=[]
         boxes=clean_boxes(boxes,original.width,original.height)
         if not boxes:
-            warnings.append('Không nhận được dòng Quốc ngữ đủ tin cậy. Chữ viết tay/ảnh mờ có thể cần hiệu đính hoặc engine khác; vẫn lưu được văn bản không cần box.')
+            warnings.append('Không nhận được dòng Quốc ngữ đủ tin cậy. Chữ viết tay/ảnh mờ có thể cần Gán nhãn hoặc engine khác; vẫn lưu được văn bản không cần box.')
         if any(box['confidence']<60 for box in boxes):
             warnings.append('Có dòng Quốc ngữ độ tin cậy thấp; đọc lại trước khi hoàn thành.')
         return {'boxes':boxes,'text_lines':[box['transcription'] for box in boxes],'warnings':warnings}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { LoaderCircle, Search, X } from 'lucide-react';
 import { api } from '../api';
-import type { DictionaryEntry, DictionaryLookup } from '../types';
+import type { DictionaryEntry, DictionaryLookup, DictionaryReverseMatch } from '../types';
 
 export function CharacterStrip({
   text,
@@ -46,18 +46,22 @@ export function CharacterStrip({
 
 export default function DictionaryPanel({
   character,
+  initialMode,
   canReplace,
   onReplace,
   onClose,
 }: {
   character: string;
+  initialMode: 'character' | 'reading';
   canReplace: boolean;
   onReplace: (char: string) => void;
   onClose: () => void;
 }) {
+  const [mode, setMode] = useState<'character' | 'reading'>(initialMode);
   const [query, setQuery] = useState(character);
   const [result, setResult] = useState<DictionaryLookup | null>(null);
   const [matches, setMatches] = useState<DictionaryEntry[]>([]);
+  const [reverseMatches, setReverseMatches] = useState<DictionaryReverseMatch[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const requestId = useRef(0);
@@ -68,6 +72,8 @@ export default function DictionaryPanel({
     setResult(null);
     setQuery(char);
     setMatches([]);
+    setReverseMatches([]);
+    setMode('character');
     try {
       const value = await api.lookupCharacter(char);
       if (id === requestId.current) setResult(value);
@@ -81,6 +87,16 @@ export default function DictionaryPanel({
   useEffect(() => {
     if (character) void lookup(character);
   }, [character]);
+  useEffect(() => {
+    setMode(initialMode);
+    if (initialMode === 'reading') {
+      setQuery('');
+      setResult(null);
+      setMatches([]);
+      setReverseMatches([]);
+      setError('');
+    }
+  }, [initialMode]);
   useEffect(
     () => () => {
       requestId.current++;
@@ -97,6 +113,7 @@ export default function DictionaryPanel({
     setError('');
     setResult(null);
     setMatches([]);
+    setReverseMatches([]);
     try {
       const entries = await api.searchDictionary(query);
       if (id === requestId.current) setMatches(entries);
@@ -106,28 +123,71 @@ export default function DictionaryPanel({
       if (id === requestId.current) setBusy(false);
     }
   }
+  async function reverseSearch() {
+    const id = ++requestId.current;
+    setBusy(true);
+    setError('');
+    setResult(null);
+    setMatches([]);
+    setReverseMatches([]);
+    try {
+      const groups = await api.reverseSearchDictionary(query);
+      if (id === requestId.current) setReverseMatches(groups);
+    } catch (e) {
+      if (id === requestId.current)
+        setError(e instanceof Error ? e.message : 'Không tìm được chữ Hán/Nôm.');
+    } finally {
+      if (id === requestId.current) setBusy(false);
+    }
+  }
   const entry = result?.entry;
   return (
-    <aside className="dictionary-panel" aria-label="Từ điển hỗ trợ hiệu đính">
+    <aside className="dictionary-panel" aria-label="Từ điển hỗ trợ Gán nhãn">
       <div className="dictionary-heading">
         <strong>Từ điển Hán / Nôm</strong>
         <button className="icon-button" aria-label="Đóng từ điển" onClick={onClose}>
           <X size={19} />
         </button>
       </div>
+      <div className="dictionary-modes" role="tablist" aria-label="Chiều tra từ điển">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'character'}
+          onClick={() => setMode('character')}
+        >
+          Tra từ chữ Hán/Nôm
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'reading'}
+          onClick={() => {
+            setMode('reading');
+            setQuery('');
+            setResult(null);
+            setMatches([]);
+            setReverseMatches([]);
+            setError('');
+          }}
+        >
+          Tìm chữ từ Quốc ngữ
+        </button>
+      </div>
       <form
         className="dictionary-search"
         onSubmit={(event) => {
           event.preventDefault();
-          void search();
+          if (mode === 'reading') void reverseSearch();
+          else void search();
         }}
       >
         <input
-          aria-label="Tìm chữ hoặc âm đọc"
+          aria-label={mode === 'reading' ? 'Nhập tiếng Quốc ngữ' : 'Tìm chữ hoặc âm đọc'}
           maxLength={100}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Nhập chữ hoặc âm Việt…"
+          placeholder={mode === 'reading' ? 'Ví dụ: thiên địa, người…' : 'Nhập chữ Hán/Nôm…'}
         />
         <button
           className="icon-button"
@@ -138,8 +198,9 @@ export default function DictionaryPanel({
         </button>
       </form>
       <p className="muted">
-        Tra tại máy: ưu tiên bộ Nôm cục bộ nếu có, dùng Unihan dự phòng. Chỉ thay chữ khi bạn chọn
-        áp dụng.
+        {mode === 'reading'
+          ? 'Tìm theo từng tiếng Quốc ngữ trong âm đọc Việt của Unihan và dữ liệu Nôm cục bộ; cụm nhiều tiếng được chia thành từng nhóm.'
+          : 'Tra tại máy: ưu tiên bộ Nôm cục bộ nếu có, dùng Unihan dự phòng. Chỉ thay chữ khi bạn chọn áp dụng.'}
       </p>
       {busy && <LoaderCircle className="spin" size={22} />}
       {error && <p role="alert">{error}</p>}
@@ -224,6 +285,37 @@ export default function DictionaryPanel({
             </span>
           </button>
         ))}
+      {!busy && mode === 'reading' && reverseMatches.length > 0 && (
+        <div className="dictionary-reverse-results">
+          {reverseMatches.map(({ syllable, entries }, index) => (
+            <section key={`${syllable}-${index}`}>
+              <h3>
+                “{syllable}” · {entries.length} chữ
+              </h3>
+              {entries.length ? (
+                entries.map((entry) => (
+                  <button
+                    key={entry.character}
+                    className="dictionary-match"
+                    onClick={() => void lookup(entry.character)}
+                  >
+                    <span className="han-text">{entry.character}</span>
+                    <span>
+                      {entry.readings.join(' · ')}
+                      <small>{entry.definitions.join('; ') || 'Chưa có nghĩa trong nguồn này'}</small>
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <p>Không có chữ khớp âm đọc này trong dữ liệu từ điển đã cài.</p>
+              )}
+            </section>
+          ))}
+        </div>
+      )}
+      {!busy && mode === 'reading' && reverseMatches.length === 0 && !error && query.trim() && (
+        <p>Chưa có kết quả. Từ điển chỉ tìm âm đọc từng tiếng, không dịch nghĩa cả cụm.</p>
+      )}
       <p className="dictionary-note">
         {result?.notice ||
           'Mục từ và dị thể giúp đọc lại từng chữ; không xác nhận độ đúng ngữ nghĩa của câu hoặc điểm chất lượng ≥95%.'}

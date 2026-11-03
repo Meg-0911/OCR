@@ -58,8 +58,8 @@ def test_ocr_upload_recognize_preview_save_and_horizontal_label_order(tmp_path):
             assert b'name="image_file"' in request.content and b'\xff\xd8' in request.content
             return success({'file_name':'temp.jpg'})
         assert json.loads(request.content) == {
-            'file_name':'temp.jpg', 'ocr_id':4, 'lang_type':1,
-            'reading_direction':2, 'epitaph':0, 'tag':None,
+            'file_name':'temp.jpg', 'ocr_id':1, 'lang_type':1,
+            'reading_direction':2, 'epitaph':0, 'tag':None, 'font_type':0,
         }
         return success({'result_ocr_text':['天地', '玄黃'], 'result_bbox':[POINTS, [[120, 10], [190, 10], [190, 50], [120, 50]]]})
     client, page = client_with_page(tmp_path, handler)
@@ -86,6 +86,37 @@ def test_ocr_upload_recognize_preview_save_and_horizontal_label_order(tmp_path):
     assert client.get('/api/health').json()['ocr'] == 'configured'
 
 
+def test_page_rerun_reuses_saved_ocr_id_instead_of_normalizing_it(tmp_path):
+    calls = []
+    def handler(request):
+        if request.url.path.endswith('/image-upload'):
+            return success({'file_name':'temp.jpg'})
+        calls.append(json.loads(request.content))
+        return success({'result_ocr_text':['天地'], 'result_bbox':[POINTS]})
+
+    client, page = client_with_page(tmp_path, handler)
+    app = client.app
+    url = f"/api/pages/{page['id']}/ocr"
+    initial = client.post(url, json={'version':page['version']}).json()
+    initial['settings']['ocr_id'] = 4
+    with app.state.store.db() as db:
+        db.execute('UPDATE ocr_results SET result=?,settings=? WHERE id=?', (
+            json.dumps(initial,ensure_ascii=False),
+            json.dumps(initial['settings']),
+            initial['result_id'],
+        ))
+
+    rerun = client.post(url, json={
+        'version':page['version'],'force':True,'reuse_saved_settings':True,'ocr_id':1,
+    })
+
+    assert rerun.status_code == 200, rerun.text
+    assert calls == [
+        {'file_name':'temp.jpg','ocr_id':1,'lang_type':2,'reading_direction':1,'epitaph':0,'tag':None,'font_type':0},
+        {'file_name':'temp.jpg','ocr_id':4,'lang_type':2,'reading_direction':1,'epitaph':0,'tag':None,'font_type':0},
+    ]
+
+
 def test_text_only_does_not_invent_boxes():
     result = normalize_result({'result_ocr_text':['天地'], 'result_bbox':[]}, 200, 200)
     assert result['boxes'] == [] and result['text_lines'] == ['天地'] and result['warnings']
@@ -103,6 +134,30 @@ def test_invalid_provider_regions_are_not_applied(points):
     assert result['boxes'] == [] and result['warnings']
 
 
+@pytest.mark.parametrize('ocr_id',[1,2])
+def test_han_box_ocr_reuses_model_id_from_page_ocr(tmp_path,ocr_id):
+    requests=[]
+    def handler(request):
+        if request.url.path.endswith('/image-upload'):
+            return success({'file_name':'box.jpg'})
+        requests.append(json.loads(request.content))
+        return success({'result_ocr_text':['漢'],'result_bbox':[]})
+
+    client,page=client_with_page(tmp_path,handler)
+    initial=client.post(f"/api/pages/{page['id']}/ocr",json={
+        'version':page['version'],'ocr_id':ocr_id,'reading_direction':2,
+    })
+    assert initial.status_code==200,initial.text
+    response=client.post(f"/api/pages/{page['id']}/ocr-region",json={
+        'box':{'id':'box-1','transcription':'字','points':POINTS},
+        'language':'han','reading_direction':2,
+    })
+
+    assert response.status_code==200,response.text
+    assert response.json()['text']=='漢'
+    assert [request['ocr_id'] for request in requests]==[ocr_id,ocr_id]
+
+
 def test_missing_token_unclassified_and_stale_requests_do_not_call_provider(tmp_path):
     def handler(request):
         pytest.fail('Provider must not be called')
@@ -114,7 +169,7 @@ def test_missing_token_unclassified_and_stale_requests_do_not_call_provider(tmp_
     assert client.post(url + '/ocr', json={'version':page['version'], 'ocr_id':99}).status_code == 422
     for category in ('vi', 'misc', 'blank'):
         updated = client.put(url, json={'version':page['version'], 'category':category, 'boxes':[], 'done':False}).json()
-        assert client.post(url + '/ocr', json={'version':updated['version']}).status_code == 422
+        assert client.post(url + '/ocr', json={'version':updated['version']}).status_code == (422 if category=='blank' else 503)
         page = updated
 
 

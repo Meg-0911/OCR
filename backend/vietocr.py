@@ -165,5 +165,5 @@ class VietOCR:
             result['warnings'] = warnings + ['VietOCR không tìm được dòng; đã thử Tesseract dự phòng.'] + result.get('warnings', [])
             return result
         if not boxes:
-            warnings.append('Chưa tìm được dòng Quốc ngữ. Chọn vùng mẫu chứa các dòng Quốc ngữ hoặc hiệu đính thủ công.')
+            warnings.append('Chưa tìm được dòng Quốc ngữ. Chọn vùng mẫu chứa các dòng Quốc ngữ hoặc Gán nhãn thủ công.')
         return {'boxes': boxes, 'text_lines': [box['transcription'] for box in boxes], 'warnings': warnings}

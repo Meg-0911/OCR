@@ -109,7 +109,7 @@ def test_pdf_import_render_classification_and_bilingual_copy(workspace):
     client,store,root = workspace
     book,pages = upload_book(client, 'Sách thử nghiệm.pdf')
     assert book['name'] == 'Sách thử nghiệm'
-    assert len(pages) == 2 and all(p['category']=='misc' for p in pages)
+    assert len(pages) == 2 and all(p['category']=='both' for p in pages)
     page = pages[0]
     image = client.get(page['image_url'])
     assert image.status_code==200 and image.headers['content-type']=='image/jpeg'

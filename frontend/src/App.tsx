@@ -4,25 +4,18 @@ import {
   ArrowRight,
   BookOpen,
   Boxes,
-  Check,
   CheckCheck,
   ChevronDown,
   ChevronRight,
   CircleHelp,
   Download,
-  Eye,
-  EyeOff,
   FileCheck2,
   FileText,
   FolderOpen,
-  GripVertical,
   LayoutDashboard,
   Library,
   Link2,
   LoaderCircle,
-  Maximize2,
-  Minus,
-  MousePointer2,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
@@ -31,24 +24,21 @@ import {
   ScanLine,
   Search,
   Settings2,
-  ShieldCheck,
-  SlidersHorizontal,
   SplitSquareVertical,
-  SquareDashedMousePointer,
-  Trash2,
   Upload,
   X,
 } from 'lucide-react';
 import { api } from './api';
-import ManuscriptViewer from './components/ManuscriptViewer';
 import AlignmentRow from './components/AlignmentRow';
-import BookCard from './components/BookCard';
+import BookCard, { formatBookTitle } from './components/BookCard';
 import Stat from './components/Stat';
 import PairProgress from './components/PairProgress';
 import AlignmentSources from './components/AlignmentSources';
-import BookOCRPanel from './components/BookOCRPanel';
-import BookLayoutPanel from './components/BookLayoutPanel';
-import DictionaryPanel, { CharacterStrip } from './components/DictionaryPanel';
+import BookWorkbench, { referenceForPage } from './components/BookWorkbench';
+import LibraryBookReader from './components/LibraryBookReader';
+import DictionaryPanel from './components/DictionaryPanel';
+import { draftPatch, patchDraft, afterAutomaticSave, type Draft } from './drafts';
+import { replaceBoxText } from './components/boxText';
 import type {
   Alignment,
   Book,
@@ -59,61 +49,15 @@ import type {
   TextReference,
   Workspace,
   OCRJob,
-  OCRResult,
   BookSession,
+  OCRSettings,
 } from './types';
 
 type View = 'overview' | 'library' | 'review' | 'alignment' | 'export';
-type Draft = {
-  boxes: Box[];
-  category: Category;
-  reading_direction?: 1 | 2;
-  source_text?: string;
-  target_text?: string;
-  vi_boxes?: Box[];
-  ocr_skip?: boolean;
-  dirty_fields?: string[];
-};
-function draftPatch(draft: Draft) {
-  const keys = draft.dirty_fields || [
-    'boxes',
-    'category',
-    'reading_direction',
-    'source_text',
-    'target_text',
-    'vi_boxes',
-    'ocr_skip',
-  ];
-  return Object.fromEntries(
-    keys
-      .filter((key) => key in draft && key !== 'dirty_fields')
-      .map((key) => [key, draft[key as keyof Draft]]),
-  ) as Partial<
-    Pick<
-      Page,
-      | 'boxes'
-      | 'category'
-      | 'reading_direction'
-      | 'source_text'
-      | 'target_text'
-      | 'vi_boxes'
-      | 'ocr_skip'
-    >
-  >;
-}
-const categories: Record<Category, string> = {
-  ch: 'Hán Nôm',
-  vi: 'Quốc ngữ',
-  intro: 'Giới thiệu',
-  ref: 'Chú thích',
-  toc: 'Mục lục',
-  blank: 'Trang trắng',
-  misc: 'Chưa phân loại / Khác',
-};
 const nav = [
   { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard },
   { id: 'library', label: 'Tủ sách', icon: Library },
-  { id: 'review', label: 'Hiệu đính OCR', icon: ScanLine },
+  { id: 'review', label: 'Gán nhãn OCR', icon: ScanLine },
   { id: 'alignment', label: 'Căn chỉnh song ngữ', icon: SplitSquareVertical },
   { id: 'export', label: 'Xuất dữ liệu', icon: ArrowDownToLine },
 ] as const;
@@ -162,20 +106,13 @@ export default function App() {
       cancelled = true;
     };
   }, []);
-  const [view, setView] = useState<View>('review');
+  const [view, setView] = useState<View>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [bookId, setBookId] = useState('');
   const [pages, setPages] = useState<Page[]>([]);
   const [pageId, setPageId] = useState('');
-  const [category, setCategory] = useState<string>('ch');
-  const [status, setStatus] = useState('all');
-  const [pageSearch, setPageSearch] = useState('');
   const [drafts, setDrafts] = useState<Record<string, Draft>>(readDrafts);
-  const [selectedBox, setSelectedBox] = useState<string | null>(null);
-  const [showBoxes, setShowBoxes] = useState(false);
-  const [tool, setTool] = useState<'select' | 'draw'>('select');
-  const [zoom, setZoom] = useState(100);
   const [busy, setBusy] = useState(false);
   const [loadingPages, setLoadingPages] = useState(false);
   const [connectionError, setConnectionError] = useState('');
@@ -194,9 +131,17 @@ export default function App() {
   const [alignmentPage, setAlignmentPage] = useState('');
   const [reference, setReference] = useState<TextReference | null>(null);
   const [librarySearch, setLibrarySearch] = useState('');
+  const [libraryBookId, setLibraryBookId] = useState('');
   const [dictionaryCharacter, setDictionaryCharacter] = useState<string | null>(null);
+  const [dictionaryMode, setDictionaryMode] = useState<'character' | 'reading'>('character');
   const [bookJob, setBookJob] = useState<OCRJob | null>(null);
-  const [pageOCR, setPageOCR] = useState<OCRResult | null>(null);
+  const [workflowStep, setWorkflowStep] = useState<1 | 2 | 3 | 4>(1);
+  const [boxOCRPages, setBoxOCRPages] = useState<string[]>([]);
+  const boxOCRRequests = useRef(new Set<string>());
+  const [pageOCRPages, setPageOCRPages] = useState<string[]>([]);
+  const pageOCRRequests = useRef(new Set<string>());
+  const pagesRef = useRef(pages);
+  pagesRef.current = pages;
   const [autosaveState, setAutosaveState] = useState('Mọi chỉnh sửa được lưu tự động.');
   const draftsRef = useRef(drafts);
   draftsRef.current = drafts;
@@ -214,6 +159,7 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeBook = workspace?.books.find((b) => b.id === bookId);
+  const libraryBook = workspace?.books.find((b) => b.id === libraryBookId);
   const page = pages.find((p) => p.id === pageId);
   const draft = page
     ? {
@@ -221,12 +167,6 @@ export default function App() {
         ...(drafts[page.id] ? draftPatch(drafts[page.id]) : {}),
       }
     : null;
-  const filteredPages = pages.filter(
-    (p) =>
-      (category === 'all' || p.category === category) &&
-      (status === 'all' || p.status === status) &&
-      (!pageSearch || String(p.number).padStart(3, '0').includes(pageSearch)),
-  );
   const reviewablePages = pages.filter((p) => !p.ocr_skip && p.category !== 'blank');
   const pendingCount = reviewablePages.filter((p) => p.status === 'pending').length;
   const doneCount = reviewablePages.length - pendingCount;
@@ -256,8 +196,27 @@ export default function App() {
           character +
           text.slice(selected.index + selected.character.length),
       });
-    else
+    else {
+      let cursor = 0,
+        offset = -1;
+      const pageText = draft.source_text || '';
+      for (const item of draft.boxes) {
+        const start = pageText.indexOf(item.transcription, cursor);
+        if (item.id === selected.boxId) {
+          offset = start;
+          break;
+        }
+        if (start >= 0) cursor = start + item.transcription.length;
+      }
       updateDraft({
+        ...(offset >= 0
+          ? {
+              source_text:
+                pageText.slice(0, offset + selected.index) +
+                character +
+                pageText.slice(offset + selected.index + selected.character.length),
+            }
+          : {}),
         boxes: draft.boxes.map((b) =>
           b.id === selected.boxId
             ? {
@@ -270,6 +229,7 @@ export default function App() {
             : b,
         ),
       });
+    }
     setDictionarySelection({ ...selected, character });
     setDictionaryCharacter(character);
     notify('Đã thay chữ. Chỉnh sửa sẽ tự lưu; Ctrl + S để lưu ngay.');
@@ -342,34 +302,124 @@ export default function App() {
       /* Collapsing still works without browser storage. */
     }
   }
-  function updateDraft(patch: Partial<Draft>) {
-    if (!page || !draft) return;
+  function updatePageDraft(base: Page, patch: Partial<Draft>, manual: boolean) {
     setDrafts((previous) => {
       const updated = {
         ...previous,
-        [page.id]: {
-          ...draft,
-          ...previous[page.id],
-          ...patch,
-          dirty_fields: Array.from(
-            new Set([
-              ...(previous[page.id]?.dirty_fields ||
-                (previous[page.id] ? Object.keys(previous[page.id]) : [])),
-              ...Object.keys(patch),
-            ]),
-          ),
-        },
+        [base.id]: patchDraft(previous[base.id], base, patch, manual),
       };
       try {
         localStorage.setItem('nom-drafts-v1', JSON.stringify(updated));
       } catch {
         notify(
-          'Không lưu được bản nháp trên trình duyệt. Hãy bấm Lưu bản nháp để lưu vào máy.',
+          'Không giữ được bản nháp trên trình duyệt. Hãy bấm Lưu & hoàn thành trước khi đóng trang.',
           true,
         );
       }
+      draftsRef.current = updated;
       return updated;
     });
+  }
+  function updateDraft(patch: Partial<Draft>) {
+    if (page) updatePageDraft(page, patch, view === 'review' && workflowStep === 4);
+  }
+  async function recognizeBox(box: Box, language: 'han' | 'vi') {
+    if (!draft || boxOCRRequests.current.has(draft.id)) return;
+    const snapshot = draft;
+    boxOCRRequests.current.add(snapshot.id);
+    setBoxOCRPages((previous) => [...previous, snapshot.id]);
+    try {
+      const result = await api.recognizeBox(snapshot.id, box, language, snapshot.reading_direction);
+      const saved = pagesRef.current.find((item) => item.id === snapshot.id) || snapshot;
+      const pending = draftsRef.current[snapshot.id];
+      const current = { ...saved, ...(pending ? draftPatch(pending) : {}) };
+      const boxesKey = language === 'han' ? 'boxes' : 'vi_boxes';
+      const textKey = language === 'han' ? 'source_text' : 'target_text';
+      const latestBox = current[boxesKey].find((item) => item.id === box.id);
+      if (!latestBox || latestBox.transcription !== box.transcription ||
+          JSON.stringify(latestBox.points) !== JSON.stringify(box.points) ||
+          (saved.status === 'done' && saved.version !== snapshot.version)) {
+        notify('Box đã thay đổi trong lúc OCR. Kết quả cũ không được áp dụng.', true);
+        return;
+      }
+      const next = replaceBoxText(current[boxesKey], current[textKey], box.id, result.text,
+        current.reading_direction, language === 'han');
+      updatePageDraft(saved, { [boxesKey]: next.boxes, [textKey]: next.text }, true);
+      notify('Đã OCR lại box. Kiểm tra chữ rồi bấm Lưu & hoàn thành.');
+    } catch (error) {
+      fail(error);
+    } finally {
+      boxOCRRequests.current.delete(snapshot.id);
+      setBoxOCRPages((previous) => previous.filter((id) => id !== snapshot.id));
+    }
+  }
+  async function rerunPageOCR(target: Page, settings: OCRSettings) {
+    if (pageOCRRequests.current.has(target.id)) return;
+    const id = bookId;
+    pageOCRRequests.current.add(target.id);
+    setPageOCRPages((previous) => [...previous, target.id]);
+    try {
+      await saveBookDrafts();
+      const currentPages = await api.pages(id);
+      if (currentBookRef.current !== id) return;
+      const currentPage = currentPages.find((item) => item.id === target.id);
+      if (!currentPage) throw new Error('Không tìm thấy trang cần OCR lại.');
+      const draftSnapshot = draftsRef.current[target.id];
+      const previousOCR = await api.latestOCR(target.id);
+      const result = await api.recognizePage(target.id, {
+        ...settings,
+        ...(previousOCR?.settings || {}),
+        mode: settings.mode,
+        version: currentPage.version,
+        force: true,
+        reuse_saved_settings: true,
+      });
+      if (currentBookRef.current !== id) return;
+      if (draftsRef.current[target.id] !== draftSnapshot) {
+        notify('Trang đã được chỉnh sửa trong lúc OCR. Kết quả mới không được áp dụng.', true);
+        return;
+      }
+      const requested = result.requested_languages || result.completed_languages || [];
+      const completed = (result.completed_languages || []).filter((language) =>
+        requested.includes(language),
+      );
+      const patch: Partial<Draft> = {};
+      if (completed.includes('han')) {
+        patch.boxes = result.boxes;
+        patch.source_text = result.text_lines.join('\n');
+      }
+      if (completed.includes('vi')) {
+        patch.vi_boxes = result.vi_boxes || [];
+        patch.target_text = (result.vi_text_lines || []).join('\n');
+      }
+      if (!Object.keys(patch).length)
+        throw new Error('OCR không trả về kết quả cho ngôn ngữ của trang này.');
+      setPages((previous) =>
+        previous.map((item) =>
+          item.id === currentPage.id && item.version <= currentPage.version ? currentPage : item,
+        ),
+      );
+      updatePageDraft(currentPage, patch, true);
+      notify(`Đã OCR lại trang ${currentPage.number}. Kiểm tra kết quả rồi lưu trang.`);
+    } catch (error) {
+      fail(error);
+    } finally {
+      pageOCRRequests.current.delete(target.id);
+      setPageOCRPages((previous) => previous.filter((id) => id !== target.id));
+    }
+  }
+  async function bulkTagPages(pageIds: string[], category: Category) {
+    setBusy(true);
+    try {
+      for (const id of pageIds) await saveDraftNow(id);
+      for (const id of pageIds) {
+        const updated = await api.patchPage(id, { category });
+        setPages((previous) => previous.map((item) => (item.id === id ? updated : item)));
+      }
+      notify(`Đã đổi nhãn ${pageIds.length} trang.`);
+    } finally {
+      setBusy(false);
+    }
   }
   async function saveDraftNow(id: string): Promise<Page | undefined> {
     const inflight = savingDrafts.current.get(id);
@@ -379,14 +429,18 @@ export default function App() {
     }
     const snapshot = draftsRef.current[id];
     if (!snapshot) return;
+    const patch = draftPatch(snapshot, 'automatic');
+    if (!Object.keys(patch).length) return;
     setAutosaveState('Đang lưu chỉnh sửa…');
-    const task = api.patchPage(id, draftPatch(snapshot));
+    const task = api.patchPage(id, patch);
     savingDrafts.current.set(id, task);
     try {
       const updated = await task;
       if (draftsRef.current[id] === snapshot) {
         const next = { ...draftsRef.current };
-        delete next[id];
+        const remaining = afterAutomaticSave(snapshot, Object.keys(patch));
+        if (remaining) next[id] = remaining;
+        else delete next[id];
         draftsRef.current = next;
       }
       setPages((previous) =>
@@ -395,7 +449,9 @@ export default function App() {
       setDrafts((previous) => {
         if (previous[id] !== snapshot) return previous;
         const next = { ...previous };
-        delete next[id];
+        const remaining = afterAutomaticSave(snapshot, Object.keys(patch));
+        if (remaining) next[id] = remaining;
+        else delete next[id];
         draftsRef.current = next;
         try {
           localStorage.setItem('nom-drafts-v1', JSON.stringify(next));
@@ -405,6 +461,7 @@ export default function App() {
         return next;
       });
       setAutosaveState('Đã lưu chỉnh sửa vào máy.');
+      void loadWorkspace();
       return updated;
     } catch (error) {
       setAutosaveState('Chưa lưu được vào máy; bản nháp còn trên trình duyệt.');
@@ -418,7 +475,7 @@ export default function App() {
   }
   useEffect(() => {
     if (busy || !pages.length) return;
-    const ids = pages.filter((p) => drafts[p.id]).map((p) => p.id);
+    const ids = pages.filter((p) => drafts[p.id] && Object.keys(draftPatch(drafts[p.id], 'automatic')).length).map((p) => p.id);
     if (!ids.length) return;
     const timer = setTimeout(() => {
       void (async () => {
@@ -433,9 +490,7 @@ export default function App() {
       setWorkspace(result);
       if (!sessionRestored.current) {
         sessionRestored.current = true;
-        const local = readSession();
-        const resume = result.books.some((b) => b.id === local.book_id) ? local : result.resume;
-        if (resume?.view) setView(resume.view);
+        setView('overview');
       }
       setConnectionError('');
       setBookId((current) =>
@@ -469,16 +524,14 @@ export default function App() {
           ? localSession
           : savedSession;
         setPages(result);
+        setWorkflowStep(session.workflow_step || 1);
+        const unfinished = result.filter(
+          (p) => p.status !== 'done' && !p.ocr_skip && p.category !== 'blank',
+        );
         const first =
-          result.find((p) => p.id === session.page_id) ||
-          result.find((p) => p.status === 'pending' && p.category === 'ch') ||
-          result.find((p) => p.status === 'pending') ||
-          result[0];
+          unfinished.find((p) => p.id === session.page_id) || unfinished[0] || result[0];
         setPageId(first?.id || '');
-        setCategory('all');
         if (session.alignment_page) setAlignmentPage(session.alignment_page);
-        setStatus('all');
-        setPageSearch('');
       })
       .catch((error) => {
         if (!cancelled) fail(error);
@@ -492,7 +545,13 @@ export default function App() {
   }, [bookId]);
   useEffect(() => {
     if (!bookId || loadingPages || !pageId || !pages.some((p) => p.id === pageId)) return;
-    const state = { book_id: bookId, page_id: pageId, view, alignment_page: alignmentPage || null };
+    const state = {
+      book_id: bookId,
+      page_id: pageId,
+      view,
+      alignment_page: alignmentPage || null,
+      workflow_step: workflowStep,
+    };
     try {
       localStorage.setItem('nom-session', JSON.stringify(state));
       localStorage.setItem(`nom-session-${bookId}`, JSON.stringify(state));
@@ -506,29 +565,7 @@ export default function App() {
         .catch(() => {});
     }, 350);
     return () => clearTimeout(timer);
-  }, [bookId, pageId, view, alignmentPage, loadingPages]);
-  useEffect(() => {
-    setSelectedBox(null);
-    setTool('select');
-    setZoom(100);
-  }, [pageId]);
-  useEffect(() => {
-    setPageOCR(null);
-    if (!pageId) return;
-    let cancelled = false;
-    api
-      .latestOCR(pageId)
-      .then((result) => {
-        if (!cancelled) setPageOCR(result);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [pageId, page?.version]);
-  useEffect(() => {
-    if (!filteredPages.some((p) => p.id === pageId)) setPageId(filteredPages[0]?.id || '');
-  }, [pages, category, status, pageSearch, pageId]);
+  }, [bookId, pageId, view, alignmentPage, loadingPages, workflowStep]);
   useEffect(() => {
     if (!bookId || view !== 'alignment') return;
     let cancelled = false;
@@ -581,19 +618,19 @@ export default function App() {
     );
   }
 
-  function chooseCategory(next: string) {
-    setCategory(next);
-    const first = pages.find(
-      (p) => (next === 'all' || p.category === next) && (status === 'all' || p.status === status),
-    );
-    if (first) setPageId(first.id);
-  }
   async function savePage(done: boolean) {
-    if (!page || !draft) return;
+    if (!page || !draft) return false;
+    if (done && boxOCRRequests.current.has(page.id)) {
+      notify('Chờ OCR box này xong trước khi lưu trang.', true);
+      return false;
+    }
     setBusy(true);
     try {
       await saveDraftNow(page.id);
-      const current = (await api.pages(bookId)).find((p) => p.id === page.id)!;
+      const fresh = await api.pages(bookId);
+      const saved = fresh.find((p) => p.id === page.id)!;
+      const snapshot = draftsRef.current[page.id];
+      const current = done && snapshot ? { ...saved, ...draftPatch(snapshot) } : saved;
       const updated = done
         ? await api.savePage(
             current,
@@ -601,25 +638,25 @@ export default function App() {
             true,
             current.category,
             current.reading_direction,
+            { source_text: current.source_text, target_text: current.target_text, vi_boxes: current.vi_boxes },
           )
         : current;
       setPages((previous) => previous.map((p) => (p.id === updated.id ? updated : p)));
       if (done) {
-        const currentIndex = filteredPages.findIndex((p) => p.id === page.id);
-        const next = [
-          ...filteredPages.slice(currentIndex + 1),
-          ...filteredPages.slice(0, currentIndex),
-        ].find((p) => p.status === 'pending');
-        if (next) setPageId(next.id);
-        notify(
-          next
-            ? 'Đã hoàn thành và mở trang tiếp theo.'
-            : 'Đã hoàn thành trang. Không còn trang chờ trong bộ lọc này.',
-        );
+        if (snapshot && draftsRef.current[page.id] === snapshot) {
+          const next = { ...draftsRef.current };
+          delete next[page.id];
+          draftsRef.current = next;
+          setDrafts(next);
+          try { localStorage.setItem('nom-drafts-v1', JSON.stringify(next)); } catch { /* server copy saved */ }
+        }
+        notify(`Đã lưu và hoàn thành trang ${page.number}.`);
       } else notify('Đã lưu bản nháp vào máy.');
       void loadWorkspace();
+      return true;
     } catch (error) {
       fail(error);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -632,7 +669,7 @@ export default function App() {
         view === 'review'
       ) {
         event.preventDefault();
-        if (!busy) void savePage(false);
+        if (!busy) void savePage(workflowStep === 4);
       }
     };
     document.addEventListener('keydown', listener);
@@ -676,7 +713,7 @@ export default function App() {
       setBookId(book.id);
       setView('review');
       setModal(null);
-      notify(`Đã nhập ${book.pages} trang. Phân loại trang để bắt đầu hiệu đính.`);
+      notify(`Đã nhập ${book.pages} trang. Phân loại trang để bắt đầu Gán nhãn.`);
     } catch (error) {
       fail(error);
     } finally {
@@ -720,7 +757,8 @@ export default function App() {
   }
   function newRow(source = '', target = '') {
     const sourcePage =
-      pages.find((p) => p.id === alignmentPage) || pages.find((p) => p.category === 'ch');
+      pages.find((p) => p.id === alignmentPage) ||
+      pages.find((p) => p.ocr_languages.includes('han'));
     if (!sourcePage || !activeBook) {
       notify('Cần phân loại ít nhất một trang Hán Nôm trước khi tạo cặp.', true);
       return;
@@ -743,6 +781,83 @@ export default function App() {
         reviewed: false,
       },
     ]);
+  }
+  async function autoAlignBook() {
+    if (!activeBook) return;
+    const sourcePages = pages.filter(
+      (item) =>
+        !item.ocr_skip &&
+        ['ch', 'both'].includes(item.category) &&
+        item.ocr_languages.includes('han'),
+    );
+    if (!sourcePages.length) {
+      notify('Sách chưa có trang Hán Nôm để căn chỉnh.', true);
+      return;
+    }
+    const referenceHasPages =
+      !!reference?.text &&
+      (/^\s*\*+\s*Page\s+\d+\s*\*+\s*$/im.test(reference.text) || reference.text.includes('\f'));
+    const existing = rows.length;
+    if (
+      !window.confirm(
+        `Tự căn ${sourcePages.length} trang theo thứ tự dòng và thay toàn bộ ${existing} cặp hiện tại? Các cặp mới sẽ ở trạng thái chưa duyệt để bạn kiểm tra.`,
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const next: Alignment[] = [];
+      let skipped = 0;
+      const sequences = new Map<number, number>();
+      for (const [pageIndex, sourcePage] of sourcePages.entries()) {
+        const sourceText =
+          sourcePage.source_text || sourcePage.boxes.map((box) => box.transcription).join('\n');
+        const samePageTarget = sourcePage.target_text;
+        const separateTarget = pages.find(
+          (item) => item.number === sourcePage.number && item.category === 'vi',
+        );
+        const targetText =
+          samePageTarget ||
+          separateTarget?.target_text ||
+          separateTarget?.boxes.map((box) => box.transcription).join('\n') ||
+          (referenceHasPages
+            ? referenceForPage(reference?.text || '', sourcePage.number)
+            : sourcePages.length === 1
+              ? reference?.text || ''
+              : '');
+        const sourceLines = sourceText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+        const targetLines = targetText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+        if (!sourceLines.length || !targetLines.length) {
+          skipped++;
+          continue;
+        }
+        const prefix = `${activeBook.name}.${String(sourcePage.number).padStart(3, '0')}.`;
+        for (let index = 0; index < Math.max(sourceLines.length, targetLines.length); index++) {
+          const sequence = (sequences.get(sourcePage.number) || 0) + 1;
+          sequences.set(sourcePage.number, sequence);
+          next.push({
+            id: crypto.randomUUID(),
+            sentence_id: `${prefix}${sequence}`,
+            source: sourceLines[index] || '',
+            target: targetLines[index] || '',
+            reviewed: false,
+          });
+        }
+        if (pageIndex % 15 === 14) await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      }
+      if (!next.length) {
+        notify('Chưa có cặp trang nào có cả văn bản Hán Nôm và Quốc ngữ để tự căn.', true);
+        return;
+      }
+      changeRows(next);
+      notify(
+        `Đã tự căn ${next.length} cặp từ ${sourcePages.length - skipped}/${sourcePages.length} trang. ${skipped} trang thiếu văn bản hai bên; tất cả cặp mới cần đọc lại.`,
+      );
+    } catch (error) {
+      fail(error);
+    } finally {
+      setBusy(false);
+    }
   }
   async function download(format: 'csv' | 'xlsx' | 'labels') {
     if (!activeBook) return;
@@ -782,7 +897,9 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div
+      className={`app-shell ${view === 'review' ? 'review-mode' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}
+    >
       <aside id="main-sidebar" className="sidebar" aria-label="Thanh điều hướng">
         <a
           href="#"
@@ -823,6 +940,7 @@ export default function App() {
           <button
             onClick={() => {
               setDictionarySelection(null);
+              setDictionaryMode('reading');
               setDictionaryCharacter('');
             }}
           >
@@ -913,11 +1031,11 @@ export default function App() {
                   </h1>
                   <p>
                     {view === 'review'
-                      ? 'Đối chiếu bản gốc, hiệu đính văn bản và hoàn thiện từng trang ngữ liệu.'
+                      ? 'Đối chiếu bản gốc, Gán nhãn văn bản và hoàn thiện từng trang ngữ liệu.'
                       : view === 'alignment'
                         ? 'Đối chiếu Hán Nôm và Quốc ngữ theo từng đơn vị có ý nghĩa.'
                         : view === 'library'
-                          ? 'Quản lý tài liệu gốc và tiếp tục từ lần hiệu đính gần nhất.'
+                          ? 'Xem các trang sách và kết quả Hán Nôm, Quốc ngữ đã lưu.'
                           : view === 'export'
                             ? 'Xuất nhãn và các cặp song ngữ theo đúng định dạng bàn giao.'
                             : 'Theo dõi tiến trình xây dựng kho ngữ liệu song song Hán Nôm – Quốc ngữ.'}
@@ -933,10 +1051,7 @@ export default function App() {
                   <FolderOpen size={22} />
                   <div>
                     <strong>Chưa có sách trong thư mục nguồn</strong>
-                    <p>
-                      Đặt PDF vào backend/data/raw_data/ rồi quét lại. TXT cùng tên được dùng làm
-                      nguồn Quốc ngữ đối chiếu.
-                    </p>
+                    <p>Đặt PDF vào backend/data/raw_data/ rồi quét lại.</p>
                   </div>
                   <button
                     className="secondary-button"
@@ -956,13 +1071,14 @@ export default function App() {
                   ))}
                 </div>
               )}
-              {workspace.pair_stats ? (
-                <PairProgress stats={workspace.pair_stats} onImport={() => void openImport()} />
-              ) : (
-                <p className="stats-refresh-notice">
-                  Khởi động lại backend để cập nhật bộ đếm cặp câu.
-                </p>
-              )}
+              {view !== 'review' &&
+                (workspace.pair_stats ? (
+                  <PairProgress stats={workspace.pair_stats} onImport={() => void openImport()} />
+                ) : (
+                  <p className="stats-refresh-notice">
+                    Khởi động lại backend để cập nhật bộ đếm cặp câu.
+                  </p>
+                ))}
               {(view === 'review' || view === 'alignment' || view === 'export') && (
                 <>
                   <div className="book-context">
@@ -982,7 +1098,7 @@ export default function App() {
                         >
                           {workspace.books.map((book) => (
                             <option key={book.id} value={book.id}>
-                              {book.name}
+                              {formatBookTitle(book.name)}
                             </option>
                           ))}
                         </select>
@@ -1007,617 +1123,38 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                  <div className="pipeline">
-                    <button onClick={() => setView('library')} className="completed">
-                      <span>
-                        <Check size={13} />
-                      </span>
-                      Nhập & phân loại
-                    </button>
-                    <div className="pipeline-line" />
-                    <button
-                      className={view === 'review' ? 'current' : ''}
-                      onClick={() => setView('review')}
-                    >
-                      <span>02</span>Hiệu đính OCR
-                    </button>
-                    <div className="pipeline-line" />
-                    <button
-                      className={view === 'alignment' ? 'current' : ''}
-                      onClick={() => setView('alignment')}
-                    >
-                      <span>03</span>Căn chỉnh song ngữ
-                    </button>
-                    <div className="pipeline-line" />
-                    <button
-                      className={view === 'export' ? 'current' : ''}
-                      onClick={() => setView('export')}
-                    >
-                      <span>04</span>Xuất dữ liệu
-                    </button>
-                  </div>
                 </>
               )}
-              {view === 'review' && (
-                <>
-                  {activeBook && (
-                    <BookOCRPanel
-                      key={bookId}
-                      bookId={bookId}
-                      pages={pages}
-                      referenceFile={activeBook.reference_file}
-                      ready={workspace.ocr_ready}
-                      viReady={workspace.vietnamese_ocr?.ready || false}
-                      viEngine={workspace.vietnamese_ocr?.engine}
-                      disabled={busy || loadingPages}
-                      beforeStart={saveBookDrafts}
-                      onOpenPage={(id) => {
-                        setCategory('all');
-                        setStatus('all');
-                        setPageSearch('');
-                        setPageId(id);
-                      }}
-                      onJob={setBookJob}
-                      onRefresh={() => void refreshBookPages()}
-                      onError={fail}
-                    />
-                  )}
-                  {activeBook && (
-                    <BookLayoutPanel
-                      key={bookId}
-                      bookId={bookId}
-                      page={page}
-                      box={draft?.boxes.find((box) => box.id === selectedBox)}
-                      disabled={busy}
-                      onSaved={() => void refreshBookPages()}
-                      onError={fail}
-                    />
-                  )}
-                  <section className="review-workspace" aria-label="Không gian hiệu đính">
-                    <div className="workspace-toolbar">
-                      <div className="language-tabs" role="group" aria-label="Nhóm trang">
-                        <button
-                          className={category === 'ch' ? 'selected' : ''}
-                          onClick={() => chooseCategory('ch')}
-                        >
-                          <span className="han-character">文</span>Hán Nôm
-                          <span>{pages.filter((p) => p.category === 'ch').length}</span>
-                        </button>
-                        <button
-                          className={category === 'vi' ? 'selected' : ''}
-                          onClick={() => chooseCategory('vi')}
-                        >
-                          <span className="vi-character">Aa</span>Quốc ngữ
-                          <span>{pages.filter((p) => p.category === 'vi').length}</span>
-                        </button>
-                        <select
-                          aria-label="Các nhóm trang khác"
-                          value={category !== 'ch' && category !== 'vi' ? category : ''}
-                          onChange={(event) => chooseCategory(event.target.value)}
-                        >
-                          <option value="" disabled>
-                            Nhóm khác
-                          </option>
-                          <option value="all">Tất cả trang</option>
-                          {Object.entries(categories)
-                            .filter(([key]) => key !== 'ch' && key !== 'vi')
-                            .map(([key, label]) => (
-                              <option key={key} value={key}>
-                                {label}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                      <div className="pending-label">
-                        <span />
-                        {pendingCount} trang chờ duyệt
-                      </div>
-                    </div>
-                    <div className="review-grid">
-                      <aside className="page-navigator">
-                        <div className="panel-title">
-                          <span>
-                            Các trang <small>{filteredPages.length}</small>
-                          </span>
-                          <PanelLeftClose size={15} />
-                        </div>
-                        <div className="page-filter">
-                          <SlidersHorizontal size={13} />
-                          <select
-                            value={status}
-                            aria-label="Lọc trạng thái"
-                            onChange={(event) => setStatus(event.target.value)}
-                          >
-                            <option value="all">Tất cả trạng thái</option>
-                            <option value="pending">Chờ duyệt</option>
-                            <option value="done">Đã hoàn thành</option>
-                          </select>
-                        </div>
-                        <label className="page-search">
-                          <Search size={13} />
-                          <input
-                            aria-label="Tìm số trang"
-                            placeholder="Tìm số trang…"
-                            value={pageSearch}
-                            onChange={(event) => setPageSearch(event.target.value)}
-                          />
-                        </label>
-                        <div className="thumbnails">
-                          {loadingPages ? (
-                            <LoaderCircle className="spin" size={22} />
-                          ) : filteredPages.length ? (
-                            filteredPages.map((p) => (
-                              <button
-                                key={p.id}
-                                className={`thumbnail-card ${p.id === pageId ? 'selected' : ''}`}
-                                onClick={() => setPageId(p.id)}
-                                aria-label={`Mở trang ${p.number}, ${categories[p.category]}`}
-                              >
-                                <div className="thumbnail-image">
-                                  <img
-                                    loading="lazy"
-                                    src={`${p.image_url}?thumbnail=true`}
-                                    alt={`Bản quét trang ${p.number}`}
-                                  />
-                                  {p.status === 'done' && (
-                                    <span className="thumb-done">
-                                      <Check size={12} />
-                                    </span>
-                                  )}
-                                  {drafts[p.id] && (
-                                    <span className="thumb-draft" title="Có bản nháp" />
-                                  )}
-                                </div>
-                                <div>
-                                  <span>Trang {String(p.number).padStart(3, '0')}</span>
-                                  <small>
-                                    {p.ocr_skip || p.category === 'blank'
-                                      ? 'Bỏ qua OCR'
-                                      : p.source_text && p.target_text
-                                        ? 'Có đủ hai nội dung'
-                                        : p.source_text || p.target_text
-                                          ? 'Có kết quả một phần'
-                                          : bookJob?.pages.find((item) => item.page_id === p.id)
-                                                ?.status === 'running'
-                                            ? 'Đang OCR'
-                                            : 'Chờ xử lý'}
-                                  </small>
-                                  <span className={`status-dot ${p.status}`} />
-                                </div>
-                              </button>
-                            ))
-                          ) : (
-                            <div className="small-empty">
-                              <FileText size={23} />
-                              <p>
-                                Không có trang
-                                <br />
-                                trong bộ lọc này.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                        <div className="navigator-footer">
-                          <ShieldCheck size={12} />
-                          Tiến trình lưu trên máy
-                        </div>
-                      </aside>
-                      {page && draft ? (
-                        <>
-                          <div className="image-panel">
-                            <div className="image-toolbar">
-                              <span>
-                                <FileText size={14} />
-                                <strong>{String(page.number).padStart(3, '0')}</strong>
-                                <span className="muted">/ {pages.length} trang</span>
-                              </span>
-                              <div className="image-controls">
-                                <button
-                                  className={`icon-button ${tool === 'select' ? 'is-active' : ''}`}
-                                  aria-label="Chọn và di chuyển vùng"
-                                  title="Chọn và di chuyển vùng"
-                                  onClick={() => setTool('select')}
-                                >
-                                  <MousePointer2 size={16} />
-                                </button>
-                                <button
-                                  className={`icon-button ${tool === 'draw' ? 'is-active' : ''}`}
-                                  aria-label="Vẽ vùng mới"
-                                  title="Vẽ vùng mới"
-                                  onClick={() => {
-                                    setTool('draw');
-                                    setShowBoxes(true);
-                                  }}
-                                >
-                                  <SquareDashedMousePointer size={17} />
-                                </button>
-                                <span className="toolbar-divider" />
-                                <button
-                                  className="icon-button"
-                                  aria-label={showBoxes ? 'Ẩn vùng chữ' : 'Hiện vùng chữ'}
-                                  onClick={() => setShowBoxes(!showBoxes)}
-                                >
-                                  {showBoxes ? <Eye size={17} /> : <EyeOff size={17} />}
-                                </button>
-                                <button
-                                  className="icon-button"
-                                  aria-label="Vừa khung hình"
-                                  onClick={() => setZoom(100)}
-                                >
-                                  <Maximize2 size={16} />
-                                </button>
-                              </div>
-                            </div>
-                            <ManuscriptViewer
-                              page={page}
-                              boxes={draft.boxes}
-                              selected={selectedBox}
-                              setSelected={setSelectedBox}
-                              showBoxes={showBoxes}
-                              tool={tool}
-                              zoom={zoom}
-                              onBoxes={(boxes) => updateDraft({ boxes })}
-                              onDrawn={() => setTool('select')}
-                            />
-                            <div className="image-footer">
-                              <span>
-                                <MousePointer2 size={13} />
-                                {tool === 'draw'
-                                  ? 'Kéo trên ảnh để tạo vùng chữ'
-                                  : 'Chọn vùng · Kéo để chỉnh vị trí'}
-                              </span>
-                              <div>
-                                <button
-                                  className="icon-button"
-                                  aria-label="Thu nhỏ"
-                                  onClick={() => setZoom(Math.max(50, zoom - 25))}
-                                >
-                                  <Minus size={14} />
-                                </button>
-                                <span>{zoom}%</span>
-                                <button
-                                  className="icon-button"
-                                  aria-label="Phóng to"
-                                  onClick={() => setZoom(Math.min(200, zoom + 25))}
-                                >
-                                  <Plus size={14} />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                          <aside className="transcription-panel">
-                            <div className="panel-title">
-                              <span>
-                                Văn bản nhận dạng <small>{draft.boxes.length} vùng</small>
-                              </span>
-                              <button
-                                className="icon-button"
-                                aria-label="Thêm vùng văn bản"
-                                title="Vẽ thêm vùng trên bản quét"
-                                onClick={() => {
-                                  setTool('draw');
-                                  setShowBoxes(true);
-                                }}
-                              >
-                                <Plus size={17} />
-                              </button>
-                            </div>
-                            <div className="editor-notice">
-                              <span />
-                              {workspace.ocr_ready
-                                ? 'OCR đã cấu hình · đọc lại trước khi hoàn thành'
-                                : 'OCR chưa cấu hình · có thể hiệu đính thủ công'}
-                            </div>
-                            <div className="transcription-list">
-                              <div className="page-text-editor">
-                                {pageOCR?.warnings.map((warning, index) => (
-                                  <p key={index} className="reference-draft-note">
-                                    {warning}
-                                  </p>
-                                ))}
-                                <p role="status">
-                                  {autosaveState} ·{' '}
-                                  {page.ocr_skip || page.category === 'blank'
-                                    ? 'Trang đã chọn bỏ qua OCR'
-                                    : bookJob?.pages.find((p) => p.page_id === page.id)?.status ===
-                                        'running'
-                                      ? 'Đang xử lý trang này'
-                                      : page.source_text || page.target_text
-                                        ? 'Đã có nội dung để hiệu đính'
-                                        : 'Đang chờ OCR theo quyển'}
-                                </p>
-                                <label>
-                                  Hán / Nôm · đối chiếu với ảnh bên cạnh
-                                  <textarea
-                                    className="han-text"
-                                    aria-label="Văn bản Nôm toàn trang"
-                                    rows={6}
-                                    disabled={busy}
-                                    value={draft.source_text}
-                                    onChange={(event) =>
-                                      updateDraft({ source_text: event.target.value })
-                                    }
-                                    onBlur={() => void saveDraftNow(page.id).catch(fail)}
-                                    placeholder="OCR Nôm sẽ điền văn bản ở đây; có thể sửa trực tiếp."
-                                  />
-                                </label>
-                                <button
-                                  className="secondary-button"
-                                  disabled={busy}
-                                  onClick={() =>
-                                    void saveDraftNow(page.id)
-                                      .then(() => notify('Đã lưu nội dung hiện tại của trang.'))
-                                      .catch(fail)
-                                  }
-                                >
-                                  Lưu Hán / Nôm hiện tại
-                                </button>
-                                <CharacterStrip
-                                  text={draft.source_text || ''}
-                                  onLookup={(character, index) => {
-                                    setDictionarySelection({
-                                      pageId: page.id,
-                                      boxId: 'page-source',
-                                      index,
-                                      character,
-                                    });
-                                    setDictionaryCharacter(character);
-                                  }}
-                                />
-                                <label>
-                                  Quốc ngữ · đối chiếu với cùng ảnh
-                                  <textarea
-                                    aria-label="Văn bản Quốc ngữ toàn trang"
-                                    rows={6}
-                                    disabled={busy}
-                                    value={draft.target_text}
-                                    onChange={(event) =>
-                                      updateDraft({ target_text: event.target.value })
-                                    }
-                                    onBlur={() => void saveDraftNow(page.id).catch(fail)}
-                                    placeholder="OCR Quốc ngữ lấy trực tiếp từ cùng ảnh, không cần tạo bản sao trang."
-                                  />
-                                </label>
-                                {page.target_origin?.startsWith('txt-draft:') && (
-                                  <p className="reference-draft-note">
-                                    Bản ghép nháp từ TXT: {page.target_origin.slice(10)}. Duyệt lại
-                                    đoạn và tách/gộp khi căn chỉnh.
-                                  </p>
-                                )}
-                                <button
-                                  className="secondary-button"
-                                  disabled={busy}
-                                  onClick={() =>
-                                    void saveDraftNow(page.id)
-                                      .then(() => notify('Đã lưu nội dung hiện tại của trang.'))
-                                      .catch(fail)
-                                  }
-                                >
-                                  Lưu Quốc ngữ hiện tại
-                                </button>
-                                <p>
-                                  Hai văn bản được lưu tự động khi sửa. Duyệt xong trang rồi căn
-                                  chỉnh để tạo các cặp ngữ liệu.
-                                </p>
-                              </div>
-                              <details className="optional-box-editor">
-                                <summary>
-                                  Box tùy chọn · {draft.boxes.length} vùng Nôm /{' '}
-                                  {draft.vi_boxes?.length || 0} vùng Quốc ngữ
-                                </summary>
-                                {!!pageOCR?.boxes.length && (
-                                  <button
-                                    className="secondary-button"
-                                    onClick={() =>
-                                      updateDraft({
-                                        boxes: pageOCR.boxes,
-                                        vi_boxes: pageOCR.vi_boxes || [],
-                                      })
-                                    }
-                                  >
-                                    Lấy box đã phát hiện (tùy chọn, không chạy lại OCR)
-                                  </button>
-                                )}
-                                {draft.boxes.length ? (
-                                  draft.boxes.map((box, index) => (
-                                    <div
-                                      key={box.id}
-                                      className={`transcription-card ${selectedBox === box.id ? 'selected' : ''}`}
-                                      onClick={() => setSelectedBox(box.id)}
-                                    >
-                                      <div className="transcription-label">
-                                        <span>
-                                          <GripVertical size={12} />
-                                          <b>{String(index + 1).padStart(2, '0')}</b>
-                                          <span>
-                                            {draft.category === 'ch' &&
-                                            (draft.reading_direction ?? page.reading_direction) ===
-                                              1
-                                              ? 'Cột dọc'
-                                              : 'Vùng chữ'}
-                                          </span>
-                                        </span>
-                                        <button
-                                          className="icon-button"
-                                          aria-label={`Xóa vùng ${index + 1}`}
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            updateDraft({
-                                              boxes: draft.boxes.filter((b) => b.id !== box.id),
-                                            });
-                                            if (selectedBox === box.id) setSelectedBox(null);
-                                          }}
-                                        >
-                                          <Trash2 size={13} />
-                                        </button>
-                                      </div>
-                                      <textarea
-                                        className={draft.category === 'ch' ? 'han-text' : ''}
-                                        aria-label={`Văn bản vùng ${index + 1}`}
-                                        rows={draft.category === 'ch' ? 2 : 3}
-                                        value={box.transcription}
-                                        placeholder="Nhập văn bản trong vùng…"
-                                        onFocus={() => setSelectedBox(box.id)}
-                                        onChange={(event) =>
-                                          updateDraft({
-                                            boxes: draft.boxes.map((b) =>
-                                              b.id === box.id
-                                                ? { ...b, transcription: event.target.value }
-                                                : b,
-                                            ),
-                                          })
-                                        }
-                                      />
-                                      <CharacterStrip
-                                        text={box.transcription}
-                                        onLookup={(character, index) => {
-                                          setSelectedBox(box.id);
-                                          setDictionarySelection({
-                                            pageId: page.id,
-                                            boxId: box.id,
-                                            index,
-                                            character,
-                                          });
-                                          setDictionaryCharacter(character);
-                                        }}
-                                      />
-                                      <div className="transcription-meta">
-                                        <span>{box.transcription.length} ký tự</span>
-                                        <span>Tra từng chữ để đối chiếu</span>
-                                      </div>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="editor-empty">
-                                    <Boxes size={30} />
-                                    <h3>Chưa có box — vẫn sửa và lưu văn bản được</h3>
-                                    <p>
-                                      Chỉ vẽ khi muốn giới hạn vùng đọc hoặc chỉnh nhãn tọa độ. Có
-                                      thể lưu vùng mẫu cho cả quyển.
-                                    </p>
-                                    <button
-                                      className="secondary-button"
-                                      onClick={() => {
-                                        setTool('draw');
-                                        setShowBoxes(true);
-                                      }}
-                                    >
-                                      <Plus size={15} />
-                                      Vẽ vùng đầu tiên
-                                    </button>
-                                  </div>
-                                )}
-                              </details>
-                            </div>
-                            <div className="editor-bottom">
-                              <label htmlFor="category-select">PHÂN LOẠI TRANG</label>
-                              <select
-                                id="category-select"
-                                value={draft.category}
-                                onChange={(event) =>
-                                  updateDraft({ category: event.target.value as Category })
-                                }
-                              >
-                                {Object.entries(categories).map(([key, label]) => (
-                                  <option key={key} value={key}>
-                                    {label}
-                                  </option>
-                                ))}
-                              </select>
-                              <label>
-                                <input
-                                  type="checkbox"
-                                  checked={draft.ocr_skip || false}
-                                  onChange={(e) => updateDraft({ ocr_skip: e.target.checked })}
-                                />
-                                Bỏ qua trang khi OCR sách
-                              </label>
-                              <div className="editor-extra-actions">
-                                <button
-                                  disabled={!drafts[page.id]}
-                                  title="Khôi phục bản đã lưu gần nhất"
-                                  onClick={() => {
-                                    setDrafts((previous) => {
-                                      const next = { ...previous };
-                                      delete next[page.id];
-                                      try {
-                                        localStorage.setItem('nom-drafts-v1', JSON.stringify(next));
-                                      } catch {}
-                                      return next;
-                                    });
-                                    setSelectedBox(null);
-                                  }}
-                                  aria-label="Khôi phục bản đã lưu"
-                                >
-                                  <RotateCcw size={12} />
-                                </button>
-                              </div>
-                              <div className="dictionary-status">
-                                <CircleHelp size={13} />
-                                {workspace.dictionary.ready
-                                  ? 'Từ điển tại máy · bấm chữ để tra'
-                                  : 'Cài từ điển: py backend/setup_dictionary.py'}
-                              </div>
-                            </div>
-                          </aside>
-                        </>
-                      ) : (
-                        <div className="no-page">
-                          <BookOpen size={38} />
-                          <h3>
-                            {loadingPages ? 'Đang tải tài liệu…' : 'Chọn một trang để bắt đầu'}
-                          </h3>
-                          <p>Chọn nhóm trang và bản quét ở cột bên trái.</p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="workspace-actions">
-                      <span className="save-state">
-                        {page && drafts[page.id] ? (
-                          <>
-                            <span className="draft-state-dot" />
-                            Bản nháp trên trình duyệt
-                          </>
-                        ) : (
-                          <>
-                            <CheckCheck size={15} />
-                            Đã lưu vào máy
-                          </>
-                        )}
-                        <small>Ctrl + S để lưu</small>
-                      </span>
-                      <div>
-                        <button
-                          className="secondary-button"
-                          disabled={!page || busy}
-                          onClick={() => void savePage(false)}
-                        >
-                          <Save size={15} />
-                          Lưu bản nháp
-                        </button>
-                        <button
-                          className="primary-button"
-                          disabled={!page || busy}
-                          onClick={() => void savePage(true)}
-                        >
-                          {busy ? <LoaderCircle size={16} className="spin" /> : <Check size={16} />}
-                          Hoàn thành & tiếp theo
-                          <ArrowRight size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  </section>
-                  <div className="workspace-caption">
-                    <span>
-                      <ShieldCheck size={14} />
-                      Tài liệu và bản hiệu đính được lưu cục bộ trên máy của bạn.
-                    </span>
-                    <button onClick={() => setModal('guide')}>
-                      Quy tắc hiệu đính
-                      <ArrowRight size={13} />
-                    </button>
-                  </div>
-                </>
+              {view === 'review' && activeBook && !loadingPages && pages.length > 0 && (
+                <BookWorkbench
+                  key={bookId}
+                  bookId={bookId}
+                  initialStep={workflowStep}
+                  onStepChange={setWorkflowStep}
+                  pages={pages}
+                  page={draft || undefined}
+                  dirty={!!drafts[pageId]}
+                  busy={busy || loadingPages}
+                  recognizingBox={boxOCRPages.includes(pageId)}
+                  onRecognizeBox={recognizeBox}
+                  onRerunPage={rerunPageOCR}
+                  rerunningPage={pageOCRPages.includes(pageId)}
+                  onBulkTag={bulkTagPages}
+                  job={bookJob}
+                  onJob={setBookJob}
+                  onPatch={updateDraft}
+                  onNavigate={setPageId}
+                  onConfirm={() => savePage(true)}
+                  beforeStart={saveBookDrafts}
+                  saveState={autosaveState}
+                  onRefresh={() => void refreshBookPages()}
+                  onError={fail}
+                  onLookup={(box, character, index) => {
+                    setDictionarySelection({ pageId: pageId, boxId: box.id, index, character });
+                    setDictionaryMode('character');
+                    setDictionaryCharacter(character);
+                  }}
+                />
               )}
               {view === 'overview' && (
                 <>
@@ -1638,7 +1175,7 @@ export default function App() {
                       icon={<FileCheck2 size={21} />}
                       value={workspace.books.reduce((n, b) => n + b.done, 0)}
                       label="Trang đã hoàn thành"
-                      detail="Được người hiệu đính xác nhận"
+                      detail="Được người Gán nhãn xác nhận"
                     />
                     <Stat
                       icon={<Link2 size={21} />}
@@ -1650,7 +1187,7 @@ export default function App() {
                   <div className="section-heading">
                     <div>
                       <h2>Tiếp tục công việc</h2>
-                      <p>Mở một tài liệu để tiếp tục hiệu đính.</p>
+                      <p>Mở một tài liệu để tiếp tục Gán nhãn.</p>
                     </div>
                     <button className="text-button" onClick={() => setView('library')}>
                       Xem tủ sách
@@ -1659,75 +1196,73 @@ export default function App() {
                   </div>
                   <div className="book-grid">
                     {workspace.books.map((book) => (
-                      <BookCard key={book.id} book={book} onOpen={() => selectBook(book)} />
+                      <BookCard
+                        key={book.id}
+                        book={book}
+                        onOpen={() => selectBook(book, 'review')}
+                      />
                     ))}
                   </div>
-                  <div className="info-banner">
-                    <BookOpen size={23} />
-                    <div>
-                      <strong>Từ bản quét đến ngữ liệu song song</strong>
-                      <p>
-                        Phân loại đầy đủ trang có bản dịch, hiệu đính theo thứ tự đọc và căn chỉnh
-                        trước khi xuất. Mục tiêu chất lượng theo yêu cầu gốc: ≥95% tương đồng.
-                      </p>
-                    </div>
-                    <button className="secondary-button" onClick={() => setModal('guide')}>
-                      Xem quy trình
-                      <ArrowRight size={15} />
-                    </button>
-                  </div>
                 </>
               )}
-              {view === 'library' && (
-                <>
-                  <div className="section-toolbar">
-                    <label className="search-input">
-                      <Search size={17} />
-                      <input
-                        aria-label="Tìm trong tủ sách"
-                        placeholder="Tìm tài liệu trong tủ sách…"
-                        value={librarySearch}
-                        onChange={(event) => setLibrarySearch(event.target.value)}
-                      />
-                    </label>
-                    <span className="muted">
-                      {workspace.books.length} tài liệu trong không gian
-                    </span>
-                    <button
-                      className="secondary-button"
-                      disabled={busy}
-                      onClick={() => void syncFolder()}
-                    >
-                      <RotateCcw size={15} />
-                      Quét lại thư mục
-                    </button>
-                  </div>
-                  <div className="book-grid">
-                    {workspace.books
-                      .filter((book) =>
-                        book.name.toLowerCase().includes(librarySearch.toLowerCase()),
-                      )
-                      .map((book) => (
-                        <BookCard key={book.id} book={book} onOpen={() => selectBook(book)} />
-                      ))}
-                    <button className="new-book-card" onClick={() => void openImport()}>
-                      <Plus size={26} />
-                      <strong>Thêm một cuốn sách</strong>
-                      <span>PDF từ máy hoặc backend/data/raw_data/</span>
-                    </button>
-                  </div>
-                  <div className="info-banner">
-                    <ShieldCheck size={22} />
-                    <div>
-                      <strong>Nguồn gốc được giữ nguyên</strong>
-                      <p>
-                        Tên sách theo đúng tên PDF. Trang được đánh số từ 001; các bản Hán Nôm và
-                        Quốc ngữ có thể dùng chung ảnh nguồn.
-                      </p>
+              {view === 'library' &&
+                (libraryBook ? (
+                  <LibraryBookReader
+                    key={libraryBook.id}
+                    book={libraryBook}
+                    onClose={() => setLibraryBookId('')}
+                    onError={fail}
+                  />
+                ) : (
+                  <>
+                    <div className="section-toolbar">
+                      <label className="search-input">
+                        <Search size={17} />
+                        <input
+                          aria-label="Tìm trong tủ sách"
+                          placeholder="Tìm tài liệu trong tủ sách…"
+                          value={librarySearch}
+                          onChange={(event) => setLibrarySearch(event.target.value)}
+                        />
+                      </label>
+                      <span className="muted">
+                        {workspace.books.length} tài liệu trong không gian
+                      </span>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={busy}
+                        onClick={() => void syncFolder()}
+                      >
+                        <RotateCcw size={15} />
+                        Quét lại thư mục
+                      </button>
                     </div>
-                  </div>
-                </>
-              )}
+                    <div className="book-grid">
+                      {workspace.books
+                        .filter((book) =>
+                          book.name.toLowerCase().includes(librarySearch.toLowerCase()),
+                        )
+                        .map((book) => (
+                          <BookCard
+                            key={book.id}
+                            book={book}
+                            onOpen={() => setLibraryBookId(book.id)}
+                            actionLabel="Xem trang & kết quả"
+                          />
+                        ))}
+                      <button
+                        type="button"
+                        className="new-book-card"
+                        onClick={() => void openImport()}
+                      >
+                        <Plus size={26} />
+                        <strong>Thêm một cuốn sách</strong>
+                        <span>PDF từ máy hoặc backend/data/raw_data/</span>
+                      </button>
+                    </div>
+                  </>
+                ))}
               {view === 'alignment' && (
                 <section className="alignment-workspace">
                   <div className="alignment-top">
@@ -1736,7 +1271,7 @@ export default function App() {
                         <Link2 size={19} />
                         Cặp ngữ liệu song song <span className="count-badge">{rows.length}</span>
                       </h2>
-                      <p>Gộp các hàng liên tiếp, hoặc tách tại một ranh giới ngữ nghĩa.</p>
+                      <p>Tự căn hàng loạt theo số trang và thứ tự dòng, sau đó kiểm tra thủ công.</p>
                     </div>
                     <div className="button-group">
                       <select
@@ -1746,7 +1281,7 @@ export default function App() {
                       >
                         <option value="">Chọn trang Nôm</option>
                         {pages
-                          .filter((p) => p.category === 'ch')
+                          .filter((p) => p.ocr_languages.includes('han'))
                           .map((p) => (
                             <option key={p.id} value={p.id}>
                               Trang {String(p.number).padStart(3, '0')}
@@ -1756,6 +1291,14 @@ export default function App() {
                       <button className="secondary-button" disabled={busy} onClick={() => newRow()}>
                         <Plus size={15} />
                         Thêm cặp
+                      </button>
+                      <button
+                        className="secondary-button"
+                        disabled={busy || alignmentLoading}
+                        onClick={() => void autoAlignBook()}
+                      >
+                        <SplitSquareVertical size={15} />
+                        Tự căn toàn sách
                       </button>
                       <button
                         className="primary-button"
@@ -1769,10 +1312,10 @@ export default function App() {
                   </div>
                   {!alignmentLoading && (
                     <AlignmentSources
-                      key={`${bookId}-${alignmentPage || pages.find((p) => p.category === 'ch')?.id || ''}`}
+                      key={`${bookId}-${alignmentPage || pages.find((p) => p.ocr_languages.includes('han'))?.id || ''}`}
                       page={
                         pages.find((p) => p.id === alignmentPage) ||
-                        pages.find((p) => p.category === 'ch')
+                        pages.find((p) => p.ocr_languages.includes('han'))
                       }
                       pages={pages}
                       reference={reference}
@@ -1783,7 +1326,7 @@ export default function App() {
                   <div className="alignment-notice">
                     <CircleHelp size={16} />
                     <span>
-                      Từ điển hỗ trợ tra từng chữ khi hiệu đính. Độ tương đồng của các cặp chưa được
+                      Từ điển hỗ trợ tra từng chữ khi Gán nhãn. Độ tương đồng của các cặp chưa được
                       đánh giá tự động; đánh dấu đã đọc không xác nhận tương đồng ngữ nghĩa.
                     </span>
                   </div>
@@ -1874,10 +1417,14 @@ export default function App() {
                     <div className="empty-section">
                       <Link2 size={34} />
                       <h3>Chưa có cặp căn chỉnh</h3>
-                      <p>Chọn một trang Hán Nôm và thêm cặp văn bản tương ứng.</p>
+                      <p>Tự ghép dòng Hán Nôm và Quốc ngữ theo thứ tự trên các trang có văn bản hai bên, rồi rà từng cặp.</p>
+                      <button className="primary-button" disabled={busy} onClick={() => void autoAlignBook()}>
+                        <SplitSquareVertical size={15} />
+                        Tự căn toàn sách
+                      </button>
                       <button className="secondary-button" onClick={() => newRow()}>
                         <Plus size={15} />
-                        Tạo cặp đầu tiên
+                        Tạo cặp thủ công
                       </button>
                     </div>
                   )}
@@ -1900,7 +1447,7 @@ export default function App() {
                       <Download size={26} />
                     </span>
                     <div>
-                      <h2>Gói dữ liệu của {activeBook?.name}</h2>
+                      <h2>Gói dữ liệu của {formatBookTitle(activeBook?.name)}</h2>
                       <p>
                         {pendingCount
                           ? `${pendingCount} trang chưa hoàn thành. Có thể xuất bản làm việc để kiểm tra định dạng.`
@@ -2001,34 +1548,11 @@ export default function App() {
                       ))}
                     </div>
                   </div>
-                  <div className="info-banner">
-                    <CircleHelp size={22} />
-                    <div>
-                      <strong>Bản xuất làm việc chưa phải gói nộp đầy đủ</strong>
-                      <p>
-                        Gói bàn giao cuối cùng còn cần PDF gốc, ảnh JPG, báo cáo và mã nguồn. Độ
-                        tương đồng ≥95% cần được đánh giá bằng từ điển và đối chiếu nội dung.
-                      </p>
-                    </div>
-                    <button className="text-button" onClick={() => setView('alignment')}>
-                      Kiểm tra căn chỉnh
-                      <ArrowRight size={15} />
-                    </button>
-                  </div>
                 </>
               )}
             </>
           )}
         </main>
-        <footer className="app-footer">
-          <span>
-            NÔM WORKSPACE <span>v0.1</span>
-          </span>
-          <span>Một không gian cho những giá trị còn mãi.</span>
-          <span>
-            Hán Nôm <Link2 size={11} /> Quốc ngữ
-          </span>
-        </footer>
       </div>
       {toast && (
         <div
@@ -2049,6 +1573,7 @@ export default function App() {
       {dictionaryCharacter !== null && (
         <DictionaryPanel
           character={dictionaryCharacter}
+          initialMode={dictionaryMode}
           canReplace={!busy && !!dictionarySelection && dictionarySelection.pageId === page?.id}
           onReplace={replaceDictionaryCharacter}
           onClose={() => setDictionaryCharacter(null)}
@@ -2175,10 +1700,6 @@ export default function App() {
                     </p>
                   )}
                 </div>
-                <p className="modal-note">
-                  <ShieldCheck size={14} />
-                  PDF gốc được lưu tại máy. Khi bấm Chạy OCR, ảnh trang được gửi tới Kim Hán Nôm.
-                </p>
               </>
             ) : modal === 'guide' ? (
               <div className="guide-content">
@@ -2193,7 +1714,7 @@ export default function App() {
                   ],
                   [
                     '02',
-                    'Hiệu đính từng vùng chữ',
+                    'Gán nhãn từng vùng chữ',
                     'Nôm dọc đọc phải → trái, trên → dưới. Quốc ngữ theo dòng. Mỗi box có 4 điểm; loại tiêu đề, số trang và chân trang. Kéo vùng để di chuyển, kéo điểm góc để chỉnh kích thước.',
                   ],
                   [
@@ -2275,8 +1796,7 @@ export default function App() {
                   <span className="pending-pill">{nomFontStatus}</span>
                 </div>
                 <p className="muted">
-                  Dữ liệu làm việc được bỏ qua trong Git. Mỗi máy đọc toàn bộ PDF trong thư mục
-                  nguồn; TXT đối chiếu không được tính thành sách riêng.
+                  Dữ liệu chỉ tính file PDF (txt dùng để đối chiếu chữ nếu có).
                 </p>
                 <button
                   className="secondary-button"
