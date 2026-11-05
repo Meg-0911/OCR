@@ -9,12 +9,17 @@ from .han_layout import prepare_han_image, character_regions, pack_lines, map_ch
 
 HAN_KEYS=('ocr_id','lang_type','reading_direction','epitaph','tag','font_type')
 
+def color_signature(settings):
+    profile=settings.get('ink_profile','red_qn')
+    return {'ink_profile':profile} if profile!='red_qn' else {}
 
 def signature(settings,language):
     if language=='han':
-        return {**{key:settings.get(key) for key in HAN_KEYS},'source_regions':settings.get('source_regions') or [],'pipeline_version':settings.get('pipeline_version')}
+        return {**{key:settings.get(key) for key in HAN_KEYS},'source_regions':settings.get('source_regions') or [],
+                **color_signature(settings),'pipeline_version':settings.get('pipeline_version')}
     return {'vi_psm':settings.get('vi_psm',11),'target_regions':settings.get('target_regions') or [],
             'vi_engine':settings.get('vi_engine'),
+            **color_signature(settings),
             'han_mask':signature(settings,'han') if settings.get('mode')=='bilingual' else None}
 
 
@@ -87,7 +92,7 @@ def recognize(page,settings,force,*,cached,image_bytes,han_provider,vi_provider,
                 picture=Image.open(io.BytesIO(image)).convert('RGB')
                 boxes,texts,han_warnings=[],[],[]
                 for crop,x,y in image_regions(picture,settings.get('source_regions')):
-                    prepared, mask, colored = prepare_han_image(crop)
+                    prepared, mask, colored = prepare_han_image(crop,settings.get('ink_profile','red_qn'))
                     glyphs = character_regions(mask,settings['reading_direction']) if colored else []
                     packed = colored and 4 <= len(glyphs) <= 300
                     payload = {key:settings[key] for key in HAN_KEYS if key in settings}
@@ -119,7 +124,7 @@ def recognize(page,settings,force,*,cached,image_bytes,han_provider,vi_provider,
                 sx=picture.width/page['width']; sy=picture.height/page['height']
                 masks=[{**box,'points':[[a*sx,b*sy] for a,b in box['points']]} for box in (result['boxes'] if settings.get('mode')=='bilingual' else page['boxes'])]
                 target=vi_provider.recognize(image,regions=settings.get('target_regions'),
-                    han_boxes=masks,psm=settings.get('vi_psm',11),**extra)
+                    han_boxes=masks,psm=settings.get('vi_psm',11),ink_profile=settings.get('ink_profile','red_qn'),**extra)
                 for box in target['boxes']:
                     box['points']=[[a/sx,b/sy] for a,b in box['points']]
                 responses['vi']=target

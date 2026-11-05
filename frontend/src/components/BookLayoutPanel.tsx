@@ -17,7 +17,11 @@ export default function BookLayoutPanel({
   onSaved: () => void;
   onError: (error: unknown) => void;
 }) {
-  const [layout, setLayout] = useState<BookLayout>({ source_regions: [], target_regions: [] });
+  const [layout, setLayout] = useState<BookLayout>({
+    source_regions: [],
+    target_regions: [],
+    ink_profile: 'red_qn',
+  });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   useEffect(() => {
@@ -116,7 +120,7 @@ export default function BookLayoutPanel({
           className="secondary-button"
           disabled={disabled || busy}
           onClick={() => {
-            setLayout({ source_regions: [], target_regions: [] });
+            setLayout({ source_regions: [], target_regions: [], ink_profile: 'red_qn' });
             setMessage('Bấm Lưu mẫu để trở về chế độ tự động.');
           }}
         >

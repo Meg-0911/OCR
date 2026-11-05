@@ -25,6 +25,14 @@ def test_find_colored_handwriting_without_including_black_han_row():
     assert all(top > 43 for left, top, right, bottom in rectangles)
 
 
+def test_find_blue_quoc_ngu_lines_without_including_red_han_row():
+    picture = two_lines((35, 75, 170))
+    ImageDraw.Draw(picture).rectangle((60, 24, 500, 43), fill=(180, 40, 60))
+    rectangles, colored = line_regions(picture, ink_profile='blue_qn_red_han')
+    assert colored and len(rectangles) == 2
+    assert all(top > 43 for left, top, right, bottom in rectangles)
+
+
 def test_black_lines_use_han_mask_but_keep_unmasked_qn():
     picture = two_lines('black')
     mask = [{'transcription': '天地', 'points': [[0, 40], [600, 40], [600, 90], [0, 90]]}]

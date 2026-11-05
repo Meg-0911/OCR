@@ -297,7 +297,7 @@ def test_saved_reading_direction_is_used_by_whole_book_workflow(tmp_path):
     app,client,book,pages,calls,vi,transport=workspace(tmp_path,count=2)
     base=f"/api/books/{book['id']}"
     layout={'source_regions':[[.1,.1,.9,.9]],'target_regions':[],'reading_direction':2}
-    assert client.put(base+'/layout',json=layout).json()==layout
+    assert client.put(base+'/layout',json=layout).json()=={**layout,'ink_profile':'red_qn'}
     job=client.post(base+'/workflow',json={}).json();finish(app,job)
     for page in client.get(base+'/pages').json():
         result=client.get(f"/api/pages/{page['id']}/ocr").json()
@@ -306,7 +306,7 @@ def test_saved_reading_direction_is_used_by_whole_book_workflow(tmp_path):
     assert len(calls)==2 and vi.calls==2
     app.state.ocr_jobs.close()
     with TestClient(create_app(tmp_path,ocr_config=KHNConfig(token='test-only'),ocr_transport=transport,vi_provider=vi)) as reopened:
-        assert reopened.get(base+'/layout').json()==layout
+        assert reopened.get(base+'/layout').json()=={**layout,'ink_profile':'red_qn'}
 
 
 def test_confirmed_pages_stay_complete_and_are_excluded_from_new_ocr_jobs(tmp_path):

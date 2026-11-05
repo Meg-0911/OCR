@@ -13,22 +13,22 @@ from .dictionary import is_han
 from .ocr import OCRError
 from .setup_vietocr import FILES, REVISION
 from .vietnamese_ocr import VietnameseOCR, clean_boxes, image_regions
+from .ink_colors import ink_mask, profile_colors
 
 ENGINE = 'VietOCR chữ viết tay · CPU'
 CACHE_KEY = f'vietocr:{REVISION}:rgb-layout-1'
 
 
-def line_regions(image, han_boxes=None):
+def line_regions(image, han_boxes=None, ink_profile='red_qn'):
     """Locate horizontal lines; colored ink helps separate QN from black Hán/Nôm."""
     import numpy as np
 
-    pixels = np.asarray(image.convert('RGB'), dtype=np.int16)
-    r, g, b = pixels[:, :, 0], pixels[:, :, 1], pixels[:, :, 2]
-    red = (r - g > 22) & (r - b > 3) & (g < 205) & (r < 235) & ((b - g > -5) | (r - g > 55))
+    vi_color, _ = profile_colors(ink_profile)
+    colored_ink = ink_mask(image, vi_color)
     # Use color only to locate rows. The recognizer always receives the original RGB pixels.
-    colored = int(red.sum()) > max(100, image.width * image.height * .0003)
+    colored = int(colored_ink.sum()) > max(100, image.width * image.height * .0003)
     if colored:
-        mask = red
+        mask = colored_ink
     else:
         prepared = image.copy()
         painter = ImageDraw.Draw(prepared)
@@ -63,7 +63,7 @@ def line_regions(image, han_boxes=None):
 
 
 class LineRecognizer:
-    def __init__(self, folder, threads):
+    def __init__(self, folder, threads, device='cpu'):
         import numpy as np
         import onnxruntime as ort
 
@@ -74,8 +74,18 @@ class LineRecognizer:
         options = ort.SessionOptions()
         options.intra_op_num_threads = threads
         options.inter_op_num_threads = 1
-        self.encoder = ort.InferenceSession(str(folder / 'encoder_fp16.onnx'), sess_options=options, providers=['CPUExecutionProvider'])
-        self.decoder = ort.InferenceSession(str(folder / 'decoder_fp16.onnx'), sess_options=options, providers=['CPUExecutionProvider'])
+        providers = ['CPUExecutionProvider']
+        if device == 'cuda':
+            if hasattr(ort, 'preload_dlls'):
+                ort.preload_dlls()
+            if 'CUDAExecutionProvider' not in ort.get_available_providers():
+                raise RuntimeError('CUDAExecutionProvider unavailable; install onnxruntime-gpu on Colab')
+            providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+        self.encoder = ort.InferenceSession(str(folder / 'encoder_fp16.onnx'), sess_options=options, providers=providers)
+        self.decoder = ort.InferenceSession(str(folder / 'decoder_fp16.onnx'), sess_options=options, providers=providers)
+        if device == 'cuda' and any('CUDAExecutionProvider' not in session.get_providers() for session in (self.encoder, self.decoder)):
+            raise RuntimeError('CUDA initialization failed; refusing silent CPU fallback')
+        self.device = device
         self.vocab = (folder / 'vocab.txt').read_text(encoding='utf-8').splitlines()
 
     def predict(self, image):
@@ -114,6 +124,9 @@ class VietOCR:
             self.threads = max(1, min(8, int(values.get('VI_OCR_THREADS') or 4)))
         except ValueError:
             self.threads = 4
+        self.device = str(values.get('VI_OCR_DEVICE') or 'cpu').lower()
+        if self.device not in ('cpu', 'cuda'):
+            raise ValueError('VI_OCR_DEVICE must be cpu or cuda')
         self.fallback = VietnameseOCR(root)
         self.lock = threading.Lock()
         self.model = None
@@ -121,11 +134,14 @@ class VietOCR:
     def status(self):
         ready = all((self.folder / name).is_file() for name in ('encoder_fp16.onnx', 'decoder_fp16.onnx', 'vocab.txt'))
         ready = ready and all(importlib.util.find_spec(name) is not None for name in ('numpy', 'onnxruntime'))
-        return {'ready': bool(ready), 'engine': ENGINE, 'cache_key': CACHE_KEY, 'external': False,
-                'setup': 'py backend/setup_vietocr.py', 'device': 'CPU',
+        return {'ready': bool(ready), 'engine': ENGINE if self.device == 'cpu' else 'VietOCR chữ viết tay · CUDA', 'cache_key': CACHE_KEY, 'external': False,
+                'setup': 'py backend/setup_vietocr.py', 'device': self.device.upper(),
                 'fallback_ready': self.fallback.status()['ready']}
 
-    def recognize(self, image, *, regions=None, han_boxes=None, psm=11):
+    def create_model(self):
+        return LineRecognizer(self.folder, self.threads, self.device)
+
+    def recognize(self, image, *, regions=None, han_boxes=None, psm=11, ink_profile='red_qn'):
         if not self.status()['ready']:
             raise OCRError('Chưa cài VietOCR. Cài backend/requirements.txt, chạy py backend/setup_vietocr.py rồi khởi động lại backend.', 503)
         original = Image.open(io.BytesIO(image)).convert('RGB')
@@ -133,10 +149,10 @@ class VietOCR:
         try:
             with self.lock:
                 if self.model is None:
-                    self.model = LineRecognizer(self.folder, self.threads)
+                    self.model = self.create_model()
                 for crop, x, y in image_regions(original, regions):
                     local_han = [{**box, 'points': [[a - x, b - y] for a, b in box['points']]} for box in han_boxes or []]
-                    rectangles, colored = line_regions(crop, local_han)
+                    rectangles, colored = line_regions(crop, local_han, ink_profile)
                     if len(rectangles) > 200:
                         raise OCRError('Có quá nhiều vùng dòng trên trang. Giới hạn vùng Quốc ngữ bằng mẫu cho quyển rồi thử lại.', 422)
                     for left, top, right, bottom in rectangles:

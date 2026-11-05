@@ -106,6 +106,7 @@ export type OCRResult = {
 export type BookLayout = {
   source_regions: [number, number, number, number][];
   target_regions: [number, number, number, number][];
+  ink_profile: 'red_qn' | 'blue_qn_red_han';
   reading_direction?: 1 | 2;
 };
 export type OCRJob = {

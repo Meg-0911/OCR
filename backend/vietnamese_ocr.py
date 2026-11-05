@@ -88,7 +88,7 @@ class VietnameseOCR:
         return {'ready':bool((Path(self.command).is_file() or shutil.which(self.command)) and (self.tessdata/'vie.traineddata').is_file()),
                 'engine':'Tesseract vie+eng tại máy','setup':'py backend/setup_vietnamese_ocr.py'}
 
-    def recognize(self,image,*,regions=None,han_boxes=None,psm=11):
+    def recognize(self,image,*,regions=None,han_boxes=None,psm=11,ink_profile='red_qn'):
         if not self.status()['ready']:
             raise OCRError('Chưa cài OCR Quốc ngữ. Chạy py backend/setup_vietnamese_ocr.py rồi khởi động lại backend.',503)
         original=Image.open(io.BytesIO(image)).convert('RGB')

@@ -3,22 +3,30 @@ import io
 from uuid import uuid4
 
 from PIL import Image, ImageFilter
+from .ink_colors import PROFILES, ink_mask, profile_colors
 
 PIPELINE_VERSION = 'nom-ink-characters-v2'
 
 
-def prepare_han_image(image):
+def prepare_han_image(image, ink_profile='red_qn'):
     import numpy as np
     picture = image.convert('RGB')
     rgb = np.asarray(picture).astype(np.int16)
     gray = np.asarray(picture.convert('L')).astype(np.int16)
-    red = (rgb[:, :, 0] - rgb[:, :, 1] > 28) & (rgb[:, :, 0] - rgb[:, :, 2] > 10) & (rgb[:, :, 1] < 190)
-    colored = int(red.sum()) > max(100, picture.width * picture.height * .0003)
+    _, han_color = profile_colors(ink_profile)
     background = np.asarray(picture.convert('L').filter(ImageFilter.GaussianBlur(max(5, picture.height * .0075)))).astype(np.int16)
-    neutral = (rgb[:, :, 0] - rgb[:, :, 1] < 18) & (rgb[:, :, 0] - rgb[:, :, 2] < 28)
     mask = (gray < 170) & (background - gray > 25)
-    if colored:
-        mask &= neutral
+    if han_color == 'neutral':
+        red_qn = ((rgb[:, :, 0] - rgb[:, :, 1] > 28) &
+                  (rgb[:, :, 0] - rgb[:, :, 2] > 10) & (rgb[:, :, 1] < 190))
+        colored = int(red_qn.sum()) > max(100, picture.width * picture.height * .0003)
+        if colored:
+            neutral = (rgb[:, :, 0] - rgb[:, :, 1] < 18) & (rgb[:, :, 0] - rgb[:, :, 2] < 28)
+            mask &= neutral
+    else:
+        han_mask = ink_mask(picture, han_color)
+        mask &= han_mask
+        colored = int(han_mask.sum()) > max(100, picture.width * picture.height * .0003)
     # Scan edges are not glyphs. This margin is below 1% of the image.
     margin = max(1, round(min(picture.size) * .008))
     mask[:margin] = False; mask[-margin:] = False

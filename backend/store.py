@@ -239,7 +239,8 @@ class Store:
     def book_layout(self,book_id):
         with self.db() as db:
             row=db.execute('SELECT profile FROM book_layouts WHERE book_id=?',(book_id,)).fetchone()
-        return json.loads(row['profile']) if row else {'source_regions':[],'target_regions':[]}
+        profile=json.loads(row['profile']) if row else {}
+        return {'source_regions':[], 'target_regions':[], 'ink_profile':'red_qn', **profile}
 
     def session(self,key):
         with self.db() as db:
@@ -346,10 +347,13 @@ class Store:
                     continue
                 labels, states = [], []
                 for page in pages:
-                    if page["category"] != category:
+                    if page["category"] != category and not (category == 'vi' and page['category'] == 'both' and page['vi_boxes']):
+                        continue
+                    if category == 'vi' and page['category'] == 'both' and any(p['category'] == 'vi' and p['number'] == page['number'] for p in pages):
                         continue
                     name = f"{category}/{book['name']}.{page['number']:03d}.jpg"
-                    boxes = [{"transcription":b["transcription"], "points":b["points"]} for b in ordered_boxes(page["boxes"], category, page['reading_direction']) if b['transcription'].strip()]
+                    geometry = (page['vi_boxes'] or page['boxes']) if category == 'vi' else page['boxes']
+                    boxes = [{"transcription":b["transcription"], "points":b["points"]} for b in ordered_boxes(geometry, category, page['reading_direction']) if b['transcription'].strip()]
                     labels.append(name + "\t" + json.dumps(boxes, ensure_ascii=False))
                     states.append(name + "\t" + str(int(page["status"] == "done")))
                 for filename, lines in (("Label.txt", labels), ("fileState.txt", states)):

@@ -32,6 +32,7 @@ import type {
 } from '../types';
 import ManuscriptViewer from './ManuscriptViewer';
 import BookOCRPanel, { useBookOCR } from './BookOCRPanel';
+import ColabControls from './ColabControls';
 import CharacterBoxEditor, { groupCharacterBoxes } from './CharacterBoxEditor';
 import { removeBoxAndText, replaceBoxText } from './boxText';
 
@@ -122,7 +123,11 @@ export default function BookWorkbench(props: Props) {
   const [sourcesError, setSourcesError] = useState('');
   const [sourcesReload, setSourcesReload] = useState(0);
   const [uploading, setUploading] = useState(false);
-  const [layout, setLayout] = useState<BookLayout>({ source_regions: [], target_regions: [] });
+  const [layout, setLayout] = useState<BookLayout>({
+    source_regions: [],
+    target_regions: [],
+    ink_profile: 'red_qn',
+  });
   const [layoutReady, setLayoutReady] = useState(false);
   const [layoutSaving, setLayoutSaving] = useState(false);
   const [layoutError, setLayoutError] = useState(false);
@@ -544,6 +549,20 @@ export default function BookWorkbench(props: Props) {
                 </>
               )}
             </span>
+            <ColabControls
+              bookId={props.bookId}
+              disabled={
+                props.busy ||
+                !layoutReady ||
+                layoutSaving ||
+                !!layoutError ||
+                acting ||
+                !!(props.job && ['running', 'pausing'].includes(props.job.status))
+              }
+              beforeStart={props.beforeStart}
+              onRefresh={props.onRefresh}
+              onError={props.onError}
+            />
             <BookOCRPanel
               disabled={
                 props.busy || !layoutReady || layoutSaving || layoutError || !unfinishedPages.length
@@ -959,6 +978,23 @@ export default function BookWorkbench(props: Props) {
                         >
                           <option value={1}>Trên xuống dưới · cột phải sang trái</option>
                           <option value={2}>Trái sang phải · dòng trên xuống dưới</option>
+                        </select>
+                      </label>
+                      <label className="workbench-region-language">
+                        Màu mực trong quyển
+                        <select
+                          aria-label="Màu mực trong quyển"
+                          value={layout.ink_profile}
+                          disabled={props.busy || acting || !layoutReady}
+                          onChange={(event) =>
+                            persistLayout({
+                              ...layout,
+                              ink_profile: event.target.value as BookLayout['ink_profile'],
+                            })
+                          }
+                        >
+                          <option value="red_qn">Quốc ngữ đỏ · Hán/Nôm đen hoặc xám</option>
+                          <option value="blue_qn_red_han">Quốc ngữ xanh · Hán/Nôm đỏ</option>
                         </select>
                       </label>
                     </>

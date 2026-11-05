@@ -6,6 +6,7 @@ import pymupdf
 from fastapi.testclient import TestClient
 
 from backend.app import create_app
+from backend import bilingual
 from backend.ocr import KHNConfig, OCRError
 from backend.vietnamese_ocr import create_vietnamese_ocr, parse_tsv, clean_boxes
 from backend.store import Store
@@ -122,7 +123,7 @@ def test_book_template_crops_han_maps_coordinates_and_applies_text_without_boxes
     app,client,book,page,calls=setup(tmp_path,vi)
     layout={'source_regions':[[.5,.5,1,1]],'target_regions':[[0,.25,1,.5]]}
     assert client.put(f"/api/books/{book['id']}/layout",json=layout).status_code==200
-    assert client.get(f"/api/books/{book['id']}/layout").json()==layout
+    assert client.get(f"/api/books/{book['id']}/layout").json()=={**layout,'ink_profile':'red_qn'}
     job=client.post(f"/api/books/{book['id']}/ocr-job",json={'mode':'bilingual','include_unclassified':True}).json()
     app.state.ocr_jobs.futures[job['id']].result(timeout=10)
     finished=client.get(f"/api/books/{book['id']}/ocr-job").json()
@@ -136,6 +137,33 @@ def test_book_template_crops_han_maps_coordinates_and_applies_text_without_boxes
     invalid=client.put(f"/api/books/{book['id']}/layout",json={'source_regions':[[0,0,1.1,1]]})
     assert invalid.status_code==422
     app.state.ocr_jobs.close()
+
+
+def test_blue_quoc_ngu_ink_profile_is_saved_and_passed_to_ocr(tmp_path):
+    vi=LocalVI()
+    app,client,book,page,calls=setup(tmp_path,vi)
+    layout=client.get(f"/api/books/{book['id']}/layout").json()
+    assert layout['ink_profile']=='red_qn'
+    layout['ink_profile']='blue_qn_red_han'
+    saved=client.put(f"/api/books/{book['id']}/layout",json=layout)
+    assert saved.status_code==200 and saved.json()['ink_profile']=='blue_qn_red_han'
+    page=client.get(f"/api/books/{book['id']}/pages").json()[0]
+    result=client.post(f"/api/pages/{page['id']}/ocr",json={'version':page['version'],'mode':'bilingual'}).json()
+    assert result['settings']['ink_profile']=='blue_qn_red_han'
+    assert vi.calls==1
+    invalid=client.put(f"/api/books/{book['id']}/layout",json={**layout,'ink_profile':'green_qn'})
+    assert invalid.status_code==422
+    app.state.ocr_jobs.close()
+
+
+def test_default_ink_profile_keeps_legacy_ocr_checkpoints_compatible():
+    legacy={'mode':'bilingual','source_regions':[],'target_regions':[]}
+    current={**legacy,'ink_profile':'red_qn'}
+    selected={**legacy,'ink_profile':'blue_qn_red_han'}
+    assert bilingual.signature(legacy,'han')==bilingual.signature(current,'han')
+    assert bilingual.signature(legacy,'vi')==bilingual.signature(current,'vi')
+    assert bilingual.signature(legacy,'han')!=bilingual.signature(selected,'han')
+    assert bilingual.signature(legacy,'vi')!=bilingual.signature(selected,'vi')
 
 
 def test_old_han_only_result_does_not_skip_needed_vietnamese_in_new_job(tmp_path):

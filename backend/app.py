@@ -139,6 +139,7 @@ class LayoutInput(BaseModel):
     source_regions: list[tuple[float,float,float,float]] = Field(default_factory=list,max_length=100)
     target_regions: list[tuple[float,float,float,float]] = Field(default_factory=list,max_length=100)
     reading_direction: Literal[1,2] | None = None
+    ink_profile: Literal['red_qn','blue_qn_red_han'] = 'red_qn'
 
     @field_validator('source_regions','target_regions')
     @classmethod
@@ -203,6 +204,7 @@ class AlignmentsInput(BaseModel):
 
 def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None, ocr_transport=None, vi_provider=None):
     root = (root or Path(os.environ.get('CORPUS_ROOT', Path(__file__).resolve().parents[1]))).resolve()
+    code_root = Path(__file__).resolve().parents[1]
     store = Store(root)
     @asynccontextmanager
     async def lifespan(app):
@@ -411,13 +413,16 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             previous=store.book_layout(book_id)
             if 'reading_direction' not in profile and 'reading_direction' in previous:
                 profile['reading_direction']=previous['reading_direction']
+            if 'ink_profile' not in data.model_fields_set:
+                profile['ink_profile']=previous.get('ink_profile','red_qn')
             with store.db() as db:
                 db.execute('INSERT INTO book_layouts VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET profile=excluded.profile',
                            (book_id,json.dumps(profile)))
                 changed=[key for key in ('source_regions','target_regions') if json.dumps(previous[key])!=json.dumps(profile[key])]
                 direction_changed=profile.get('reading_direction',2)!=previous.get('reading_direction',2)
-                if changed or direction_changed:
-                    inherited='1=1' if direction_changed else ' OR '.join(key+' IS NULL' for key in changed)
+                ink_changed=profile['ink_profile']!=previous.get('ink_profile','red_qn')
+                if changed or direction_changed or ink_changed:
+                    inherited='1=1' if direction_changed or ink_changed else ' OR '.join(key+' IS NULL' for key in changed)
                     db.execute("UPDATE pages SET status='pending',version=version+1 WHERE book_id=? AND ocr_skip=0 AND category!='blank' AND ("+inherited+')',(book_id,))
             store.sync_labels(book_id)
         return profile
@@ -629,6 +634,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         status=vietnamese.status()
         settings['vi_engine']=status.get('cache_key',status['engine'])
         layout=store.book_layout(book_id)
+        settings['ink_profile']=layout.get('ink_profile','red_qn')
         if 'reading_direction' not in data.model_fields_set and layout.get('reading_direction'):
             settings['reading_direction']=layout['reading_direction']
             if 'ocr_id' not in data.model_fields_set:
@@ -745,6 +751,51 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     jobs = OCRJobs(store, recognize_for_job,
                    lambda page,settings:bilingual.needs_ocr(page,page_settings(page,settings),recover_ocr(page['id'])))
     app.state.ocr_jobs = jobs
+
+    @app.get('/api/colab/source')
+    def colab_source():
+        from fastapi.responses import Response
+        names = ('__init__.py', 'colab_worker.py', 'colab_exchange.py', 'bilingual.py',
+                 'vietocr.py', 'ink_colors.py', 'vietnamese_ocr.py', 'ocr.py', 'dictionary.py',
+                 'han_layout.py', 'setup_vietocr.py')
+        content = io.BytesIO()
+        with zipfile.ZipFile(content, 'w', zipfile.ZIP_DEFLATED) as archive:
+            for name in names:
+                archive.write(code_root / 'backend' / name, 'backend/' + name)
+            archive.write(code_root / 'notebooks/requirements-colab.txt', 'notebooks/requirements-colab.txt')
+        return Response(content.getvalue(), media_type='application/zip',
+                        headers={'Content-Disposition': 'attachment; filename="vietocr-colab-source.zip"'})
+
+    @app.get('/api/colab/notebook')
+    def colab_notebook():
+        return FileResponse(code_root / 'notebooks/VietOCR_Workspace_Colab.ipynb',
+                            filename='VietOCR_Workspace_Colab.ipynb')
+
+    @app.get('/api/books/{book_id}/colab-bundle')
+    def colab_bundle(book_id: str):
+        from .colab_exchange import export_bundle
+        from fastapi.responses import Response
+        require_book(book_id)
+        settings = effective_settings(book_id, OCRInput(version=0, mode='vi'))
+        try:
+            content = export_bundle(store, book_id, lambda p: rendered_image(p, high_resolution=True),
+                                    lambda p: page_settings(p, settings))
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from None
+        return Response(content, media_type='application/zip',
+                        headers={'Content-Disposition': 'attachment; filename="vietocr-colab-input.zip"'})
+
+    @app.post('/api/books/{book_id}/colab-results')
+    def colab_results(book_id: str, file: UploadFile):
+        from .colab_exchange import import_bundle
+        require_book(book_id)
+        content = file.file.read(MAX_UPLOAD + 1)
+        if len(content) > MAX_UPLOAD:
+            raise HTTPException(413, 'Gói kết quả quá lớn.')
+        try:
+            return import_bundle(store, book_id, content)
+        except (ValueError, KeyError, TypeError, zipfile.BadZipFile) as exc:
+            raise HTTPException(422, str(exc)) from None
 
     @app.get('/api/books/{book_id}/ocr-job')
     def latest_book_job(book_id: str):

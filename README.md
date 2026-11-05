@@ -113,7 +113,9 @@ Nguồn: [Unihan 17.0.0](https://www.unicode.org/Public/17.0.0/ucd/Unihan.zip), 
 
 ### OCR Quốc ngữ trên cùng trang
 
-Mặc định giao diện chọn **Nôm + Quốc ngữ**. Không cần vẽ box: Nôm qua Kim Hán Nôm, Quốc ngữ qua **VietOCR `vgg_transformer` tinh chỉnh chữ viết tay tiếng Việt**, chạy ONNX Runtime trên CPU tại máy. Bộ tìm dòng dùng màu mực khi phù hợp hoặc ảnh xám và tọa độ Nôm thực để giảm lẫn hai lớp chữ. VietOCR nhận ảnh màu gốc của từng dòng, không chuyển sang ảnh chỉ giữ mực đỏ. Kết quả hai ngôn ngữ được lưu độc lập và hiển thị trên cùng trang.
+Mặc định giao diện chọn **Nôm + Quốc ngữ**. Không cần vẽ box: Nôm qua Kim Hán Nôm, Quốc ngữ qua **VietOCR `vgg_transformer` tinh chỉnh chữ viết tay tiếng Việt**, chạy ONNX Runtime trên CPU tại máy. Bộ tìm dòng dùng màu mực khi phù hợp hoặc ảnh xám và tọa độ Nôm thực để giảm lẫn hai lớp chữ. VietOCR nhận ảnh màu gốc của từng dòng, không chuyển sang ảnh chỉ giữ một màu mực.
+
+Ở bước **Gắn nhãn trang**, chọn **Màu mực trong quyển** phù hợp với cả quyển: mặc định **Quốc ngữ đỏ · Hán/Nôm đen hoặc xám**, hoặc **Quốc ngữ xanh · Hán/Nôm đỏ**. Lựa chọn này điều khiển cách tách vùng trước khi nhận dạng. Nếu màu thay đổi giữa các trang, profile theo quyển không đủ; cần kiểm tra box và chỉnh vùng OCR thủ công. Đổi profile chỉ lưu cấu hình và đánh dấu lại trang; không tự chạy OCR.
 
 Đã cài sẵn trên máy hiện tại. Khi cài máy mới, cài các thư viện trong `backend/requirements.txt` rồi tải mô hình:
 
@@ -214,7 +216,7 @@ Bấm **OCR toàn sách** để chạy các trang còn cần xử lý, theo các
 
 ### Gán nhãn và xác nhận
 
-Di chuột hoặc chuyển focus tới dòng/ký tự ở cột phải để ảnh cuộn tới và tô sáng box OCR tương ứng. Với trang Nôm mực đen xen Quốc ngữ mực đỏ, ứng dụng tách nét mực và khoảng trống thực để lấy box ký tự, ghép các hàng sát nhau trước khi nhận dạng rồi ánh xạ về tọa độ ảnh gốc. Chỉ gán chữ khi số chữ OCR khớp số vùng ký tự; chỗ chưa ghép được hiện `□` và phải sửa trước khi hoàn thành. Không chia đều box dòng để giả lập tọa độ chữ. Nếu bố cục chưa tách được, giữ box dòng thực do engine trả về. Bấm nút tra cạnh ô chữ Nôm để tra từ điển và thay dị thể.
+Di chuột hoặc chuyển focus tới dòng/ký tự ở cột phải để ảnh cuộn tới và tô sáng box OCR tương ứng. Bộ tách vùng dùng profile mực đã chọn ở bước **Gắn nhãn trang**. Với trang Nôm mực đen xen Quốc ngữ mực đỏ, hoặc Nôm đỏ xen Quốc ngữ xanh, ứng dụng tách nét mực và khoảng trống thực để lấy box ký tự, ghép các hàng sát nhau trước khi nhận dạng rồi ánh xạ về tọa độ ảnh gốc. Chỉ gán chữ khi số chữ OCR khớp số vùng ký tự; chỗ chưa ghép được hiện `□` và phải sửa trước khi hoàn thành. Không chia đều box dòng để giả lập tọa độ chữ. Nếu bố cục chưa tách được, giữ box dòng thực do engine trả về. Bấm nút tra cạnh ô chữ Nôm để tra từ điển và thay dị thể.
 
 Ảnh scan dùng cho OCR được dựng lại từ PDF ở độ phân giải cao hơn ảnh thu nhỏ; tọa độ được đổi về cùng hệ với ảnh hiển thị. Chiều đọc độc lập với loại mô hình Kim Hán Nôm: loại thông thường dùng `ocr_id=1`, không dùng `ocr_id=4` (y học) để chọn chiều ngang. Bản nâng cấp vô hiệu checkpoint OCR tự động của pipeline cũ khi tiếp tục; trang đã xác nhận và trường đã sửa tay vẫn được giữ.
 

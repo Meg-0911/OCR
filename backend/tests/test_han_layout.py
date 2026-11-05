@@ -31,6 +31,21 @@ def test_ink_coordinates_exclude_interlinear_red_text_and_preserve_reading_order
     assert vertical[0]['bounds'][0]>vertical[-1]['bounds'][0]
 
 
+def test_blue_quoc_ngu_profile_keeps_red_han_ink():
+    picture=Image.new('RGB',(600,400),'white')
+    draw=ImageDraw.Draw(picture)
+    for top in (50,220):
+        for left in (60,180,300,420):
+            draw.rectangle((left,top,left+35,top+45),fill=(180,40,60))
+            draw.rectangle((left,top+65,left+45,top+80),fill=(35,75,170))
+    prepared,mask,colored=prepare_han_image(picture,'blue_qn_red_han')
+    assert colored
+    glyphs=character_regions(mask,2)
+    assert len(glyphs)==8
+    assert mask[48:98,58:98].sum()>0 and mask[113:135,58:108].sum()==0
+    assert tuple(np.asarray(prepared)[120,70])==(255,255,255)
+
+
 def test_mapping_never_shifts_characters_when_recognizer_drops_a_glyph():
     picture,mask,_=prepare_han_image(mixed_page())
     glyphs=character_regions(mask,2)
