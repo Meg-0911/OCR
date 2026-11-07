@@ -9,7 +9,6 @@ from uuid import uuid4
 from dotenv import dotenv_values
 from PIL import Image, ImageDraw
 
-from .dictionary import is_han
 from .ocr import OCRError
 from .setup_vietocr import FILES, REVISION
 from .vietnamese_ocr import VietnameseOCR, clean_boxes, image_regions
@@ -19,10 +18,14 @@ CACHE_KEY = f'vietocr:{REVISION}:rgb-layout-1'
 
 
 def line_regions(image, han_boxes=None):
-    """Locate horizontal lines; colored ink helps separate QN from black Hán/Nôm."""
+    """Locate Quốc ngữ lines after excluding the Nôm geometry, regardless of ink colour."""
     import numpy as np
 
-    pixels = np.asarray(image.convert('RGB'), dtype=np.int16)
+    prepared = image.convert('RGB').copy()
+    painter = ImageDraw.Draw(prepared)
+    for box in han_boxes or []:
+        painter.polygon([tuple(point) for point in box['points']], fill='white')
+    pixels = np.asarray(prepared, dtype=np.int16)
     r, g, b = pixels[:, :, 0], pixels[:, :, 1], pixels[:, :, 2]
     red = (r - g > 22) & (r - b > 3) & (g < 205) & (r < 235) & ((b - g > -5) | (r - g > 55))
     # Use color only to locate rows. The recognizer always receives the original RGB pixels.
@@ -30,11 +33,6 @@ def line_regions(image, han_boxes=None):
     if colored:
         mask = red
     else:
-        prepared = image.copy()
-        painter = ImageDraw.Draw(prepared)
-        for box in han_boxes or []:
-            if any(is_han(char) for char in box['transcription']):
-                painter.polygon([tuple(point) for point in box['points']], fill='white')
         gray = np.asarray(prepared.convert('L'))
         threshold = min(180, max(65, float(np.percentile(gray, 10)) - 25))
         mask = gray < threshold
@@ -57,8 +55,11 @@ def line_regions(image, han_boxes=None):
         # A very tall block has not been separated into lines; never feed it as one line.
         if bottom - top > max(80, image.height * .14):
             continue
-        rectangles.append((max(0, int(xs.min()) - padding), max(0, top - padding),
-                           min(image.width, int(xs.max()) + padding + 1), min(image.height, bottom + padding)))
+        left=max(0,int(xs.min())-padding)
+        right=min(image.width,int(xs.max())+padding+1)
+        if left<image.width*.02 and right>image.width*.98 and (top<image.height*.04 or bottom>image.height*.96):
+            continue
+        rectangles.append((left, max(0, top - padding), right, min(image.height, bottom + padding)))
     return rectangles, colored
 
 

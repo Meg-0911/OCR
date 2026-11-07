@@ -787,7 +787,7 @@ export default function App() {
     const sourcePages = pages.filter(
       (item) =>
         !item.ocr_skip &&
-        ['ch', 'both'].includes(item.category) &&
+        !['blank', 'misc'].includes(item.category) &&
         item.ocr_languages.includes('han'),
     );
     if (!sourcePages.length) {
@@ -883,7 +883,7 @@ export default function App() {
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${activeBook.name}${format === 'labels' ? '_labels.zip' : '.' + format}`;
+      link.download = `${activeBook.name}${format === 'labels' ? '_' + format + '.zip' : '.' + format}`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1496,7 +1496,7 @@ export default function App() {
                         format: 'xlsx',
                         title: 'Bảng tính Excel',
                         description:
-                          'Giữ nguyên Unicode. Các cặp chưa được kiểm chứng ngữ nghĩa được tô đỏ để tiếp tục kiểm tra.',
+                          'Giữ nguyên Unicode và bốn cột căn chỉnh để kiểm tra trong Excel.',
                         label: '.XLSX',
                         icon: FileCheck2,
                       },
@@ -1504,7 +1504,7 @@ export default function App() {
                         format: 'labels',
                         title: 'Nhãn PPOCRLabel',
                         description:
-                          'Label.txt và fileState.txt theo từng nhóm. Gói nhãn này không bao gồm ảnh gốc.',
+                          'Label.txt, fileState.txt và ảnh JPEG tương ứng trong từng thư mục.',
                         label: '.ZIP',
                         icon: Boxes,
                       },
@@ -1736,7 +1736,6 @@ export default function App() {
                     </div>
                   </div>
                 ))}
-                <div className="guide-callout">Mục tiêu ≥95% độ tương đồng dữ liệu.</div>
               </div>
             ) : (
               <div className="settings-content">

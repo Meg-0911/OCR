@@ -1,10 +1,10 @@
-"""Image-derived character coordinates for mixed ink Nôm / Quốc ngữ scans."""
+"""Ink-derived regions used to map OCR text back to Nôm columns/rows."""
 import io
 from uuid import uuid4
 
 from PIL import Image, ImageFilter
 
-PIPELINE_VERSION = 'nom-ink-characters-v2'
+PIPELINE_VERSION = 'nom-glyph-ink-v4'
 
 
 def prepare_han_image(image):
@@ -12,17 +12,33 @@ def prepare_han_image(image):
     picture = image.convert('RGB')
     rgb = np.asarray(picture).astype(np.int16)
     gray = np.asarray(picture.convert('L')).astype(np.int16)
-    red = (rgb[:, :, 0] - rgb[:, :, 1] > 28) & (rgb[:, :, 0] - rgb[:, :, 2] > 10) & (rgb[:, :, 1] < 190)
-    colored = int(red.sum()) > max(100, picture.width * picture.height * .0003)
     background = np.asarray(picture.convert('L').filter(ImageFilter.GaussianBlur(max(5, picture.height * .0075)))).astype(np.int16)
-    neutral = (rgb[:, :, 0] - rgb[:, :, 1] < 18) & (rgb[:, :, 0] - rgb[:, :, 2] < 28)
-    mask = (gray < 170) & (background - gray > 25)
-    if colored:
-        mask &= neutral
+    ink = (gray < 170) & (background - gray > 25)
+    neutral = (abs(rgb[:, :, 0] - rgb[:, :, 1]) < 18) & (abs(rgb[:, :, 0] - rgb[:, :, 2]) < 28)
+    red = (rgb[:, :, 0] - rgb[:, :, 1] > 28) & (rgb[:, :, 0] - rgb[:, :, 2] > 10) & (rgb[:, :, 1] < 190)
+    blue = (rgb[:, :, 2] - rgb[:, :, 0] > 20) & (rgb[:, :, 2] - rgb[:, :, 1] > 8) & (rgb[:, :, 0] < 190)
+    masks = [ink & channel for channel in (neutral, red, blue)]
     # Scan edges are not glyphs. This margin is below 1% of the image.
     margin = max(1, round(min(picture.size) * .008))
-    mask[:margin] = False; mask[-margin:] = False
-    mask[:, :margin] = False; mask[:, -margin:] = False
+    for mask in masks:
+        mask[:margin] = False; mask[-margin:] = False
+        mask[:, :margin] = False; mask[:, -margin:] = False
+    candidates = []
+    for mask in masks:
+        glyphs = character_regions(mask, 2)
+        if len(glyphs) < 4:
+            continue
+        ratios = []
+        for glyph in glyphs:
+            x1, y1, x2, y2 = glyph['bounds']
+            ratios.append(min(x2-x1, y2-y1) / max(x2-x1, y2-y1))
+        candidates.append((float(np.median(ratios)), len(glyphs), mask))
+    # The colour of Nôm ink varies by book. Square glyphs distinguish it from
+    # the elongated Latin text in the other layer on these scanned editions.
+    candidates.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    selected = candidates[0] if candidates and candidates[0][0] >= .78 else None
+    colored = selected is not None and sum(int(m.sum()) > max(100, picture.width*picture.height*.0003) for m in masks) > 1
+    mask = selected[2] if selected else ink
     if colored:
         pixels = np.full(rgb.shape, 255, dtype=np.uint8)
         pixels[mask] = rgb[mask].astype(np.uint8)
@@ -90,8 +106,8 @@ def pack_lines(picture, glyphs):
     return atlas, placements
 
 
-def map_characters(result, glyphs):
-    """Attach text only when an OCR region contains the same number of glyphs."""
+def map_characters(result, glyphs, direction=2):
+    """Keep a box for every glyph so recognition errors stay easy to locate."""
     mapped = {}
     for box in result['boxes']:
         xs = [p[0] for p in box['points']]; ys = [p[1] for p in box['points']]
@@ -106,15 +122,25 @@ def map_characters(result, glyphs):
             continue
         for index, char in zip(candidates, text):
             mapped.setdefault(index, char)
-    boxes, lines = [], {}
+    lines = {}
+    boxes = []
     for index, glyph in enumerate(glyphs):
-        left, top, right, bottom = glyph['bounds']
         char = mapped.get(index, '□')
-        boxes.append({'id': 'han-' + uuid4().hex, 'transcription': char, 'points': [[left, top], [right, top], [right, bottom], [left, bottom]]})
         lines.setdefault(glyph['line'], []).append(char)
+        boxes.append(_segment_box([(glyph['bounds'], char)]))
     unknown = len(glyphs) - len(mapped)
     warnings = ([f'{unknown} ký tự chưa ghép được với OCR; ô □ cần Gán nhãn.'] if unknown else [])
     return {'boxes': boxes, 'text_lines': [''.join(line) for line in lines.values()], 'warnings': warnings}
+
+
+def _segment_box(run):
+    left = min(item[0][0] for item in run)
+    top = min(item[0][1] for item in run)
+    right = max(item[0][2] for item in run)
+    bottom = max(item[0][3] for item in run)
+    return {'id': 'han-' + uuid4().hex,
+            'transcription': ''.join(item[1] for item in run),
+            'points': [[left, top], [right, top], [right, bottom], [left, bottom]]}
 
 
 def jpeg_bytes(image):

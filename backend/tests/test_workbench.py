@@ -128,6 +128,23 @@ def test_pdf_import_render_classification_and_bilingual_copy(workspace):
     assert len(list((root/'backend/data/raw_data').glob('*.pdf')))==1
 
 
+def test_bulk_plan_keeps_ocr_languages_in_sync_with_page_tag(workspace):
+    client,store,_=workspace
+    book,pages=upload_book(client,'Tags.pdf')
+    result=client.put(f"/api/books/{book['id']}/plan",json={'pages':[
+        {'page_id':pages[0]['id'],'category':'ch'},
+        {'page_id':pages[1]['id'],'category':'vi'},
+    ]})
+    assert result.status_code==200,result.text
+    assert [page['ocr_languages'] for page in result.json()]==[['han'],['vi']]
+    with store.db() as db:
+        db.execute("UPDATE pages SET ocr_languages='[\"han\", \"vi\"]' WHERE id=?",(pages[1]['id'],))
+    assert store.page(pages[1]['id'])['ocr_languages']==['vi']
+    assert client.put(f"/api/books/{book['id']}/plan",json={'pages':[
+        {'page_id':pages[0]['id'],'category':'both'},
+    ]}).json()[0]['ocr_languages']==['han','vi']
+
+
 def test_bad_pdf_and_path_traversal_are_rejected(workspace):
     client,_,root = workspace
     assert client.post('/api/books/upload',files={'file':('broken.pdf',b'not a pdf','application/pdf')}).status_code == 400
@@ -152,7 +169,7 @@ def test_sources_are_local_and_import_keeps_name(workspace):
     assert client.post('/api/books/import',json={'filename':sources[0]['name']}).status_code==409
 
 
-def test_csv_and_xlsx_exact_schema_unicode_and_unverified_color(annotated):
+def test_csv_and_xlsx_exact_schema_and_unicode(annotated):
     client,_,_,book,_ = annotated
     rows = [{'id':'1', 'sentence_id':f"{book['name']}.001.1", 'source':'漢字𠊛', 'target':'=1+1', 'reviewed':True}]
     assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':rows}).status_code==200
@@ -166,8 +183,35 @@ def test_csv_and_xlsx_exact_schema_unicode_and_unverified_color(annotated):
     assert [c.value for c in sheet[1]]==EXPORT_COLUMNS
     assert sheet['C2'].value=='漢字𠊛'
     assert sheet['D2'].data_type=='s'
-    assert sheet['C2'].font.color.rgb=='00C43838'
-    assert sheet['D2'].font.color.rgb=='00C43838'
+    assert sheet['C2'].font.color.type=='theme'
+    assert sheet['D2'].font.color.type=='theme'
+
+
+def test_incomplete_split_pair_cannot_be_exported(annotated):
+    client,_,_,book,_=annotated
+    rows=[{'id':'split','sentence_id':f"{book['name']}.001.1",'source':'天地','target':'','reviewed':False}]
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':rows}).status_code==200
+    assert client.get(f"/api/books/{book['id']}/export?format=csv").status_code==400
+    assert client.get(f"/api/books/{book['id']}/export?format=xlsx").status_code==400
+
+
+def test_correcting_placeholder_updates_saved_pairs_after_split_and_merge(workspace):
+    client,_,_=workspace
+    book,pages=upload_book(client,'Corrections.pdf')
+    page=client.patch(f"/api/pages/{pages[0]['id']}",json={'category':'ch','source_text':'□天□'}).json()
+    rows=[
+        {'id':'one','sentence_id':'Corrections.001.1','source':'□天','target':'A','reviewed':True},
+        {'id':'two','sentence_id':'Corrections.001.2','source':'□','target':'B','reviewed':True},
+    ]
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':rows}).status_code==200
+    page=client.patch(f"/api/pages/{page['id']}",json={'source_text':'地天□'}).json()
+    saved=client.get(f"/api/books/{book['id']}/alignments").json()
+    assert [row['source'] for row in saved]==['地天','□']
+    assert [row['reviewed'] for row in saved]==[False,True]
+    merged=[{**saved[0],'source':'地天□','target':'AB'}]
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':merged}).status_code==200
+    client.patch(f"/api/pages/{page['id']}",json={'source_text':'地天玄'})
+    assert [row['source'] for row in client.get(f"/api/books/{book['id']}/alignments").json()]==['地天玄']
 
 
 def test_label_archive_and_alignment_validation(annotated):
@@ -176,13 +220,58 @@ def test_label_archive_and_alignment_validation(annotated):
     with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
         assert f"{book['name']}/ref/Label.txt" in archive.namelist()
         assert f"{book['name']}/ch/fileState.txt" in archive.namelist()
-        assert all(not name.endswith('.jpg') for name in archive.namelist())
+        assert f"{book['name']}/ch/{book['name']}.001.jpg" in archive.namelist()
     rows=[{'id':'1', 'sentence_id':f"{book['name']}.001.1", 'source':'字', 'target':'Chữ', 'reviewed':False}]
     assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[rows[0],rows[0]]}).status_code==422
     rows[0]['sentence_id']=f"{book['name']}.999.1"
     assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':rows}).status_code==422
     book,_=upload_book(client)
     assert client.get(f"/api/books/{book['id']}/export?format=csv").status_code==400
+
+
+def test_bilingual_labels_contain_real_images_and_only_their_language(workspace):
+    client,_,_=workspace
+    book,pages=upload_book(client,'Mixed Book.pdf')
+    han={'id':'han','transcription':'天地','points':[[10,10],[30,10],[30,40],[10,40]]}
+    vi={'id':'vi','transcription':'Thiên địa','points':[[40,10],[100,10],[100,40],[40,40]]}
+    response=client.put(f"/api/pages/{pages[0]['id']}",json={
+        'version':pages[0]['version'],'category':'both','boxes':[han],'vi_boxes':[vi],
+        'source_text':'天地','target_text':'Thiên địa','done':True})
+    assert response.status_code==200,response.text
+    response=client.put(f"/api/pages/{pages[1]['id']}",json={
+        'version':pages[1]['version'],'category':'blank','boxes':[],'done':True})
+    assert response.status_code==200,response.text
+    row={'id':'one','sentence_id':'Mixed Book.001.1','source':'天地','target':'Thiên địa','reviewed':True}
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[row]}).status_code==200
+    response=client.get(f"/api/books/{book['id']}/export?format=labels")
+    assert response.status_code==200,response.text
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        names=set(archive.namelist())
+        for category in ('ch','vi'):
+            image=f'Mixed Book/{category}/Mixed Book.001.jpg'
+            assert image in names and archive.read(image).startswith(b'\xff\xd8')
+        assert 'Mixed Book/blank/Mixed Book.002.jpg' in names
+        han_labels=archive.read('Mixed Book/ch/Label.txt').decode('utf-8')
+        vi_labels=archive.read('Mixed Book/vi/Label.txt').decode('utf-8')
+        assert '天地' in han_labels and 'Thiên địa' not in han_labels
+        assert 'Thiên địa' in vi_labels and '天地' not in vi_labels
+
+
+def test_translated_intro_is_in_special_and_both_language_folders(workspace):
+    client,_,_=workspace
+    book,pages=upload_book(client,'Intro Book.pdf')
+    han={'id':'han','transcription':'序','points':[[10,10],[30,10],[30,40],[10,40]]}
+    vi={'id':'vi','transcription':'Lời tựa','points':[[40,10],[100,10],[100,40],[40,40]]}
+    response=client.put(f"/api/pages/{pages[0]['id']}",json={
+        'version':pages[0]['version'],'category':'intro','boxes':[han],'vi_boxes':[vi],
+        'source_text':'序','target_text':'Lời tựa','done':True})
+    assert response.status_code==200,response.text
+    row={'id':'intro','sentence_id':'Intro Book.001.1','source':'序','target':'Lời tựa','reviewed':True}
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[row]}).status_code==200
+    with zipfile.ZipFile(io.BytesIO(client.get(f"/api/books/{book['id']}/export?format=labels").content)) as archive:
+        for category in ('intro','ch','vi'):
+            assert f'Intro Book/{category}/Intro Book.001.jpg' in archive.namelist()
+        assert 'Lời tựa' not in archive.read('Intro Book/ch/Label.txt').decode('utf-8')
 
 
 def test_unknown_resources_are_404(workspace):

@@ -16,16 +16,33 @@ export function groupCharacterBoxes(boxes: Box[], direction: 1 | 2) {
 
 export function replaceBoxText(boxes: Box[], text: string, id: string, value: string, direction: 1 | 2, han: boolean) {
   const next = boxes.map(box => box.id === id ? { ...box, transcription: value } : box);
-  if (han && boxes.length && boxes.every(box => Array.from(box.transcription).length <= 1))
+  const lines = groupCharacterBoxes(boxes, direction);
+  const currentFromBoxes = lines.map(row => row.map(box => box.transcription).join('')).join('');
+  if (han && text.replace(/\s/g, '') === currentFromBoxes.replace(/\s/g, ''))
     return { boxes: next, text: groupCharacterBoxes(next, direction).map(row => row.map(box => box.transcription).join('')).join('\n') };
   let cursor = 0;
   for (const box of boxes) {
     const start = box.transcription ? text.indexOf(box.transcription, cursor) : -1;
-    if (box.id === id) return {
-      boxes: next,
-      text: start >= 0 ? text.slice(0, start) + value + text.slice(start + box.transcription.length)
-        : !box.transcription ? [text, value].filter(Boolean).join('\n') : text,
-    };
+    if (box.id === id) {
+      if (start >= 0)
+        return { boxes: next, text: text.slice(0, start) + value + text.slice(start + box.transcription.length) };
+      // A merge or split can leave the page text with a different box boundary.
+      // Use the selected box's placeholder rank instead of silently keeping □.
+      if (han && text.includes('□') && box.transcription.includes('□')) {
+        const readingOrder = lines.flat();
+        const before = readingOrder.slice(0, readingOrder.findIndex(item => item.id === id));
+        const rank = before.reduce((sum, item) => sum + [...item.transcription].filter(char => char === '□').length, 0);
+        let position = -1;
+        for (let i = 0; i <= rank; i++) position = text.indexOf('□', position + 1);
+        if (position >= 0) {
+          const unknowns = [...box.transcription].filter(char => char === '□').length;
+          let end = position + 1;
+          while (end < text.length && text[end] === '□' && end - position < unknowns) end++;
+          return { boxes: next, text: text.slice(0, position) + value + text.slice(end) };
+        }
+      }
+      return { boxes: next, text: !box.transcription ? [text, value].filter(Boolean).join('\n') : text };
+    }
     if (start >= 0) cursor = start + box.transcription.length;
   }
   return { boxes: next, text };

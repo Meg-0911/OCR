@@ -15,7 +15,6 @@ from dotenv import dotenv_values
 from PIL import Image, ImageDraw
 
 from .ocr import OCRError
-from .dictionary import is_han
 
 
 def image_regions(image, regions):
@@ -95,8 +94,6 @@ class VietnameseOCR:
         prepared=original.copy()
         painter=ImageDraw.Draw(prepared)
         for box in han_boxes or []:
-            if not any(is_han(char) for char in box['transcription']):
-                continue
             points=box['points']
             painter.rectangle((min(p[0] for p in points),min(p[1] for p in points),max(p[0] for p in points),max(p[1] for p in points)),fill='white')
         boxes=[]

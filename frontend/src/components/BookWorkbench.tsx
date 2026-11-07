@@ -206,6 +206,12 @@ export default function BookWorkbench(props: Props) {
     setEditingPageCrop(!!page && (page.source_regions != null || page.target_regions != null));
   }, [page?.id]);
   useEffect(() => {
+    if (!page) return;
+    const languages = page.category === 'ch' ? ['han'] : page.category === 'vi' ? ['vi']
+      : page.category === 'blank' || page.category === 'misc' ? [] : page.ocr_languages;
+    if (!languages.includes(language) && languages.length) setLanguage(languages[0] as 'han' | 'vi');
+  }, [page?.id, page?.category, page?.ocr_languages.join(','), language]);
+  useEffect(() => {
     setSelected(null);
   }, [language]);
   useEffect(() => {
@@ -625,7 +631,7 @@ export default function BookWorkbench(props: Props) {
                   aria-label={
                     step === 2
                       ? 'Ảnh trang sách và vùng đọc'
-                      : 'Ảnh trang sách và bounding box ký tự OCR'
+                      : 'Ảnh trang sách và bounding box OCR'
                   }
                   onPointerDownCapture={(event) => {
                     if ((event.target as Element).closest('.manuscript-stage')) {
@@ -828,20 +834,20 @@ export default function BookWorkbench(props: Props) {
                       role="tablist"
                       aria-label="Văn bản đối chiếu"
                     >
-                      <button
+                      {(page.category === 'ch' || (page.category !== 'vi' && page.category !== 'blank' && page.category !== 'misc' && page.ocr_languages.includes('han'))) && <button
                         role="tab"
                         aria-selected={language === 'han'}
                         onClick={() => selectLanguage('han')}
                       >
                         Hán Nôm
-                      </button>
-                      <button
+                      </button>}
+                      {(page.category === 'vi' || (page.category !== 'ch' && page.category !== 'blank' && page.category !== 'misc' && page.ocr_languages.includes('vi'))) && <button
                         role="tab"
                         aria-selected={language === 'vi'}
                         onClick={() => selectLanguage('vi')}
                       >
                         Quốc ngữ
-                      </button>
+                      </button>}
                     </div>
                   )}
                   {step === 2 && (

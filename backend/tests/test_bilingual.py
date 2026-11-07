@@ -70,22 +70,23 @@ def test_unmapped_character_must_be_corrected_before_completion(tmp_path):
     box={'id':'unknown','transcription':'□','points':[[10,10],[30,10],[30,40],[10,40]]}
     payload={'version':0,'category':'both','source_text':'□','boxes':[box],'done':True}
     assert client.put(url,json=payload).status_code==422
-    payload.update(source_text='𠊛',boxes=[dict(box,transcription='𠊛')])
+    payload.update(category='ch',source_text='𠊛',boxes=[dict(box,transcription='𠊛')])
     assert client.put(url,json=payload).json()['status']=='done'
     app.state.ocr_jobs.close()
 
 
-def test_text_only_bilingual_page_can_be_saved_completed_and_restored(tmp_path):
+def test_text_only_page_remains_pending_until_real_box_is_added(tmp_path):
     app,client,book,page,_=setup(tmp_path)
     url=f"/api/pages/{page['id']}"
-    result=client.put(url,json={'version':0,'category':'ch','done':True,'source_text':'天地','target_text':'Thiên địa'}).json()
-    assert result['status']=='done' and result['boxes']==[] and result['vi_boxes']==[]
+    assert client.put(url,json={'version':0,'category':'ch','done':True,'source_text':'天地','target_text':'Thiên địa'}).status_code==422
+    box={'id':'source','transcription':'天地','points':[[10,10],[30,10],[30,40],[10,40]]}
+    result=client.put(url,json={'version':0,'category':'ch','done':True,'source_text':'天地','target_text':'Thiên địa','boxes':[box]}).json()
+    assert result['status']=='done' and result['boxes']==[box] and result['vi_boxes']==[]
     assert result['source_text']=='天地' and result['target_text']=='Thiên địa'
     with zipfile.ZipFile(io.BytesIO(client.get(f"/api/books/{book['id']}/export?format=labels").content)) as archive:
-        exported=json.loads(archive.read(f"{book['name']}/page_texts.json"))
-        assert exported[0]['source_text']=='天地' and exported[0]['target_text']=='Thiên địa'
+        assert f"{book['name']}/ch/{book['name']}.001.jpg" in archive.namelist()
     # Older clients omitting the new text fields never erase saved text.
-    result=client.put(url,json={'version':result['version'],'category':'ch','boxes':[]}).json()
+    result=client.put(url,json={'version':result['version'],'category':'ch','boxes':[box]}).json()
     assert result['source_text']=='天地' and result['target_text']=='Thiên địa'
     app.state.ocr_jobs.close()
     with TestClient(create_app(tmp_path,ocr_config=KHNConfig())) as restarted:
@@ -185,13 +186,13 @@ def test_empty_vi_result_is_not_marked_complete_and_han_checkpoint_survives(tmp_
 
 def test_previously_reviewed_han_only_page_can_add_vi_without_overwriting_edits(tmp_path):
     app,client,book,page,calls=setup(tmp_path)
-    page=client.put(f"/api/pages/{page['id']}",json={'version':0,'category':'ch','source_text':'Nôm đã Gán nhãn','target_text':'','done':True}).json()
+    page=client.put(f"/api/pages/{page['id']}",json={'version':0,'category':'ch','source_text':'Nôm đã Gán nhãn','target_text':'','boxes':[{'id':'source','transcription':'天地','points':[[10,10],[30,10],[30,40],[10,40]]}],'done':True}).json()
     client.patch(f"/api/pages/{page['id']}",json={'category':'both'})
     job=client.post(f"/api/books/{book['id']}/ocr-job",json={'mode':'bilingual'}).json()
     app.state.ocr_jobs.futures[job['id']].result(timeout=10)
     updated=client.get(f"/api/books/{book['id']}/pages").json()[0]
     assert updated['source_text']=='Nôm đã Gán nhãn' and updated['target_text']=='Thiên địa huyền hoàng.'
-    assert updated['status']=='pending' and len(calls)==1 and updated['boxes']
+    assert updated['status']=='pending' and len(calls)==0 and updated['boxes']
     app.state.ocr_jobs.close()
 
 

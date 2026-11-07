@@ -6,6 +6,7 @@ import threading
 import unicodedata
 import csv
 import time
+from difflib import SequenceMatcher
 from datetime import datetime, timezone
 from contextlib import contextmanager
 from pathlib import Path
@@ -32,8 +33,17 @@ def replace_file(temporary,target):
             time.sleep(.02*2**attempt)
 
 
-def ordered_boxes(boxes, category, reading_direction=1):
-    if boxes and category in ('ch','both') and all(len(box['transcription'])<=1 for box in boxes):
+def ordered_boxes(boxes, category, reading_direction=1, image_size=None):
+    # Two-page landscape scans are read left page first, then right page.
+    # A single-page landscape scan with content on one side keeps its order.
+    if image_size and image_size[0] > image_size[1] and boxes:
+        middle=image_size[0]/2
+        left=[]; right=[]
+        for box in boxes:
+            (left if sum(p[0] for p in box['points'])/4 < middle else right).append(box)
+        if left and right:
+            return ordered_boxes(left,category,reading_direction)+ordered_boxes(right,category,reading_direction)
+    if boxes and category in ('ch','both'):
         # Character tops vary within a physical row; sorting by top alone scrambles text.
         axis=0 if reading_direction==1 else 1
         def center(box):
@@ -49,6 +59,66 @@ def ordered_boxes(boxes, category, reading_direction=1):
     if category in ("ch", "both") and reading_direction == 1:
         return sorted(boxes, key=lambda b: (-max(p[0] for p in b["points"]), min(p[1] for p in b["points"])))
     return sorted(boxes, key=lambda b: (min(p[1] for p in b["points"]), min(p[0] for p in b["points"])))
+
+
+def label_groups(page):
+    """An image can belong to both language folders; labels stay language-specific."""
+    category = page['category']
+    if category == 'both':
+        return ('ch', 'vi')
+    if category in ('intro','ref','toc'):
+        languages=page['ocr_languages']
+        return (category,) + (('ch',) if 'han' in languages else ()) + (('vi',) if 'vi' in languages else ())
+    return (category,)
+
+
+def label_boxes(page, category):
+    size=(page['width'],page['height'])
+    if category == 'ch':
+        return nom_export_boxes(page['boxes'],page['reading_direction'],size)
+    if category == 'vi':
+        return ordered_boxes(page['vi_boxes'] or (page['boxes'] if page['category']=='vi' else []), 'vi', 2,size)
+    return ordered_boxes([*page['boxes'], *page['vi_boxes']], category, page['reading_direction'],size)
+
+
+def nom_export_boxes(boxes, direction, image_size=None):
+    """Combine edit-time glyph boxes into physical Nôm columns or rows for PPOCRLabel."""
+    ordered=ordered_boxes(boxes,'ch',direction,image_size)
+    if not ordered:
+        return []
+    axis=0 if direction==1 else 1
+    travel=1 if direction==1 else 0
+    def extent(box, dimension):
+        values=[point[dimension] for point in box['points']]
+        return min(values),max(values)
+    def center(box):
+        lo,hi=extent(box,axis)
+        return (lo+hi)/2
+    def same_line(a,b):
+        a0,a1=extent(a,axis); b0,b1=extent(b,axis)
+        return abs(center(a)-center(b)) < max(a1-a0,b1-b0)*.5
+    def merge(run):
+        x0=min(extent(box,0)[0] for box in run)
+        y0=min(extent(box,1)[0] for box in run)
+        x1=max(extent(box,0)[1] for box in run)
+        y1=max(extent(box,1)[1] for box in run)
+        return {'transcription':''.join(box['transcription'] for box in run),
+                'points':[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]}
+    output=[]; run=[]
+    for box in ordered:
+        if run:
+            previous=run[-1]
+            a0,a1=extent(previous,travel); b0,b1=extent(box,travel)
+            gap=b0-a1
+            span=max(a1-a0,b1-b0)
+            if (len(previous['transcription'])>1 or len(box['transcription'])>1 or
+                    not same_line(run[0],box) or gap>span*.75 or
+                    previous['transcription'][-1:].isspace() or box['transcription'][:1].isspace()):
+                output.append(merge(run)); run=[]
+        run.append(box)
+    if run:
+        output.append(merge(run))
+    return output
 
 
 class Store:
@@ -186,13 +256,13 @@ class Store:
     @staticmethod
     def page_dict(row):
         page = dict(row)
-        page["boxes"] = ordered_boxes(json.loads(page["boxes"]), page['category'], page['reading_direction'])
-        page['vi_boxes']=json.loads(page['vi_boxes'])
+        page["boxes"] = ordered_boxes(json.loads(page["boxes"]), page['category'], page['reading_direction'],(page['width'],page['height']))
+        page['vi_boxes']=ordered_boxes(json.loads(page['vi_boxes']),'vi',2,(page['width'],page['height']))
         page['ocr_skip']=bool(page['ocr_skip'])
         page['edited_fields']=json.loads(page['edited_fields'])
         for key in ('source_regions','target_regions'):
             page[key]=json.loads(page[key]) if page[key] is not None else None
-        page['ocr_languages']=json.loads(page['ocr_languages']) if page['ocr_languages'] is not None else (['han'] if page['category']=='ch' else ['vi'] if page['category']=='vi' else ['han','vi'])
+        page['ocr_languages']=(['han'] if page['category']=='ch' else ['vi'] if page['category']=='vi' else ['han','vi']) if page['category'] in ('ch','vi','both') else (json.loads(page['ocr_languages']) if page['ocr_languages'] is not None else ['han','vi'])
         page["image_url"] = f"/api/pages/{page['id']}/image"
         return page
 
@@ -277,6 +347,51 @@ class Store:
                                (*changes.values(),page['id']))
                 self.sync_labels(page['book_id'])
 
+    def propagate_placeholder_edits(self, book_id, page_number, old_text, new_text):
+        """Keep saved alignment rows in sync when corrected Nôm boxes replace □."""
+        if old_text == new_text or '□' not in old_text:
+            return
+        replacements={}
+        for operation,start,end,new_start,new_end in SequenceMatcher(None,old_text,new_text,autojunk=False).get_opcodes():
+            if operation != 'replace':
+                continue
+            old=old_text[start:end]
+            new=new_text[new_start:new_end]
+            if not old or not all(char=='□' or char.isspace() for char in old) or new.count('□')>=old.count('□'):
+                continue
+            rank=old_text[:start].count('□')
+            replacements[rank]=new.replace('\r','').replace('\n','')
+            for next_rank in range(rank+1,rank+old.count('□')):
+                replacements[next_rank]=''
+        if not replacements:
+            return
+        book=self.book(book_id)
+        prefix=f"{book['name']}.{page_number:03d}."
+        with self.db() as db:
+            saved=db.execute('SELECT rows FROM alignments WHERE book_id=?',(book_id,)).fetchone()
+            if not saved:
+                return
+            rows=json.loads(saved['rows'])
+            indices=[index for index,row in enumerate(rows) if row['sentence_id'].startswith(prefix)]
+            if sum(rows[index]['source'].count('□') for index in indices)!=old_text.count('□'):
+                return
+            rank=0; changed=False
+            for index in indices:
+                row=rows[index]
+                source=[]
+                for char in row['source']:
+                    if char=='□':
+                        source.append(replacements.get(rank,char))
+                        changed |= rank in replacements
+                        rank+=1
+                    else:
+                        source.append(char)
+                if ''.join(source)!=row['source']:
+                    row['source']=''.join(source)
+                    row['reviewed']=False
+            if changed:
+                db.execute('UPDATE alignments SET rows=? WHERE book_id=?',(json.dumps(rows,ensure_ascii=False),book_id))
+
     def sync_results(self,book_id,event=None):
         """Recoverable result snapshots and a small operational audit, separate from OCR history."""
         with self.lock:
@@ -346,10 +461,10 @@ class Store:
                     continue
                 labels, states = [], []
                 for page in pages:
-                    if page["category"] != category:
+                    if category not in label_groups(page):
                         continue
                     name = f"{category}/{book['name']}.{page['number']:03d}.jpg"
-                    boxes = [{"transcription":b["transcription"], "points":b["points"]} for b in ordered_boxes(page["boxes"], category, page['reading_direction']) if b['transcription'].strip()]
+                    boxes = [{"transcription":b["transcription"], "points":b["points"]} for b in label_boxes(page, category) if b['transcription'].strip()]
                     labels.append(name + "\t" + json.dumps(boxes, ensure_ascii=False))
                     states.append(name + "\t" + str(int(page["status"] == "done")))
                 for filename, lines in (("Label.txt", labels), ("fileState.txt", states)):

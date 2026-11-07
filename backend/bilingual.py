@@ -104,7 +104,7 @@ def recognize(page,settings,force,*,cached,image_bytes,han_provider,vi_provider,
                     save(None,responses,result['result_id'])
                     normalized=normalize_result(raw,atlas.width,atlas.height)
                     if packed:
-                        normalized=map_characters(normalized,placements)
+                        normalized=map_characters(normalized,placements,settings['reading_direction'])
                     for box in normalized['boxes']:
                         box['points']=[[a+x,b+y] for a,b in box['points']]
                     boxes.extend(normalized['boxes']); texts.extend(normalized['text_lines']); han_warnings.extend(normalized['warnings'])

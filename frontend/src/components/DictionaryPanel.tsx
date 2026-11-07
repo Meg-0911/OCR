@@ -318,7 +318,7 @@ export default function DictionaryPanel({
       )}
       <p className="dictionary-note">
         {result?.notice ||
-          'Mục từ và dị thể giúp đọc lại từng chữ; không xác nhận độ đúng ngữ nghĩa của câu hoặc điểm chất lượng ≥95%.'}
+          'Mục từ và dị thể giúp đọc lại từng chữ; cần tự kiểm tra nghĩa theo ngữ cảnh.'}
       </p>
     </aside>
   );

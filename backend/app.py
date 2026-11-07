@@ -1,5 +1,4 @@
 import csv
-import io
 import json
 import math
 import os
@@ -23,7 +22,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from pydantic import BaseModel, Field, field_validator
 
-from .store import CATEGORIES, Store, ordered_boxes
+from .store import CATEGORIES, Store, label_groups
 from .ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
 from .sources import source_files
 from .dictionary import Dictionary
@@ -482,13 +481,16 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 raise HTTPException(422,'Còn ký tự □ chưa nhận dạng. Sửa các ô này trước khi hoàn thành trang.')
             if data.done and any(not box.transcription.strip() for box in data.boxes):
                 raise HTTPException(422,'Còn box chưa có chữ. Điền ký tự trước khi hoàn thành trang.')
-            if data.done and not (page['ocr_skip'] if data.ocr_skip is None else data.ocr_skip) and data.category in ('ch','vi','both','intro','ref','toc') and not (source_text.strip() or target_text.strip() or (data.boxes and all(b.transcription.strip() for b in data.boxes))):
-                raise HTTPException(422, 'Trang chưa có văn bản để duyệt. Dùng kết quả OCR hoặc nhập chữ; không bắt buộc vẽ box.')
             if data.done and not page['ocr_skip'] and page['category']!='blank':
                 with store.db() as db:
                     active=db.execute("SELECT 1 FROM ocr_job_pages p JOIN ocr_jobs j ON j.id=p.job_id WHERE p.page_id=? AND p.status IN ('pending','running') AND j.status IN ('running','pausing')",(page_id,)).fetchone()
                 if active:
                     raise HTTPException(409,'Chờ OCR trang này hoàn tất trước khi xác nhận.')
+            if data.done and not (page['ocr_skip'] if data.ocr_skip is None else data.ocr_skip) and data.category not in ('blank','misc'):
+                languages = page['ocr_languages'] if data.category in ('intro','ref','toc') else (['han'] if data.category=='ch' else ['vi'] if data.category=='vi' else ['han','vi'])
+                vi_boxes = data.vi_boxes if data.vi_boxes is not None else page['vi_boxes']
+                if ('han' in languages and not data.boxes) or ('vi' in languages and not vi_boxes):
+                    raise HTTPException(422, 'Trang cần box thật cho từng ngôn ngữ trước khi hoàn thành. Kiểm tra OCR hoặc vẽ box thủ công.')
             boxes = [b.model_dump(mode='json') for b in data.boxes]
             try:
                 with store.db() as db:
@@ -521,6 +523,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             if page['category'] != updated['category']:
                 old = store.book_dir(page['book_id']) / page['category'] / f"{require_book(page['book_id'])['name']}.{page['number']:03d}.jpg"
                 old.unlink(missing_ok=True)
+            store.propagate_placeholder_edits(page['book_id'],page['number'],page['source_text'],source_text)
             store.sync_labels(page['book_id'])
             return updated
 
@@ -559,6 +562,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     db.execute('UPDATE pages SET '+','.join(key+'=?' for key in changes)+",status='pending',version=version+1 WHERE id=?",(*changes.values(),page_id))
             except sqlite3.IntegrityError:
                 raise HTTPException(409,'Trang đã có trong nhóm này.') from None
+            if 'source_text' in changes:
+                store.propagate_placeholder_edits(page['book_id'],page['number'],page['source_text'],changes['source_text'])
             store.sync_labels(page['book_id'])
             return require_page(page_id)
 
@@ -588,8 +593,14 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             try:
                 with store.db() as db:
                     for page in data.pages:
-                        db.execute("UPDATE pages SET category=?,ocr_skip=?,status='pending',version=version+1 WHERE id=? AND (category!=? OR ocr_skip!=?)",
-                                   (page.category,int(page.ocr_skip),page.page_id,page.category,int(page.ocr_skip)))
+                        languages = (['han'] if page.category=='ch' else ['vi'] if page.category=='vi' else ['han','vi'] if page.category=='both' else None)
+                        if languages is None:
+                            db.execute("UPDATE pages SET category=?,ocr_skip=?,status='pending',version=version+1 WHERE id=? AND (category!=? OR ocr_skip!=?)",
+                                       (page.category,int(page.ocr_skip),page.page_id,page.category,int(page.ocr_skip)))
+                        else:
+                            encoded=json.dumps(languages)
+                            db.execute("UPDATE pages SET category=?,ocr_languages=?,ocr_skip=?,status='pending',version=version+1 WHERE id=? AND (category!=? OR ocr_skip!=? OR COALESCE(ocr_languages,'')!=?)",
+                                       (page.category,encoded,int(page.ocr_skip),page.page_id,page.category,int(page.ocr_skip),encoded))
             except sqlite3.IntegrityError:
                 raise HTTPException(409,'Trang bị trùng trong nhóm; giữ bản ngôn ngữ chính trước khi đổi nhãn.') from None
             store.sync_labels(book_id)
@@ -822,7 +833,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         ids = [r.sentence_id for r in data.rows]
         if len(ids) != len(set(ids)) or len({r.id for r in data.rows}) != len(data.rows):
             raise HTTPException(422,'ID câu hoặc ID hàng bị trùng.')
-        valid_images = {p['number'] for p in store.pages(book_id) if p['category'] in ('ch','both')}
+        valid_images = {p['number'] for p in store.pages(book_id)
+                        if not p['ocr_skip'] and p['category'] not in ('blank','misc') and 'han' in p['ocr_languages']}
         for row in data.rows:
             match = re.fullmatch(re.escape(book['name'])+r'\.(\d{3,})\.([1-9]\d*)',row.sentence_id)
             if not match or int(match[1]) not in valid_images:
@@ -845,20 +857,29 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         folder.mkdir(exist_ok=True)
         if format == 'labels':
             store.sync_labels(book_id)
-            content = io.BytesIO()
-            with zipfile.ZipFile(content,'w',zipfile.ZIP_DEFLATED) as archive:
-                archive.write(store.book_dir(book_id)/'page_texts.json',f"{book['name']}/page_texts.json")
+            pages=store.pages(book_id)
+            path = folder / f"{book['name']}_{format}.zip"
+            temporary = path.with_suffix('.zip.tmp')
+            with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
                 for category in CATEGORIES:
-                    if category in ('blank','misc'):
+                    if category == 'both':
                         continue
-                    for name in ('Label.txt','fileState.txt'):
-                        archive.write(store.book_dir(book_id)/category/name, f"{book['name']}/{category}/{name}")
-            path = folder / f"{book['name']}_labels.zip"
-            path.write_bytes(content.getvalue())
+                    archive.writestr(f"{book['name']}/{category}/", b'')
+                    if category not in ('blank','misc','both'):
+                        for name in ('Label.txt','fileState.txt'):
+                            archive.write(store.book_dir(book_id)/category/name, f"{book['name']}/{category}/{name}")
+                for page in pages:
+                    original=rendered_image(page)
+                    image_name=f"{book['name']}.{page['number']:03d}.jpg"
+                    for category in label_groups(page):
+                        archive.write(original,f"{book['name']}/{category}/{image_name}")
+            os.replace(temporary,path)
         else:
             rows = get_alignments(book_id)
             if not rows:
                 raise HTTPException(400,'Chưa có cặp căn chỉnh. Hãy tạo và lưu các cặp trước khi xuất.')
+            if any(not row['source'].strip() or not row['target'].strip() for row in rows):
+                raise HTTPException(400,'Còn cặp căn chỉnh thiếu một vế. Hãy sửa hoặc gộp cặp trước khi xuất.')
             values = [[r['sentence_id'].rsplit('.',1)[0]+'.jpg',r['sentence_id'],r['source'],r['target']] for r in rows]
             path = folder / f"{book['name']}.{format}"
             if format == 'csv':
@@ -879,9 +900,6 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     for cell in sheet[sheet.max_row]:
                         # Export source text verbatim, never execute spreadsheet formulas.
                         cell.data_type = 's'
-                    # Dictionary integration is pending: all pairs are unverified, red.
-                    for cell in sheet[sheet.max_row][2:]:
-                        cell.font = Font(name='Arial',color='C43838')
                 for column,width in zip('ABCD',(45,48,65,85)):
                     sheet.column_dimensions[column].width = width
                 sheet.freeze_panes = 'A2'

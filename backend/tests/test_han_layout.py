@@ -6,7 +6,8 @@ from PIL import Image, ImageDraw
 
 from backend.bilingual import recognize
 from backend.han_layout import character_regions, prepare_han_image, pack_lines, map_characters
-from backend.store import ordered_boxes
+from backend.store import ordered_boxes, nom_export_boxes
+from backend.vietocr import line_regions
 
 
 def mixed_page():
@@ -46,11 +47,50 @@ def test_mapping_never_shifts_characters_when_recognizer_drops_a_glyph():
         assert box['points'][0]==list(glyph['bounds'][:2])
 
 
+def test_vertical_nom_glyphs_become_column_segments_with_real_gap():
+    glyphs=[]
+    for i,top in enumerate((10,35,60,140)):
+        glyphs.append({'line':0,'bounds':(70,top,90,top+20),'atlas':(i*30,0,i*30+20,20)})
+    result={'boxes':[{'points':[[0,0],[120,0],[120,20],[0,20]],'transcription':'天地玄黃'}]}
+    mapped=map_characters(result,glyphs,1)
+    assert [box['transcription'] for box in mapped['boxes']]==list('天地玄黃')
+    exported=nom_export_boxes(mapped['boxes'],1)
+    assert [box['transcription'] for box in exported]==['天地玄','黃']
+    assert exported[0]['points']==[[70,10],[90,10],[90,80],[70,80]]
+
+
+def test_red_nom_ink_is_selected_and_excluded_from_vietnamese_rows():
+    image=mixed_page()
+    pixels=np.asarray(image).copy()
+    black=np.all(pixels==[0,0,0],axis=2)
+    red=np.all(pixels==[180,40,60],axis=2)
+    pixels[black]=[180,40,60]
+    pixels[red]=[0,0,0]
+    image=Image.fromarray(pixels)
+    prepared,mask,colored=prepare_han_image(image)
+    assert colored
+    glyphs=character_regions(mask,2)
+    assert len(glyphs)==8
+    assert all(np.asarray(prepared)[75,70]==[255,255,255])
+    han_boxes=[{'points':[[x,y],[x+35,y],[x+35,y+45],[x,y+45]],'transcription':'□'}
+               for y in (50,220) for x in (60,180,300,420)]
+    rows,_=line_regions(image,han_boxes)
+    assert rows and all(100<row[1]<220 or row[1]>270 for row in rows)
+
+
 def test_character_order_groups_uneven_tops_before_sorting_left_to_right():
     def box(text,left,top):
         return {'transcription':text,'points':[[left,top],[left+30,top],[left+30,top+40],[left,top+40]]}
     boxes=[box('地',70,45),box('玄',10,150),box('天',10,50),box('黃',70,155)]
     assert [box['transcription'] for box in ordered_boxes(boxes,'both',2)]==list('天地玄黃')
+
+
+def test_two_page_scan_reads_left_page_before_right_page():
+    def box(text,left,top):
+        return {'transcription':text,'points':[[left,top],[left+20,top],[left+20,top+50],[left,top+50]]}
+    boxes=[box('right',450,10),box('left',150,10)]
+    assert [b['transcription'] for b in ordered_boxes(boxes,'ch',1,(600,300))]==['left','right']
+    assert [b['transcription'] for b in ordered_boxes(boxes,'vi',2,(600,300))]==['left','right']
 
 
 def test_high_resolution_coordinates_are_normalized_for_both_engines():

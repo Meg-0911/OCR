@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { CheckCheck, Link2, SplitSquareVertical, Trash2 } from 'lucide-react';
 import type { Alignment } from '../types';
 
@@ -19,21 +19,20 @@ export default function AlignmentRow({
   onMerge: () => void;
   onSplit: (source: [string, string], target: [string, string]) => void;
 }) {
-  const source = useRef<HTMLTextAreaElement>(null),
-    target = useRef<HTMLTextAreaElement>(null);
   const [splitting, setSplitting] = useState(false);
+  const [cut, setCut] = useState<{ side: 'source' | 'target'; position: number } | null>(null);
   function split() {
-    const a = source.current?.selectionStart || 0,
-      b = target.current?.selectionStart || 0;
-    if (a <= 0 || a >= row.source.length || b <= 0 || b >= row.target.length) {
+    const value = cut?.side === 'source' ? row.source : row.target;
+    if (!cut || cut.position <= 0 || cut.position >= value.length) {
       setSplitting(true);
       return;
     }
     onSplit(
-      [row.source.slice(0, a), row.source.slice(a)],
-      [row.target.slice(0, b), row.target.slice(b)],
+      cut.side === 'source' ? [row.source.slice(0, cut.position), row.source.slice(cut.position)] : [row.source, ''],
+      cut.side === 'target' ? [row.target.slice(0, cut.position), row.target.slice(cut.position)] : [row.target, ''],
     );
     setSplitting(false);
+    setCut(null);
   }
   return (
     <div className={`alignment-row ${row.reviewed ? 'reviewed' : ''}`}>
@@ -47,27 +46,25 @@ export default function AlignmentRow({
       </div>
       <div>
         <textarea
-          ref={source}
           className="han-text"
           aria-label={`Hán Nôm cặp ${index + 1}`}
           value={row.source}
           onChange={(event) => onChange({ ...row, source: event.target.value, reviewed: false })}
+          onSelect={(event) => setCut({ side: 'source', position: event.currentTarget.selectionStart })}
           placeholder="Văn bản Hán Nôm…"
         />
         <small className="unverified">Chưa kiểm chứng ngữ nghĩa</small>
       </div>
       <div>
         <textarea
-          ref={target}
           aria-label={`Quốc ngữ cặp ${index + 1}`}
           value={row.target}
           onChange={(event) => onChange({ ...row, target: event.target.value, reviewed: false })}
+          onSelect={(event) => setCut({ side: 'target', position: event.currentTarget.selectionStart })}
           placeholder="Văn bản Quốc ngữ…"
         />
         {splitting && (
-          <small className="split-hint">
-            Đặt con trỏ ở điểm tách trong mỗi ô rồi bấm tách lại.
-          </small>
+          <small className="split-hint">Đặt con trỏ giữa chữ trong một ô, rồi bấm Tách. Ô còn lại sẽ ở cặp đầu.</small>
         )}
       </div>
       <div className="alignment-tools">
@@ -82,8 +79,9 @@ export default function AlignmentRow({
         </button>
         <button
           className="icon-button"
-          title="Tách tại con trỏ trong hai ô"
+          title="Tách tại con trỏ trong một ô"
           aria-label={`Tách cặp ${index + 1}`}
+          disabled={row.source.length < 2 && row.target.length < 2}
           onClick={split}
         >
           <SplitSquareVertical size={16} />
