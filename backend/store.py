@@ -1,9 +1,11 @@
 """SQLite is the checkpoint; PPOCRLabel text files are recoverable projections."""
 import json
 import os
+import re
 import sqlite3
 import threading
 import unicodedata
+from .alignment_review import comparison_key, export_text, score_boxes, source_glyph
 import csv
 import time
 from difflib import SequenceMatcher
@@ -234,8 +236,8 @@ class Store:
         incomplete = duplicates = 0
         for alignment in alignments:
             for row in json.loads(alignment['rows']):
-                source = ''.join(unicodedata.normalize('NFC', row['source']).split())
-                target = ' '.join(unicodedata.normalize('NFC', row['target']).split()).casefold()
+                source = comparison_key(row['source']).replace(' ', '')
+                target = comparison_key(row['target'])
                 if not source or not target:
                     incomplete += 1
                     continue
@@ -269,6 +271,55 @@ class Store:
     def pages(self, book_id):
         with self.db() as db:
             return [self.page_dict(row) for row in db.execute("SELECT * FROM pages WHERE book_id=? ORDER BY number,category", (book_id,))]
+
+    def source_box_colors(self, book_id, rows):
+        """Map per-box review colors onto both sides of saved alignment text."""
+        book = self.book(book_id)
+        if not book:
+            return {}
+        output = {}
+        for page in self.pages(book_id):
+            if 'han' not in page['ocr_languages'] or not page['boxes']:
+                continue
+            prefix = f"{book['name']}.{page['number']:03d}."
+            page_rows = [row for row in rows if row['sentence_id'].startswith(prefix)]
+            if not page_rows:
+                continue
+            stream = ''.join(row['source'] for row in page_rows)
+            stream_colors = [None] * len(stream)
+            box_glyph_colors = [
+                box.get('review_kind') or 'match'
+                for box in page['boxes']
+                for char in box['transcription']
+                if source_glyph(char)
+            ]
+            glyph_index = 0
+            for index, char in enumerate(stream):
+                if not source_glyph(char):
+                    continue
+                if glyph_index < len(box_glyph_colors):
+                    stream_colors[index] = box_glyph_colors[glyph_index]
+                glyph_index += 1
+            offset = 0
+            for row in page_rows:
+                end = offset + len(row['source'])
+                output.setdefault(row['id'], {})['source'] = stream_colors[offset:end]
+                offset = end
+            word_index = 0
+            for row in page_rows:
+                colors = ['match'] * len(row['target'])
+                for match in re.finditer(r'\S+', row['target']):
+                    if not any(
+                        unicodedata.category(char).startswith(('L', 'N'))
+                        for char in match.group()
+                    ):
+                        continue
+                    if word_index < len(page['boxes']):
+                        kind = page['boxes'][word_index].get('review_kind') or 'match'
+                        colors[match.start():match.end()] = [kind] * (match.end() - match.start())
+                    word_index += 1
+                output.setdefault(row['id'], {})['target'] = colors
+        return output
 
     def page(self, page_id):
         with self.db() as db:
@@ -389,6 +440,7 @@ class Store:
                 if ''.join(source)!=row['source']:
                     row['source']=''.join(source)
                     row['reviewed']=False
+                    row['marks']=[]
             if changed:
                 db.execute('UPDATE alignments SET rows=? WHERE book_id=?',(json.dumps(rows,ensure_ascii=False),book_id))
 
@@ -410,7 +462,7 @@ class Store:
             rows=json.loads(alignment['rows']) if alignment else []
             seen={}; incomplete=duplicates=0
             for row in rows:
-                key=(''.join(unicodedata.normalize('NFC',row['source']).split()),' '.join(unicodedata.normalize('NFC',row['target']).split()).casefold())
+                key=(comparison_key(row['source']).replace(' ', ''),comparison_key(row['target']))
                 if not all(key):
                     incomplete+=1
                     continue
@@ -422,6 +474,7 @@ class Store:
                      'reviewed_pages':sum(p['status']=='done' for p in pages),
                      'ocr_pages':sum(bool(languages.get(p['id'])) for p in pages),
                      'pairs':len(seen),'reviewed_pairs':sum(seen.values()),'duplicate_pairs':duplicates,'incomplete_pairs':incomplete,
+                     'similarity_review':score_boxes(pages),
                      'job':dict(job) if job else None,'job_pages':progress}
             def write_json(path,value):
                 tmp=path.with_suffix(path.suffix+'.tmp')
@@ -434,7 +487,9 @@ class Store:
             csv_path=folder/'pairs.csv'; tmp=csv_path.with_suffix('.csv.tmp')
             with tmp.open('w',encoding='utf-8-sig',newline='') as stream:
                 writer=csv.writer(stream); writer.writerow(['img_id','sentence_id','SinoNom_Char','ChuQN_txt'])
-                writer.writerows([[r['sentence_id'].rsplit('.',1)[0]+'.jpg',r['sentence_id'],r['source'],r['target']] for r in rows])
+                writer.writerows([[r['sentence_id'].rsplit('.',1)[0]+'.jpg',r['sentence_id'],
+                                   export_text(r['source'], 'source')[0], export_text(r['target'], 'target')[0]]
+                                  for r in rows])
             replace_file(tmp,csv_path)
             write_json(self.data/'output_alignment'/'summary.json',{'updated_at':now,**self.pair_stats()})
             if event:
@@ -464,7 +519,13 @@ class Store:
                     if category not in label_groups(page):
                         continue
                     name = f"{category}/{book['name']}.{page['number']:03d}.jpg"
-                    boxes = [{"transcription":b["transcription"], "points":b["points"]} for b in label_boxes(page, category) if b['transcription'].strip()]
+                    vi_box_ids = {id(box) for box in page['vi_boxes']}
+                    boxes = []
+                    for box in label_boxes(page, category):
+                        side = 'target' if category == 'vi' or (category in ('intro', 'ref', 'toc') and id(box) in vi_box_ids) else 'source'
+                        transcription = export_text(box['transcription'], side)[0]
+                        if transcription:
+                            boxes.append({'transcription': transcription, 'points': box['points']})
                     labels.append(name + "\t" + json.dumps(boxes, ensure_ascii=False))
                     states.append(name + "\t" + str(int(page["status"] == "done")))
                 for filename, lines in (("Label.txt", labels), ("fileState.txt", states)):

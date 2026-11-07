@@ -28,6 +28,7 @@ import type {
   OCRSettings,
   Page,
   Region,
+  ReviewKind,
   TextSources,
 } from '../types';
 import ManuscriptViewer from './ManuscriptViewer';
@@ -101,6 +102,10 @@ function hasContent(page?: Page) {
   );
 }
 
+function targetWordsIn(text: string) {
+  return text.match(/\S+/gu)?.filter((word) => /[\p{L}\p{N}]/u.test(word)) || [];
+}
+
 export default function BookWorkbench(props: Props) {
   const { pages } = props;
   const [step, setStep] = useState<1 | 2 | 3 | 4>(props.initialStep);
@@ -132,6 +137,7 @@ export default function BookWorkbench(props: Props) {
   const [editingRegions, setEditingRegions] = useState(props.initialStep === 2);
   const [tool, setTool] = useState<'select' | 'draw'>('select');
   const [selected, setSelected] = useState<string | null>(null);
+  const [selectedTargetWord, setSelectedTargetWord] = useState<number | null>(null);
   const [showBoxes, setShowBoxes] = useState(true);
   const [zoom, setZoom] = useState(100);
   const [search, setSearch] = useState('');
@@ -143,6 +149,7 @@ export default function BookWorkbench(props: Props) {
   const textKey = language === 'han' ? 'source_text' : 'target_text';
   const boxes = page?.[boxesKey] || [];
   const text = page?.[textKey] || '';
+  const targetWords = targetWordsIn(page?.target_text || '');
   const characterEditing =
     language === 'han' &&
     boxes.length > 0 &&
@@ -213,7 +220,8 @@ export default function BookWorkbench(props: Props) {
   }, [page?.id, page?.category, page?.ocr_languages.join(','), language]);
   useEffect(() => {
     setSelected(null);
-  }, [language]);
+    setSelectedTargetWord(null);
+  }, [language, page?.id]);
   useEffect(() => {
     if (step !== 4 || !selected) return;
     const row = Array.from(editor.current?.querySelectorAll<HTMLElement>('[data-row]') || []).find(
@@ -265,7 +273,18 @@ export default function BookWorkbench(props: Props) {
     else if (characterEditing) changeTextBoxes(boxes.filter((box) => box.id !== selected));
     else {
       const next = removeBoxAndText(boxes, text, selected);
-      props.onPatch({ [boxesKey]: next.boxes, [textKey]: next.text });
+      const boxIndex = boxes.findIndex((box) => box.id === selected);
+      props.onPatch({
+        [boxesKey]: next.boxes,
+        [textKey]: next.text,
+        ...(language === 'vi' && page
+          ? {
+              boxes: page.boxes.map((box, index) =>
+                index >= targetWordStart(boxIndex) ? { ...box, review_kind: undefined } : box,
+              ),
+            }
+          : {}),
+      });
     }
     setSelected(null);
     setTool('select');
@@ -381,10 +400,56 @@ export default function BookWorkbench(props: Props) {
         : {}),
     });
   }
+  function markBox(boxId: string, review_kind: ReviewKind) {
+    if (!page) return;
+    const index = page.boxes.findIndex((box) => box.id === boxId);
+    if (index < 0) return;
+    props.onPatch({
+      boxes: page.boxes.map((box, boxIndex) =>
+        boxIndex === index ? { ...box, review_kind } : box,
+      ),
+    });
+  }
+  function markAllBoxes(review_kind: ReviewKind) {
+    if (!page) return;
+    props.onPatch({
+      boxes: page.boxes.map((box, index) =>
+        index < page.boxes.length ? { ...box, review_kind } : box,
+      ),
+    });
+  }
   function updateBox(box: Box, value: string) {
     if (!page) return;
     const next = replaceBoxText(boxes, text, box.id, value, page.reading_direction, language === 'han');
-    props.onPatch({ [boxesKey]: next.boxes, [textKey]: next.text });
+    props.onPatch({
+      [boxesKey]: next.boxes.map((item) =>
+        item.id === box.id && item.transcription !== value
+          ? { ...item, review_kind: undefined }
+          : item,
+      ),
+      ...(language === 'vi' && box.transcription !== value
+        ? {
+            boxes: page.boxes.map((item, index) =>
+              index >= targetWordStart(boxes.findIndex((current) => current.id === box.id))
+                ? { ...item, review_kind: undefined }
+                : item,
+            ),
+          }
+        : {}),
+      [textKey]: next.text,
+    });
+  }
+  function targetWordCount(value: string) {
+    return targetWordsIn(value).length;
+  }
+  function targetWordStart(boxIndex: number) {
+    return boxes.slice(0, boxIndex).reduce((count, box) => count + targetWordCount(box.transcription), 0);
+  }
+  function selectTargetWord(wordIndex: number, boxId: string) {
+    setSelected(boxId);
+    setSelectedTargetWord(wordIndex);
+    setShowBoxes(true);
+    setEditingRegions(false);
   }
   async function fullscreen() {
     try {
@@ -400,6 +465,20 @@ export default function BookWorkbench(props: Props) {
       aria-label="Đối chiếu sách và Gán nhãn"
       onKeyDown={(event) => {
         const target = event.target as HTMLElement;
+        const reviewKind = event.key === '1' ? 'match' : event.key === '2' ? 'mismatch' : event.key === '3' ? 'unknown' : null;
+        if (
+          step === 4 &&
+          event.altKey &&
+          !event.ctrlKey &&
+          !event.metaKey &&
+          reviewKind &&
+          selected &&
+          !target.closest('textarea, select, [contenteditable="true"]')
+        ) {
+          event.preventDefault();
+          markBox(selected, reviewKind);
+          return;
+        }
         if (
           step === 2 &&
           (event.ctrlKey || event.metaKey) &&
@@ -850,6 +929,47 @@ export default function BookWorkbench(props: Props) {
                       </button>}
                     </div>
                   )}
+                  {step === 4 &&
+                    language === 'vi' &&
+                    page.ocr_languages.includes('han') &&
+                    !characterEditing && (
+                      <div className="character-review-toolbar" aria-label="Đánh dấu từ Quốc ngữ">
+                        <span>
+                          {selectedTargetWord !== null
+                            ? `${page.boxes[selectedTargetWord]?.transcription || '—'} ↔ ${targetWords[selectedTargetWord] || '—'}`
+                            : 'Chọn một từ Quốc ngữ để đánh dấu cùng chữ Hán/Nôm thứ tự đó'}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={selectedTargetWord === null || !page.boxes[selectedTargetWord] || props.busy || acting}
+                          onClick={() => selectedTargetWord !== null && markBox(page.boxes[selectedTargetWord].id, 'match')}
+                        >
+                          Đen
+                        </button>
+                        <button
+                          type="button"
+                          disabled={selectedTargetWord === null || !page.boxes[selectedTargetWord] || props.busy || acting}
+                          onClick={() => selectedTargetWord !== null && markBox(page.boxes[selectedTargetWord].id, 'mismatch')}
+                        >
+                          Đỏ
+                        </button>
+                        <button
+                          type="button"
+                          disabled={selectedTargetWord === null || !page.boxes[selectedTargetWord] || props.busy || acting}
+                          onClick={() => selectedTargetWord !== null && markBox(page.boxes[selectedTargetWord].id, 'unknown')}
+                        >
+                          Thiếu từ điển
+                        </button>
+                        <button
+                          type="button"
+                          disabled={props.busy || acting}
+                          onClick={() => markAllBoxes('match')}
+                        >
+                          Đặt hết đen
+                        </button>
+                        <small>Màu áp dụng lên chữ Hán/Nôm và từ Quốc ngữ cùng thứ tự.</small>
+                      </div>
+                    )}
                   {step === 2 && (
                     <>
                       <div className="workbench-bulk-tag">
@@ -1108,6 +1228,9 @@ export default function BookWorkbench(props: Props) {
                             }}
                             onChange={updateBox}
                             onLookup={props.onLookup}
+                            onMark={markBox}
+                            onMarkAll={markAllBoxes}
+                            pairedWords={targetWords}
                           />
                         )}
                         {!characterEditing && boxes.length > 0 && (
@@ -1115,68 +1238,123 @@ export default function BookWorkbench(props: Props) {
                             <small>{boxes.length} vùng chữ</small>
                             {boxes.map((box, index) => {
                               let offset = 0;
+                              const rowWordStart = targetWordStart(index);
+                              let wordIndex = rowWordStart;
+                              const reviewKind = language === 'han' ? box.review_kind || 'match' : undefined;
                               return (
                                 <div
                                   key={box.id}
                                   data-row={box.id}
-                                  className={`workbench-box-row ${selected === box.id ? 'selected' : ''}`}
+                                  className={`workbench-box-row ${selected === box.id ? 'selected' : ''} ${reviewKind ? `review-${reviewKind}` : ''}`}
                                   onMouseEnter={() => {
                                     if (!editingRegions) {
                                       setSelected(box.id);
+                                      if (language === 'vi' && targetWordCount(box.transcription))
+                                        setSelectedTargetWord(rowWordStart);
                                       setShowBoxes(true);
                                     }
                                   }}
                                 >
                                   <span className="line-num">{index + 1}</span>
                                   <div>
-                                    <textarea
-                                      className={language === 'han' ? 'han-text' : ''}
-                                      aria-label={`Vùng chữ ${index + 1}`}
-                                      rows={2}
-                                      disabled={props.busy || acting}
-                                      readOnly={step !== 4}
-                                      value={box.transcription}
-                                      onFocus={() => {
-                                        setEditingRegions(false);
-                                        setSelected(box.id);
-                                        setShowBoxes(true);
-                                      }}
-                                      onChange={(event) => updateBox(box, event.target.value)}
-                                    />
-                                    <div
-                                      className={`workbench-characters ${language === 'han' ? 'han-text' : ''}`}
-                                    >
-                                      {Array.from(box.transcription).map((character) => {
-                                        const charIndex = offset;
-                                        offset += character.length;
-                                        return (
-                                          <button
-                                            key={charIndex}
-                                            title={
-                                              language === 'han'
-                                                ? `Tra chữ ${character}`
-                                                : character
-                                            }
-                                            onMouseEnter={() => {
-                                              setEditingRegions(false);
-                                              setSelected(box.id);
-                                              setShowBoxes(true);
-                                            }}
-                                            onFocus={() => {
-                                              setEditingRegions(false);
-                                              setSelected(box.id);
-                                              setShowBoxes(true);
-                                            }}
-                                            onClick={() => {
-                                              if (language === 'han' && step === 4)
-                                                props.onLookup(box, character, charIndex);
-                                            }}
-                                          >
-                                            {character}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
+                                    {language === 'han' ? (
+                                      <>
+                                        <textarea
+                                          className="han-text"
+                                          aria-label={`Vùng chữ ${index + 1}`}
+                                          rows={2}
+                                          style={{
+                                            color:
+                                              reviewKind === 'mismatch' || reviewKind === 'unknown'
+                                                ? '#c00'
+                                                : undefined,
+                                          }}
+                                          disabled={props.busy || acting}
+                                          readOnly={step !== 4}
+                                          value={box.transcription}
+                                          onFocus={() => {
+                                            setEditingRegions(false);
+                                            setSelected(box.id);
+                                            setShowBoxes(true);
+                                          }}
+                                          onChange={(event) => updateBox(box, event.target.value)}
+                                        />
+                                        <div className="workbench-characters han-text">
+                                          {Array.from(box.transcription).map((character) => {
+                                            const charIndex = offset;
+                                            offset += character.length;
+                                            return (
+                                              <button
+                                                key={charIndex}
+                                                className={`review-${reviewKind || 'match'}`}
+                                                style={{ color: reviewKind === 'mismatch' || reviewKind === 'unknown' ? '#c00' : '#000' }}
+                                                title={`Tra chữ ${character}`}
+                                                onMouseEnter={() => {
+                                                  setEditingRegions(false);
+                                                  setSelected(box.id);
+                                                  setShowBoxes(true);
+                                                }}
+                                                onFocus={() => {
+                                                  setEditingRegions(false);
+                                                  setSelected(box.id);
+                                                  setShowBoxes(true);
+                                                }}
+                                                onClick={() => {
+                                                  if (step === 4) props.onLookup(box, character, charIndex);
+                                                }}
+                                              >
+                                                {character}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div
+                                        className="workbench-vietnamese-editor"
+                                        role="textbox"
+                                        aria-label={`Vùng chữ Quốc ngữ ${index + 1}`}
+                                        aria-multiline="true"
+                                        contentEditable={step === 4 && !props.busy && !acting}
+                                        suppressContentEditableWarning
+                                        onFocus={() => {
+                                          setEditingRegions(false);
+                                          setSelected(box.id);
+                                          if (targetWordCount(box.transcription))
+                                            setSelectedTargetWord(rowWordStart);
+                                          setShowBoxes(true);
+                                        }}
+                                        onInput={(event) => {
+                                          const value = event.currentTarget.innerText
+                                            .replace(/\r\n/g, '\n')
+                                            .replace(/\n$/, '');
+                                          if (value !== box.transcription) updateBox(box, value);
+                                        }}
+                                        onKeyDown={(event) => {
+                                          if (event.key === 'Enter' && !event.shiftKey) {
+                                            event.preventDefault();
+                                            document.execCommand('insertText', false, '\n');
+                                          }
+                                        }}
+                                      >
+                                        {box.transcription.split(/(\s+)/u).map((part, partIndex) => {
+                                          if (!part) return null;
+                                          if (/^\s+$/u.test(part)) return part;
+                                          if (!/[\p{L}\p{N}]/u.test(part)) return part;
+                                          const currentWord = wordIndex++;
+                                          const kind = page.boxes[currentWord]?.review_kind || 'match';
+                                          return (
+                                            <span
+                                              key={`${currentWord}-${partIndex}`}
+                                              className={`review-${kind}`}
+                                              onClick={() => selectTargetWord(currentWord, box.id)}
+                                            >
+                                              {part}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               );

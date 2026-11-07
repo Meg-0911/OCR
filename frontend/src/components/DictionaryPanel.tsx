@@ -85,8 +85,8 @@ export default function DictionaryPanel({
     }
   }
   useEffect(() => {
-    if (character) void lookup(character);
-  }, [character]);
+    if (character && character !== '□' && initialMode === 'character') void lookup(character);
+  }, [character, initialMode]);
   useEffect(() => {
     setMode(initialMode);
     if (initialMode === 'reading') {
@@ -199,7 +199,9 @@ export default function DictionaryPanel({
       </form>
       <p className="muted">
         {mode === 'reading'
-          ? 'Tìm theo từng tiếng Quốc ngữ trong âm đọc Việt của Unihan và dữ liệu Nôm cục bộ; cụm nhiều tiếng được chia thành từng nhóm.'
+          ? character === '□'
+            ? 'Nhập âm Quốc ngữ của ô vuông, tìm chữ phù hợp rồi bấm Thay vào □ để sửa đúng box đang chọn.'
+            : 'Tìm theo từng tiếng Quốc ngữ trong âm đọc Việt của Unihan và dữ liệu Nôm cục bộ; cụm nhiều tiếng được chia thành từng nhóm.'
           : 'Tra tại máy: ưu tiên bộ Nôm cục bộ nếu có, dùng Unihan dự phòng. Chỉ thay chữ khi bạn chọn áp dụng.'}
       </p>
       {busy && <LoaderCircle className="spin" size={22} />}
@@ -294,17 +296,21 @@ export default function DictionaryPanel({
               </h3>
               {entries.length ? (
                 entries.map((entry) => (
-                  <button
+                  <div
                     key={entry.character}
                     className="dictionary-match"
-                    onClick={() => void lookup(entry.character)}
                   >
-                    <span className="han-text">{entry.character}</span>
+                    <button className="han-text" onClick={() => void lookup(entry.character)}>{entry.character}</button>
                     <span>
                       {entry.readings.join(' · ')}
                       <small>{entry.definitions.join('; ') || 'Chưa có nghĩa trong nguồn này'}</small>
                     </span>
-                  </button>
+                    {canReplace && character === '□' && (
+                      <button type="button" className="text-button" onClick={() => onReplace(entry.character)}>
+                        Thay vào □
+                      </button>
+                    )}
+                  </div>
                 ))
               ) : (
                 <p>Không có chữ khớp âm đọc này trong dữ liệu từ điển đã cài.</p>

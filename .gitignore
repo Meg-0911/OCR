@@ -12,6 +12,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 /tmp/
+/test_pytest_export_clean/
 *.tsbuildinfo
 *.sqlite3*
 

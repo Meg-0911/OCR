@@ -171,20 +171,21 @@ def test_sources_are_local_and_import_keeps_name(workspace):
 
 def test_csv_and_xlsx_exact_schema_and_unicode(annotated):
     client,_,_,book,_ = annotated
-    rows = [{'id':'1', 'sentence_id':f"{book['name']}.001.1", 'source':'漢字𠊛', 'target':'=1+1', 'reviewed':True}]
+    rows = [{'id':'1', 'sentence_id':f"{book['name']}.001.1", 'source':'漢字𠊛', 'target':'=1+1', 'reviewed':True,
+             'marks':[{'source_start':0,'source_end':3,'target_start':0,'target_end':4,'kind':'match'}]}]
     assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':rows}).status_code==200
     csv_response=client.get(f"/api/books/{book['id']}/export?format=csv")
     exported=list(csv.reader(io.StringIO(csv_response.content.decode('utf-8-sig'))))
     assert exported[0]==EXPORT_COLUMNS
     assert exported[1]==[f"{book['name']}.001.jpg",f"{book['name']}.001.1",'漢字𠊛','=1+1']
     assert len(exported)==len(rows)+1
-    workbook=load_workbook(io.BytesIO(client.get(f"/api/books/{book['id']}/export?format=xlsx").content))
+    workbook=load_workbook(io.BytesIO(client.get(f"/api/books/{book['id']}/export?format=xlsx").content),rich_text=True)
     sheet=workbook.active
     assert [c.value for c in sheet[1]]==EXPORT_COLUMNS
-    assert sheet['C2'].value=='漢字𠊛'
     assert sheet['D2'].data_type=='s'
-    assert sheet['C2'].font.color.type=='theme'
-    assert sheet['D2'].font.color.type=='theme'
+    assert str(sheet['C2'].value)=='漢字𠊛'
+    assert str(sheet['D2'].value)=='=1+1'
+    assert sheet['C2'].value[0].font.color.rgb=='FF000000'
 
 
 def test_incomplete_split_pair_cannot_be_exported(annotated):
@@ -193,6 +194,125 @@ def test_incomplete_split_pair_cannot_be_exported(annotated):
     assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':rows}).status_code==200
     assert client.get(f"/api/books/{book['id']}/export?format=csv").status_code==400
     assert client.get(f"/api/books/{book['id']}/export?format=xlsx").status_code==400
+
+
+def test_xlsx_defaults_to_black_and_rejects_out_of_range_marks(annotated):
+    client,_,_,book,_=annotated
+    url=f"/api/books/{book['id']}/alignments"
+    row={'id':'review','sentence_id':f"{book['name']}.001.1",'source':'一','target':'nhất','reviewed':True}
+    assert client.put(url,json={'rows':[row]}).status_code==200
+    assert client.get(f"/api/books/{book['id']}/export?format=csv").status_code==200
+    workbook=load_workbook(io.BytesIO(client.get(f"/api/books/{book['id']}/export?format=xlsx").content),rich_text=True)
+    assert workbook.active['C2'].value[0].font.color.rgb=='FF000000'
+    assert workbook.active['D2'].value[0].font.color.rgb=='FF000000'
+    row['marks']=[{'source_start':0,'source_end':2,'target_start':0,'target_end':4,'kind':'match'}]
+    assert client.put(url,json={'rows':[row]}).status_code==422
+    row['marks'][0]['source_end']=1
+    assert client.put(url,json={'rows':[row]}).status_code==200
+    assert client.get(f"/api/books/{book['id']}/export?format=xlsx").status_code==200
+
+
+def test_xlsx_uses_per_character_review_from_page_boxes(annotated):
+    client,_,_,book,page=annotated
+    boxes=[
+        {'id':'han-1','transcription':'天','points':[[50,10],[80,10],[80,50],[50,50]]},
+        {'id':'han-2','transcription':'玄','points':[[10,10],[40,10],[40,50],[10,50]],'review_kind':'mismatch'},
+    ]
+    vi_boxes=[
+        {'id':'vi-1','transcription':'thiên địa','points':[[10,60],[80,60],[80,90],[10,90]],'review_kind':'unknown'},
+    ]
+    saved=client.patch(f"/api/pages/{page['id']}",json={
+        'category':'ch','source_text':'天地','target_text':'thiên địa','boxes':boxes,'vi_boxes':vi_boxes,
+    })
+    assert saved.status_code==200
+    assert [box.get('review_kind') for box in saved.json()['boxes']]==[None,'mismatch']
+    assert [box.get('review_kind') for box in saved.json()['vi_boxes']]==['unknown']
+    row={'id':'glyph-colors','sentence_id':f"{book['name']}.001.1",'source':'天地','target':'thiên địa','reviewed':False}
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[row]}).status_code==200
+    xlsx_bytes=client.get(f"/api/books/{book['id']}/export?format=xlsx").content
+    sheet=load_workbook(io.BytesIO(xlsx_bytes),rich_text=True).active
+    assert str(sheet['C2'].value)=='天地'
+    assert [block.font.color.rgb for block in sheet['C2'].value]==['FF000000','FFCC0000']
+    assert str(sheet['D2'].value)=='thiên địa'
+    assert [block.font.color.rgb for block in sheet['D2'].value]==['FF000000','FFCC0000']
+    with zipfile.ZipFile(io.BytesIO(xlsx_bytes)) as workbook:
+        xml=workbook.read('xl/worksheets/sheet1.xml').decode('utf-8')
+        assert 'xml:space="preserve"> địa</t>' in xml
+        assert '<t> </t>' not in xml
+    summary=client.get(f"/api/books/{book['id']}/results/summary.json").json()
+    assert summary['similarity_review']=={'total':2,'red':1,'unmarked':0,'percent':50.0}
+
+
+def test_xlsx_applies_page_colors_to_the_single_quoc_ngu_column_on_each_page(annotated):
+    client,_,_,book,page=annotated
+    pages=client.get(f"/api/books/{book['id']}/pages").json()
+    second=pages[1]
+    first_boxes=[
+        {'id':'first-a','transcription':'天','points':[[50,10],[80,10],[80,50],[50,50]]},
+        {'id':'first-b','transcription':'地','points':[[10,10],[40,10],[40,50],[10,50]],'review_kind':'mismatch'},
+    ]
+    second_boxes=[
+        {'id':'second-a','transcription':'安','points':[[50,10],[80,10],[80,50],[50,50]]},
+        {'id':'second-b','transcription':'和','points':[[10,10],[40,10],[40,50],[10,50]],'review_kind':'mismatch'},
+    ]
+    assert client.patch(f"/api/pages/{page['id']}",json={
+        'category':'both','source_text':'天地','target_text':'thiên địa','boxes':first_boxes,
+        'vi_boxes':[{'id':'first-vi','transcription':'thiên địa','points':[[10,60],[80,60],[80,90],[10,90]]}],
+    }).status_code==200
+    assert client.patch(f"/api/pages/{second['id']}",json={
+        'category':'both','source_text':'安和','target_text':'an hòa','boxes':second_boxes,
+        'vi_boxes':[{'id':'second-vi','transcription':'an hòa','points':[[10,60],[80,60],[80,90],[10,90]]}],
+    }).status_code==200
+    rows=[
+        {'id':'first-page','sentence_id':f"{book['name']}.001.1",'source':'天地','target':'thiên địa','reviewed':False},
+        {'id':'second-page','sentence_id':f"{book['name']}.002.1",'source':'安和','target':'an hòa','reviewed':False},
+    ]
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':rows}).status_code==200
+    sheet=load_workbook(
+        io.BytesIO(client.get(f"/api/books/{book['id']}/export?format=xlsx").content),
+        rich_text=True,
+    ).active
+    assert sheet.max_column==4
+    assert str(sheet['D2'].value)=='thiên địa'
+    assert [block.font.color.rgb for block in sheet['D2'].value]==['FF000000','FFCC0000']
+    assert str(sheet['D3'].value)=='an hòa'
+    assert [block.font.color.rgb for block in sheet['D3'].value]==['FF000000','FFCC0000']
+
+
+def test_exports_clean_both_scripts_and_keep_xlsx_colors_aligned(annotated):
+    client,_,_,book,_=annotated
+    row={'id':'clean','sentence_id':f"{book['name']}.001.1",'source':'一，二。','target':'NHẤT, NHỊ!',
+         'marks':[
+             {'source_start':0,'source_end':4,'target_start':0,'target_end':10,'kind':'match'},
+             {'source_start':2,'source_end':3,'target_start':6,'target_end':9,'kind':'mismatch'},
+         ]}
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[row]}).status_code==200
+    csv_response=client.get(f"/api/books/{book['id']}/export?format=csv")
+    assert list(csv.reader(io.StringIO(csv_response.content.decode('utf-8-sig'))))[1][2:]==['一二','nhất nhị']
+    snapshot=client.get(f"/api/books/{book['id']}/results/pairs.csv")
+    assert list(csv.reader(io.StringIO(snapshot.content.decode('utf-8-sig'))))[1][2:]==['一二','nhất nhị']
+    response=client.get(f"/api/books/{book['id']}/export?format=xlsx")
+    sheet=load_workbook(io.BytesIO(response.content),rich_text=True).active
+    assert str(sheet['C2'].value)=='一二'
+    assert str(sheet['D2'].value)=='nhất nhị'
+    assert [block.font.color.rgb for block in sheet['C2'].value]==['FF000000','FFCC0000']
+
+
+def test_exports_preserve_leading_and_trailing_quoc_ngu_spaces(annotated):
+    client,_,_,book,_=annotated
+    target='  THIÊN,   ĐỊA!  '
+    row={'id':'spaces','sentence_id':f"{book['name']}.001.1",'source':'天地','target':target,'reviewed':False}
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[row]}).status_code==200
+    csv_rows=list(csv.reader(io.StringIO(
+        client.get(f"/api/books/{book['id']}/export?format=csv").content.decode('utf-8-sig')
+    )))
+    assert csv_rows[1][3]=='  thiên   địa  '
+    xlsx_bytes=client.get(f"/api/books/{book['id']}/export?format=xlsx").content
+    xlsx=load_workbook(io.BytesIO(xlsx_bytes),rich_text=True)
+    assert str(xlsx.active['D2'].value)=='  thiên   địa  '
+    with zipfile.ZipFile(io.BytesIO(xlsx_bytes)) as workbook:
+        xml=workbook.read('xl/worksheets/sheet1.xml').decode('utf-8')
+        assert 'xml:space="preserve">  thiên   địa  </t>' in xml
 
 
 def test_correcting_placeholder_updates_saved_pairs_after_split_and_merge(workspace):
@@ -232,8 +352,8 @@ def test_label_archive_and_alignment_validation(annotated):
 def test_bilingual_labels_contain_real_images_and_only_their_language(workspace):
     client,_,_=workspace
     book,pages=upload_book(client,'Mixed Book.pdf')
-    han={'id':'han','transcription':'天地','points':[[10,10],[30,10],[30,40],[10,40]]}
-    vi={'id':'vi','transcription':'Thiên địa','points':[[40,10],[100,10],[100,40],[40,40]]}
+    han={'id':'han','transcription':'天，地。','points':[[10,10],[30,10],[30,40],[10,40]]}
+    vi={'id':'vi','transcription':'Thiên, Địa!','points':[[40,10],[100,10],[100,40],[40,40]]}
     response=client.put(f"/api/pages/{pages[0]['id']}",json={
         'version':pages[0]['version'],'category':'both','boxes':[han],'vi_boxes':[vi],
         'source_text':'天地','target_text':'Thiên địa','done':True})
@@ -253,8 +373,8 @@ def test_bilingual_labels_contain_real_images_and_only_their_language(workspace)
         assert 'Mixed Book/blank/Mixed Book.002.jpg' in names
         han_labels=archive.read('Mixed Book/ch/Label.txt').decode('utf-8')
         vi_labels=archive.read('Mixed Book/vi/Label.txt').decode('utf-8')
-        assert '天地' in han_labels and 'Thiên địa' not in han_labels
-        assert 'Thiên địa' in vi_labels and '天地' not in vi_labels
+        assert '天地' in han_labels and 'Thiên' not in han_labels and '，' not in han_labels
+        assert 'thiên địa' in vi_labels and '天地' not in vi_labels and '!' not in vi_labels
 
 
 def test_translated_intro_is_in_special_and_both_language_folders(workspace):
@@ -272,6 +392,7 @@ def test_translated_intro_is_in_special_and_both_language_folders(workspace):
         for category in ('intro','ch','vi'):
             assert f'Intro Book/{category}/Intro Book.001.jpg' in archive.namelist()
         assert 'Lời tựa' not in archive.read('Intro Book/ch/Label.txt').decode('utf-8')
+        assert 'lời tựa' in archive.read('Intro Book/intro/Label.txt').decode('utf-8')
 
 
 def test_unknown_resources_are_404(workspace):
@@ -304,7 +425,7 @@ def test_pair_counter_excludes_incomplete_and_duplicates_and_resumes(workspace):
     }
     first = save_counted_pairs(client, 'Stats One.pdf', [
         ('天地', 'Thiên địa', False),
-        ('天 地', 'thie\u0302n đi\u0323a', True),
+        ('天， 地。', 'thie\u0302n đi\u0323a!', True),
         ('', 'Nội dung', True),
         ('玄黃', ' \t\n', False),
     ])

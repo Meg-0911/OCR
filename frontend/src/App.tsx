@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDownToLine,
   ArrowRight,
@@ -39,12 +39,14 @@ import LibraryBookReader from './components/LibraryBookReader';
 import DictionaryPanel from './components/DictionaryPanel';
 import { draftPatch, patchDraft, afterAutomaticSave, type Draft } from './drafts';
 import { replaceBoxText } from './components/boxText';
+import { reviewColorsForText } from './reviewColors';
 import type {
   Alignment,
   Book,
   Box,
   Category,
   Page,
+  ReviewKind,
   SourceFile,
   TextReference,
   Workspace,
@@ -87,6 +89,52 @@ function readSession(book?: string): BookSession {
   }
 }
 
+function reviewSummary(pages: Page[]) {
+  let total = 0;
+  let red = 0;
+  for (const page of pages) {
+    for (const box of page.boxes) {
+      for (const char of box.transcription) {
+        if (/\p{Script=Han}|\p{Co}|□/u.test(char)) {
+          total++;
+          red += Number(box.review_kind === 'mismatch' || box.review_kind === 'unknown');
+        }
+      }
+    }
+  }
+  return { total, red, percent: total ? 100 * (1 - red / total) : null };
+}
+
+function alignmentReviewColors(rows: Alignment[], pages: Page[]) {
+  const result = new Map<string, { source: ReviewKind[]; target: ReviewKind[] }>();
+  const rowsByPage = new Map<number, Alignment[]>();
+  for (const row of rows) {
+    const pageNumber = Number(row.sentence_id.match(/\.(\d{3,})\.\d+$/)?.[1]);
+    if (!pageNumber) continue;
+    rowsByPage.set(pageNumber, [...(rowsByPage.get(pageNumber) || []), row]);
+  }
+  for (const page of pages) {
+    const pageRows = rowsByPage.get(page.number);
+    if (!pageRows?.length || !page.boxes.length) continue;
+    const sourceStream = pageRows.map((row) => row.source).join('');
+    const sourceStreamColors = reviewColorsForText(sourceStream, page.boxes, 'source');
+    const targetStream = pageRows.map((row) => row.target).join('');
+    const targetStreamColors = reviewColorsForText(targetStream, page.boxes, 'target');
+    let sourceOffset = 0;
+    let targetOffset = 0;
+    for (const row of pageRows) {
+      const sourceEnd = sourceOffset + Array.from(row.source).length;
+      const source = sourceStreamColors.slice(sourceOffset, sourceEnd);
+      sourceOffset = sourceEnd;
+      const targetEnd = targetOffset + Array.from(row.target).length;
+      const target = targetStreamColors.slice(targetOffset, targetEnd);
+      targetOffset = targetEnd;
+      result.set(row.id, { source, target });
+    }
+  }
+  return result;
+}
+
 export default function App() {
   const [nomFontStatus, setNomFontStatus] = useState('Đang tải font Nôm…');
   useEffect(() => {
@@ -122,13 +170,38 @@ export default function App() {
   const [sourceSearch, setSourceSearch] = useState('');
   const [sourceLoading, setSourceLoading] = useState(false);
   const [rows, setRows] = useState<Alignment[]>([]);
+  const [alignmentPage, setAlignmentPage] = useState('');
+  const similarity = useMemo(
+    () => reviewSummary(pages.map((item) => ({
+      ...item,
+      ...(drafts[item.id] ? draftPatch(drafts[item.id]) : {}),
+    }))),
+    [pages, drafts],
+  );
+  const alignmentColors = useMemo(
+    () => alignmentReviewColors(rows, pages.map((item) => ({
+      ...item,
+      ...(drafts[item.id] ? draftPatch(drafts[item.id]) : {}),
+    }))),
+    [rows, pages, drafts],
+  );
+  const alignmentSourcePage = pages.find((item) => item.id === alignmentPage) ||
+    pages.find((item) => item.ocr_languages.includes('han'));
+  const alignmentSourceDraft = alignmentSourcePage
+    ? drafts[alignmentSourcePage.id]
+    : undefined;
+  const alignmentSource = alignmentSourcePage
+    ? {
+        ...alignmentSourcePage,
+        ...(alignmentSourceDraft ? draftPatch(alignmentSourceDraft) : {}),
+      }
+    : undefined;
   const [rowsDirty, setRowsDirty] = useState(false);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
   const alignmentTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const alignmentSaves = useRef(new Map<string, Promise<Alignment[]>>());
   const [alignmentLoading, setAlignmentLoading] = useState(false);
-  const [alignmentPage, setAlignmentPage] = useState('');
   const [reference, setReference] = useState<TextReference | null>(null);
   const [librarySearch, setLibrarySearch] = useState('');
   const [libraryBookId, setLibraryBookId] = useState('');
@@ -197,41 +270,14 @@ export default function App() {
           text.slice(selected.index + selected.character.length),
       });
     else {
-      let cursor = 0,
-        offset = -1;
-      const pageText = draft.source_text || '';
-      for (const item of draft.boxes) {
-        const start = pageText.indexOf(item.transcription, cursor);
-        if (item.id === selected.boxId) {
-          offset = start;
-          break;
-        }
-        if (start >= 0) cursor = start + item.transcription.length;
-      }
-      updateDraft({
-        ...(offset >= 0
-          ? {
-              source_text:
-                pageText.slice(0, offset + selected.index) +
-                character +
-                pageText.slice(offset + selected.index + selected.character.length),
-            }
-          : {}),
-        boxes: draft.boxes.map((b) =>
-          b.id === selected.boxId
-            ? {
-                ...b,
-                transcription:
-                  b.transcription.slice(0, selected.index) +
-                  character +
-                  b.transcription.slice(selected.index + selected.character.length),
-              }
-            : b,
-        ),
-      });
+      const nextValue = text.slice(0, selected.index) + character +
+        text.slice(selected.index + selected.character.length);
+      const next = replaceBoxText(draft.boxes, draft.source_text || '', selected.boxId,
+        nextValue, draft.reading_direction, true);
+      updateDraft({ boxes: next.boxes, source_text: next.text });
     }
     setDictionarySelection({ ...selected, character });
-    setDictionaryCharacter(character);
+    setDictionaryCharacter(selected.character === '□' ? null : character);
     notify('Đã thay chữ. Chỉnh sửa sẽ tự lưu; Ctrl + S để lưu ngay.');
   }
 
@@ -421,15 +467,18 @@ export default function App() {
       setBusy(false);
     }
   }
-  async function saveDraftNow(id: string): Promise<Page | undefined> {
+  async function saveDraftNow(
+    id: string,
+    mode: 'all' | 'automatic' = 'automatic',
+  ): Promise<Page | undefined> {
     const inflight = savingDrafts.current.get(id);
     if (inflight) {
       await inflight;
-      return saveDraftNow(id);
+      return saveDraftNow(id, mode);
     }
     const snapshot = draftsRef.current[id];
     if (!snapshot) return;
-    const patch = draftPatch(snapshot, 'automatic');
+    const patch = draftPatch(snapshot, mode);
     if (!Object.keys(patch).length) return;
     setAutosaveState('Đang lưu chỉnh sửa…');
     const task = api.patchPage(id, patch);
@@ -567,12 +616,12 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [bookId, pageId, view, alignmentPage, loadingPages, workflowStep]);
   useEffect(() => {
-    if (!bookId || view !== 'alignment') return;
+    if (!bookId || (view !== 'alignment' && view !== 'review')) return;
     let cancelled = false;
     setAlignmentLoading(true);
     setRows([]);
     setReference(null);
-    Promise.all([api.alignments(bookId), api.reference(bookId)])
+    Promise.all([api.alignments(bookId), view === 'alignment' ? api.reference(bookId) : Promise.resolve(null)])
       .then(([result, referenceText]) => {
         if (cancelled) return;
         setReference(referenceText);
@@ -755,9 +804,9 @@ export default function App() {
       setBusy(false);
     }
   }
-  function newRow(source = '', target = '') {
+  function newRow(source = '', target = '', sourcePageId = alignmentPage, pageLinked = false) {
     const sourcePage =
-      pages.find((p) => p.id === alignmentPage) ||
+      pages.find((p) => p.id === sourcePageId) ||
       pages.find((p) => p.ocr_languages.includes('han'));
     if (!sourcePage || !activeBook) {
       notify('Cần phân loại ít nhất một trang Hán Nôm trước khi tạo cặp.', true);
@@ -779,6 +828,7 @@ export default function App() {
         source,
         target,
         reviewed: false,
+        page_linked: pageLinked,
       },
     ]);
   }
@@ -825,8 +875,8 @@ export default function App() {
             : sourcePages.length === 1
               ? reference?.text || ''
               : '');
-        const sourceLines = sourceText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-        const targetLines = targetText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+        const sourceLines = sourceText.split(/\r?\n/).filter((line) => line.trim());
+        const targetLines = targetText.split(/\r?\n/).filter((line) => line.trim());
         if (!sourceLines.length || !targetLines.length) {
           skipped++;
           continue;
@@ -875,6 +925,9 @@ export default function App() {
     }
     setBusy(true);
     try {
+      if (format !== 'labels') {
+        for (const page of pages) await saveDraftNow(page.id, 'all');
+      }
       const response = await fetch(api.exportUrl(bookId, format));
       if (!response.ok) {
         const error = await response.json();
@@ -1151,7 +1204,7 @@ export default function App() {
                   onError={fail}
                   onLookup={(box, character, index) => {
                     setDictionarySelection({ pageId: pageId, boxId: box.id, index, character });
-                    setDictionaryMode('character');
+                    setDictionaryMode(character === '□' ? 'reading' : 'character');
                     setDictionaryCharacter(character);
                   }}
                 />
@@ -1313,10 +1366,7 @@ export default function App() {
                   {!alignmentLoading && (
                     <AlignmentSources
                       key={`${bookId}-${alignmentPage || pages.find((p) => p.ocr_languages.includes('han'))?.id || ''}`}
-                      page={
-                        pages.find((p) => p.id === alignmentPage) ||
-                        pages.find((p) => p.ocr_languages.includes('han'))
-                      }
+                      page={alignmentSource}
                       pages={pages}
                       reference={reference}
                       busy={busy}
@@ -1326,8 +1376,8 @@ export default function App() {
                   <div className="alignment-notice">
                     <CircleHelp size={16} />
                     <span>
-                      Từ điển hỗ trợ tra từng chữ khi Gán nhãn. Độ tương đồng của các cặp chưa được
-                      đánh giá tự động; đánh dấu đã đọc không xác nhận tương đồng ngữ nghĩa.
+                      Tô màu trong bước <strong>Gán nhãn OCR</strong> khi đang dò ảnh gốc. Bảng này dùng để
+                      tách, gộp và sửa cặp; màu đã đánh giá vẫn hiển thị ở hai vế.
                     </span>
                   </div>
                   <div className="alignment-head">
@@ -1352,6 +1402,8 @@ export default function App() {
                           row={row}
                           index={index}
                           total={rows.length}
+                          sourceColors={alignmentColors.get(row.id)?.source}
+                          targetColors={alignmentColors.get(row.id)?.target}
                           onChange={(updated) =>
                             changeRows(rows.map((r) => (r.id === row.id ? updated : r)))
                           }
@@ -1368,6 +1420,8 @@ export default function App() {
                                         source: row.source + next.source,
                                         target: row.target + ' ' + next.target,
                                         reviewed: false,
+                                        page_linked: false,
+                                        marks: [],
                                       },
                                     ]
                                   : i === index + 1
@@ -1396,6 +1450,8 @@ export default function App() {
                                         source: source[0],
                                         target: target[0],
                                         reviewed: false,
+                                        page_linked: false,
+                                        marks: [],
                                       },
                                       {
                                         ...r,
@@ -1404,6 +1460,8 @@ export default function App() {
                                         source: source[1],
                                         target: target[1],
                                         reviewed: false,
+                                        page_linked: false,
+                                        marks: [],
                                       },
                                     ]
                                   : [r],
@@ -1436,6 +1494,11 @@ export default function App() {
                     <span>
                       {rowsDirty ? 'Có bản nháp chưa lưu vào máy' : 'Đã lưu vào máy'} · Xuất đúng 4
                       cột theo yêu cầu
+                    </span>
+                    <span>
+                      {similarity.percent === null
+                        ? 'Chưa có chữ Nôm để tính độ tương đồng'
+                        : `Độ tương đồng ${similarity.percent.toFixed(2)}% (${similarity.red}/${similarity.total} chữ đỏ) · yêu cầu ≥95%`}
                     </span>
                   </div>
                 </section>
@@ -1488,7 +1551,7 @@ export default function App() {
                         format: 'csv',
                         title: 'Ngữ liệu CSV',
                         description:
-                          'UTF-8 có BOM, 4 cột đúng định dạng. Mở bằng Excel hoặc dùng cho xử lý dữ liệu.',
+                          'UTF-8 có BOM, 4 cột; tự bỏ dấu câu hai vế và viết thường Quốc ngữ.',
                         label: '.CSV',
                         icon: FileText,
                       },
@@ -1496,7 +1559,7 @@ export default function App() {
                         format: 'xlsx',
                         title: 'Bảng tính Excel',
                         description:
-                          'Giữ nguyên Unicode và bốn cột căn chỉnh để kiểm tra trong Excel.',
+                          'Bốn cột; tự bỏ dấu câu, viết thường Quốc ngữ và tô đen/đỏ theo đánh giá đã lưu.',
                         label: '.XLSX',
                         icon: FileCheck2,
                       },
@@ -1504,7 +1567,7 @@ export default function App() {
                         format: 'labels',
                         title: 'Nhãn PPOCRLabel',
                         description:
-                          'Label.txt, fileState.txt và ảnh JPEG tương ứng trong từng thư mục.',
+                          'Label.txt đã bỏ dấu câu, viết thường Quốc ngữ; kèm fileState.txt và ảnh JPEG.',
                         label: '.ZIP',
                         icon: Boxes,
                       },

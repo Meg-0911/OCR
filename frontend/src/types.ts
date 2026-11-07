@@ -1,5 +1,11 @@
 export type Category = 'both' | 'ch' | 'vi' | 'intro' | 'ref' | 'toc' | 'blank' | 'misc';
-export type Box = { id: string; transcription: string; points: [number, number][] };
+export type ReviewKind = 'match' | 'mismatch' | 'unknown';
+export type Box = {
+  id: string;
+  transcription: string;
+  points: [number, number][];
+  review_kind?: ReviewKind;
+};
 export type Region = [number, number, number, number];
 export type TextSources = Partial<Record<'han' | 'vi', TextReference>>;
 export type Page = {
@@ -40,6 +46,15 @@ export type Alignment = {
   source: string;
   target: string;
   reviewed: boolean;
+  page_linked?: boolean;
+  marks?: ReviewMark[];
+};
+export type ReviewMark = {
+  source_start: number;
+  source_end: number;
+  target_start: number;
+  target_end: number;
+  kind: 'match' | 'mismatch' | 'unknown';
 };
 export type PairStats = {
   target: number;

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import type { Page, TextReference } from '../types';
+import type { MouseEvent } from 'react';
+import type { Page, ReviewKind, TextReference } from '../types';
+import { reviewColorsForText } from '../reviewColors';
 
 export default function AlignmentSources({
   page,
@@ -31,6 +33,24 @@ export default function AlignmentSources({
       ?.boxes.map((box) => box.transcription)
       .join('\n') ||
     '';
+  const sourceColors = page
+    ? reviewColorsForText(sourceText, page.boxes, 'source')
+    : [];
+  const targetColors = page
+    ? reviewColorsForText(targetText, page.boxes, 'target')
+    : [];
+  function selectedText(event: MouseEvent<HTMLDivElement>, setter: (value: string) => void) {
+    const selection = window.getSelection();
+    if (!selection || !event.currentTarget.contains(selection.anchorNode)) return;
+    setter(selection.toString());
+  }
+  function coloredText(value: string, colors: ReviewKind[]) {
+    return Array.from(value).map((character, index) => (
+      <span className={`review-${colors[index] || 'match'}`} key={index}>
+        {character}
+      </span>
+    ));
+  }
 
   return (
     <details className="alignment-sources" open>
@@ -57,17 +77,15 @@ export default function AlignmentSources({
       <div className="alignment-source-grid">
         <label>
           Hán Nôm · {page ? `trang ${page.number}` : 'chọn trang nguồn phía trên'}
-          <textarea
-            className="han-text"
-            readOnly
+          <div
+            className="alignment-source-text han-text"
             aria-label="Văn bản Hán Nôm đã lưu"
-            value={sourceText}
-            placeholder="Chạy OCR, Gán nhãn và lưu trang Hán Nôm trước khi chọn câu."
-            onSelect={(event) => {
-              const input = event.currentTarget;
-              setSourceSelection(input.value.slice(input.selectionStart, input.selectionEnd));
-            }}
-          />
+            onMouseUp={(event) => selectedText(event, setSourceSelection)}
+          >
+            {sourceText
+              ? coloredText(sourceText, sourceColors)
+              : 'Chạy OCR, Gán nhãn và lưu trang Hán Nôm trước khi chọn câu.'}
+          </div>
         </label>
         <label>
           Quốc ngữ ·{' '}
@@ -93,16 +111,15 @@ export default function AlignmentSources({
               ))}
             </select>
           )}
-          <textarea
-            readOnly
+          <div
+            className="alignment-source-text"
             aria-label="Văn bản Quốc ngữ đối chiếu"
-            value={targetText}
-            placeholder="Sách này chưa có TXT đối chiếu. Nhập văn bản ở trang Quốc ngữ hoặc thêm cặp thủ công."
-            onSelect={(event) => {
-              const input = event.currentTarget;
-              setTargetSelection(input.value.slice(input.selectionStart, input.selectionEnd));
-            }}
-          />
+            onMouseUp={(event) => selectedText(event, setTargetSelection)}
+          >
+            {targetText
+              ? coloredText(targetText, targetColors)
+              : 'Sách này chưa có TXT đối chiếu. Nhập văn bản ở trang Quốc ngữ hoặc thêm cặp thủ công.'}
+          </div>
         </label>
       </div>
       <p>

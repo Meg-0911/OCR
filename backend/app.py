@@ -26,6 +26,7 @@ from .store import CATEGORIES, Store, label_groups
 from .ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
 from .sources import source_files
 from .dictionary import Dictionary
+from .alignment_review import export_text, paint, rich_text
 from .ocr_jobs import OCRJobs
 from .vietnamese_ocr import create_vietnamese_ocr
 from PIL import Image
@@ -54,6 +55,7 @@ class BoxInput(BaseModel):
     id: str = Field(min_length=1, max_length=100)
     transcription: str = Field(max_length=30000)
     points: list[tuple[float, float]] = Field(min_length=4, max_length=4)
+    review_kind: Literal['match','mismatch','unknown'] | None = None
 
     @field_validator('points')
     @classmethod
@@ -188,12 +190,22 @@ class WorkflowInput(OCRSettings):
     plan: list[PagePlan] = Field(default_factory=list,max_length=20000)
 
 
+class ReviewMark(BaseModel):
+    source_start: int = Field(ge=0)
+    source_end: int = Field(ge=0)
+    target_start: int = Field(ge=0)
+    target_end: int = Field(ge=0)
+    kind: Literal['match', 'mismatch', 'unknown']
+
+
 class AlignmentInput(BaseModel):
     id: str = Field(min_length=1, max_length=100)
     sentence_id: str = Field(min_length=1, max_length=300)
     source: str = Field(max_length=100000)
     target: str = Field(max_length=100000)
     reviewed: bool = False
+    page_linked: bool = False
+    marks: list[ReviewMark] = Field(default_factory=list, max_length=1000)
 
 
 class AlignmentsInput(BaseModel):
@@ -491,12 +503,12 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 vi_boxes = data.vi_boxes if data.vi_boxes is not None else page['vi_boxes']
                 if ('han' in languages and not data.boxes) or ('vi' in languages and not vi_boxes):
                     raise HTTPException(422, 'Trang cần box thật cho từng ngôn ngữ trước khi hoàn thành. Kiểm tra OCR hoặc vẽ box thủ công.')
-            boxes = [b.model_dump(mode='json') for b in data.boxes]
+            boxes = [b.model_dump(mode='json',exclude_none=True) for b in data.boxes]
             try:
                 with store.db() as db:
                     result = db.execute('UPDATE pages SET boxes=?,status=?,category=?,reading_direction=?,source_text=?,target_text=?,vi_boxes=?,version=version+1 WHERE id=? AND version=?',
                         (json.dumps(boxes,ensure_ascii=False),'done' if data.done else 'pending',data.category,data.reading_direction,
-                         source_text,target_text,json.dumps([b.model_dump() for b in data.vi_boxes],ensure_ascii=False) if data.vi_boxes is not None else json.dumps(page['vi_boxes'],ensure_ascii=False),page_id,data.version))
+                         source_text,target_text,json.dumps([b.model_dump(exclude_none=True) for b in data.vi_boxes],ensure_ascii=False) if data.vi_boxes is not None else json.dumps(page['vi_boxes'],ensure_ascii=False),page_id,data.version))
                     if result.rowcount != 1:
                         raise HTTPException(409, 'Trang đã được cập nhật ở cửa sổ khác. Hãy tải lại trang trước khi lưu.')
                     edited=set(page['edited_fields'])
@@ -506,7 +518,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                         edited.add('target_text')
                     if boxes!=page['boxes']:
                         edited.add('boxes')
-                    if data.vi_boxes is not None and [b.model_dump(mode='json') for b in data.vi_boxes]!=page['vi_boxes']:
+                    if data.vi_boxes is not None and [b.model_dump(mode='json',exclude_none=True) for b in data.vi_boxes]!=page['vi_boxes']:
                         edited.add('vi_boxes')
                     if data.category!=page['category']:
                         languages=['han'] if data.category=='ch' else ['vi'] if data.category=='vi' else ['han','vi'] if data.category=='both' else page['ocr_languages']
@@ -842,6 +854,10 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         rows = [r.model_dump() for r in data.rows]
         counters = {}
         for row in rows:
+            for mark in row['marks']:
+                if not (0 <= mark['source_start'] < mark['source_end'] <= len(row['source'])
+                        and 0 <= mark['target_start'] < mark['target_end'] <= len(row['target'])):
+                    raise HTTPException(422, 'Vùng tô màu phải nằm trong cả hai vế của cặp căn chỉnh.')
             prefix = row['sentence_id'].rsplit('.', 1)[0]
             counters[prefix] = counters.get(prefix, 0) + 1
             row['sentence_id'] = f"{prefix}.{counters[prefix]}"
@@ -880,7 +896,34 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 raise HTTPException(400,'Chưa có cặp căn chỉnh. Hãy tạo và lưu các cặp trước khi xuất.')
             if any(not row['source'].strip() or not row['target'].strip() for row in rows):
                 raise HTTPException(400,'Còn cặp căn chỉnh thiếu một vế. Hãy sửa hoặc gộp cặp trước khi xuất.')
-            values = [[r['sentence_id'].rsplit('.',1)[0]+'.jpg',r['sentence_id'],r['source'],r['target']] for r in rows]
+            box_colors = store.source_box_colors(book_id, rows)
+            prepared = []
+            for row in rows:
+                marks = row.get('marks', [])
+                source_colors = paint(row['source'], marks, 'source')
+                target_colors = paint(row['target'], marks, 'target')
+                source_marked = [False] * len(source_colors)
+                target_marked = [False] * len(target_colors)
+                for mark in marks:
+                    source_marked[mark['source_start']:mark['source_end']] = [True] * (
+                        mark['source_end'] - mark['source_start']
+                    )
+                    target_marked[mark['target_start']:mark['target_end']] = [True] * (
+                        mark['target_end'] - mark['target_start']
+                    )
+                for index, kind in enumerate(box_colors.get(row['id'], {}).get('source', [])):
+                    if kind is not None and not source_marked[index]:
+                        source_colors[index] = kind
+                for index, kind in enumerate(box_colors.get(row['id'], {}).get('target', [])):
+                    if kind is not None and not target_marked[index]:
+                        target_colors[index] = kind
+                source, source_colors = export_text(row['source'], 'source', source_colors)
+                target, target_colors = export_text(row['target'], 'target', target_colors)
+                if not source or not target:
+                    raise HTTPException(400, f"Cặp {row['sentence_id']} không còn văn bản sau khi bỏ dấu câu. Hãy sửa cặp trước khi xuất.")
+                prepared.append((source, source_colors, target, target_colors))
+            values = [[row['sentence_id'].rsplit('.',1)[0]+'.jpg', row['sentence_id'], source, target]
+                      for row, (source, _, target, _) in zip(rows, prepared)]
             path = folder / f"{book['name']}.{format}"
             if format == 'csv':
                 with path.open('w',encoding='utf-8-sig',newline='') as output:
@@ -895,11 +938,13 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 for cell in sheet[1]:
                     cell.font = Font(bold=True,color='FFFFFF')
                     cell.fill = PatternFill('solid',fgColor='234D42')
-                for values_row in values:
+                for values_row, (source, source_colors, target, target_colors) in zip(values, prepared):
                     sheet.append(values_row)
                     for cell in sheet[sheet.max_row]:
                         # Export source text verbatim, never execute spreadsheet formulas.
                         cell.data_type = 's'
+                    sheet[f'C{sheet.max_row}'].value = rich_text(source, source_colors)
+                    sheet[f'D{sheet.max_row}'].value = rich_text(target, target_colors)
                 for column,width in zip('ABCD',(45,48,65,85)):
                     sheet.column_dimensions[column].width = width
                 sheet.freeze_panes = 'A2'
