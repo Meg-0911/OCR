@@ -284,7 +284,9 @@ export default function App() {
       updateDraft({ boxes: next.boxes, source_text: next.text });
     }
     setDictionarySelection({ ...selected, character });
-    setDictionaryCharacter(selected.character === '□' ? null : character);
+    setDictionaryCharacter(
+      selected.character === '□' || !selected.character ? null : character,
+    );
     notify('Đã thay chữ. Chỉnh sửa sẽ tự lưu; Ctrl + S để lưu ngay.');
   }
 
@@ -1211,7 +1213,7 @@ export default function App() {
                   onError={fail}
                   onLookup={(box, character, index) => {
                     setDictionarySelection({ pageId: pageId, boxId: box.id, index, character });
-                    setDictionaryMode(character === '□' ? 'reading' : 'character');
+                    setDictionaryMode(!character || character === '□' ? 'reading' : 'character');
                     setDictionaryCharacter(character);
                   }}
                 />
@@ -1378,15 +1380,15 @@ export default function App() {
                       reference={reference}
                       busy={busy}
                       onCreate={newRow}
-                      onBoxes={(page, boxes) => updatePageDraft(page, { boxes }, false)}
+                      onBoxes={(page, boxes) => updatePageDraft(page, { export_boxes: boxes }, false)}
                       alignments={alignmentPageRows}
                     />
                   )}
                   <div className="alignment-notice">
                     <CircleHelp size={16} />
                     <span>
-                      Dùng ảnh và box hàng/cột phía trên để chỉnh nhãn đầu ra; các thay đổi được lưu
-                      cùng box chữ của trang. Tô màu khi dò chữ trong bước{' '}
+                      Dùng ảnh và box nhãn xuất phía trên để chỉnh dữ liệu tải về; chúng được lưu
+                      riêng với box chữ OCR. Tô màu khi dò chữ trong bước{' '}
                       <strong>Gán nhãn OCR</strong>; bảng dưới dùng để tách, gộp và sửa cặp.
                     </span>
                   </div>

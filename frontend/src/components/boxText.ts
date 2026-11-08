@@ -28,14 +28,15 @@ export function replaceBoxText(boxes: Box[], text: string, id: string, value: st
         return { boxes: next, text: text.slice(0, start) + value + text.slice(start + box.transcription.length) };
       // A merge or split can leave the page text with a different box boundary.
       // Use the selected box's placeholder rank instead of silently keeping □.
-      if (han && text.includes('□') && box.transcription.includes('□')) {
+      if (han && text.includes('□') && (box.transcription.includes('□') || !box.transcription)) {
         const readingOrder = lines.flat();
         const before = readingOrder.slice(0, readingOrder.findIndex(item => item.id === id));
-        const rank = before.reduce((sum, item) => sum + [...item.transcription].filter(char => char === '□').length, 0);
+        const rank = before.reduce((sum, item) =>
+          sum + Math.max(Number(!item.transcription), [...item.transcription].filter(char => char === '□').length), 0);
         let position = -1;
         for (let i = 0; i <= rank; i++) position = text.indexOf('□', position + 1);
         if (position >= 0) {
-          const unknowns = [...box.transcription].filter(char => char === '□').length;
+          const unknowns = Math.max(Number(!box.transcription), [...box.transcription].filter(char => char === '□').length);
           let end = position + 1;
           while (end < text.length && text[end] === '□' && end - position < unknowns) end++;
           return { boxes: next, text: text.slice(0, position) + value + text.slice(end) };

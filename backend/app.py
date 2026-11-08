@@ -142,6 +142,7 @@ def validate_export_order(boxes):
 class PageInput(BaseModel):
     boxes: list[BoxInput] = Field(default_factory=list,max_length=5000)
     vi_boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
+    export_boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
     source_text: str | None = Field(default=None,max_length=200000)
     target_text: str | None = Field(default=None,max_length=200000)
     done: bool = False
@@ -155,6 +156,8 @@ class PageInput(BaseModel):
         validate_export_order(self.boxes)
         if self.vi_boxes is not None:
             validate_export_order(self.vi_boxes)
+        if self.export_boxes is not None:
+            validate_export_order(self.export_boxes)
         return self
 
 
@@ -163,6 +166,7 @@ class PagePatch(BaseModel):
     target_text: str | None = Field(default=None,max_length=200000)
     boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
     vi_boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
+    export_boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
     category: Category | None = None
     reading_direction: Literal[1,2] | None = None
     ocr_skip: bool | None = None
@@ -177,7 +181,7 @@ class PagePatch(BaseModel):
 
     @model_validator(mode='after')
     def valid_export_order(self):
-        for boxes in (self.boxes, self.vi_boxes):
+        for boxes in (self.boxes, self.vi_boxes, self.export_boxes):
             if boxes is not None:
                 validate_export_order(boxes)
         return self
@@ -564,9 +568,10 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     def save_page(page_id: str, data: PageInput):
         with store.lock:
             page = require_page(page_id)
-            if any(x>page['width'] or y>page['height'] for box in [*data.boxes,*(data.vi_boxes or [])] for x,y in box.points):
+            page_boxes=[*data.boxes,*(data.vi_boxes or []),*(data.export_boxes or [])]
+            if any(x>page['width'] or y>page['height'] for box in page_boxes for x,y in box.points):
                 raise HTTPException(422, 'Box vượt ra ngoài kích thước ảnh.')
-            if len({b.id for b in data.boxes}) != len(data.boxes):
+            if any(len({b.id for b in boxes}) != len(boxes) for boxes in (data.boxes,data.vi_boxes or [],data.export_boxes or [])):
                 raise HTTPException(422, 'ID box bị trùng.')
             source_text=page['source_text'] if data.source_text is None else data.source_text
             target_text=page['target_text'] if data.target_text is None else data.target_text
@@ -585,11 +590,17 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 if ('han' in languages and not data.boxes) or ('vi' in languages and not vi_boxes):
                     raise HTTPException(422, 'Trang cần box thật cho từng ngôn ngữ trước khi hoàn thành. Kiểm tra OCR hoặc vẽ box thủ công.')
             boxes = [b.model_dump(mode='json',exclude_none=True) for b in data.boxes]
+            export_boxes = [b.model_dump(mode='json',exclude_none=True) for b in data.export_boxes] if data.export_boxes is not None else None
             try:
                 with store.db() as db:
-                    result = db.execute('UPDATE pages SET boxes=?,status=?,category=?,reading_direction=?,source_text=?,target_text=?,vi_boxes=?,version=version+1 WHERE id=? AND version=?',
-                        (json.dumps(boxes,ensure_ascii=False),'done' if data.done else 'pending',data.category,data.reading_direction,
-                         source_text,target_text,json.dumps([b.model_dump(exclude_none=True) for b in data.vi_boxes],ensure_ascii=False) if data.vi_boxes is not None else json.dumps(page['vi_boxes'],ensure_ascii=False),page_id,data.version))
+                    updates=['boxes=?','status=?','category=?','reading_direction=?','source_text=?','target_text=?','vi_boxes=?']
+                    values=[json.dumps(boxes,ensure_ascii=False),'done' if data.done else 'pending',data.category,data.reading_direction,
+                            source_text,target_text,json.dumps([b.model_dump(exclude_none=True) for b in data.vi_boxes],ensure_ascii=False) if data.vi_boxes is not None else json.dumps(page['vi_boxes'],ensure_ascii=False)]
+                    if export_boxes is not None:
+                        updates.append('export_boxes=?')
+                        values.append(json.dumps(export_boxes,ensure_ascii=False))
+                    values.extend((page_id,data.version))
+                    result = db.execute('UPDATE pages SET '+','.join(updates)+',version=version+1 WHERE id=? AND version=?',values)
                     if result.rowcount != 1:
                         raise HTTPException(409, 'Trang đã được cập nhật ở cửa sổ khác. Hãy tải lại trang trước khi lưu.')
                     edited=set(page['edited_fields'])
@@ -640,10 +651,12 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             edited=set(page['edited_fields'])
             edited.update(key for key in ('source_text','target_text','boxes','vi_boxes') if key in changes and changes[key]!=page[key])
             changes['edited_fields']=json.dumps(sorted(edited))
-            for key in ('boxes','vi_boxes'):
+            for key in ('boxes','vi_boxes','export_boxes'):
                 if key in changes:
                     if any(x>page['width'] or y>page['height'] for box in changes[key] for x,y in box['points']):
                         raise HTTPException(422,'Box vượt ra ngoài kích thước ảnh.')
+                    if len({box['id'] for box in changes[key]}) != len(changes[key]):
+                        raise HTTPException(422,'ID box bị trùng.')
                     changes[key]=json.dumps(changes[key],ensure_ascii=False)
             for key in ('source_regions','target_regions'):
                 if key in changes and changes[key] is not None:

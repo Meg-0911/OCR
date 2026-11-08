@@ -21,6 +21,7 @@ export type Page = {
   width: number;
   height: number;
   boxes: Box[];
+  export_boxes: Box[];
   image_url: string;
   version: number;
   reading_direction: 1 | 2;

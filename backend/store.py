@@ -77,7 +77,7 @@ def label_groups(page):
 def label_boxes(page, category):
     size=(page['width'],page['height'])
     if category == 'ch':
-        return nom_export_boxes(page['boxes'],page['reading_direction'],size)
+        return page['export_boxes']
     if category == 'vi':
         return ordered_boxes(page['vi_boxes'] or (page['boxes'] if page['category']=='vi' else []), 'vi', 2,size)
     return ordered_boxes([*page['boxes'], *page['vi_boxes']], category, page['reading_direction'],size)
@@ -97,7 +97,8 @@ def nom_export_boxes(boxes, direction, image_size=None):
             x1=max(point[0] for box in members for point in box['points'])
             y1=max(point[1] for box in members for point in box['points'])
             output.append({'transcription':''.join(box['transcription'] for box in members),
-                           'points':[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]})
+                           'points':[[x0,y0],[x1,y0],[x1,y1],[x0,y1]],
+                           'source_ids':[box['id'] for box in members]})
         return output
     ordered=ordered_boxes(boxes,'ch',direction,image_size)
     if not ordered:
@@ -119,7 +120,8 @@ def nom_export_boxes(boxes, direction, image_size=None):
         x1=max(extent(box,0)[1] for box in run)
         y1=max(extent(box,1)[1] for box in run)
         return {'transcription':''.join(box['transcription'] for box in run),
-                'points':[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]}
+                'points':[[x0,y0],[x1,y0],[x1,y1],[x0,y1]],
+                'source_ids':[box['id'] for box in run]}
     output=[]; run=[]
     for box in ordered:
         if run:
@@ -188,7 +190,7 @@ class Store:
             if 'reading_direction' not in {row['name'] for row in db.execute('PRAGMA table_info(pages)')}:
                 db.execute('ALTER TABLE pages ADD COLUMN reading_direction INTEGER NOT NULL DEFAULT 1')
             columns={row['name'] for row in db.execute('PRAGMA table_info(pages)')}
-            for column,default in (('source_text',"''"),('target_text',"''"),('vi_boxes',"'[]'")):
+            for column,default in (('source_text',"''"),('target_text',"''"),('vi_boxes',"'[]'"),('export_boxes',"'null'")):
                 if column not in columns:
                     db.execute(f'ALTER TABLE pages ADD COLUMN {column} TEXT NOT NULL DEFAULT {default}')
             if 'ocr_skip' not in columns:
@@ -275,6 +277,28 @@ class Store:
         page = dict(row)
         page["boxes"] = ordered_boxes(json.loads(page["boxes"]), page['category'], page['reading_direction'],(page['width'],page['height']))
         page['vi_boxes']=ordered_boxes(json.loads(page['vi_boxes']),'vi',2,(page['width'],page['height']))
+        export_boxes=json.loads(page['export_boxes'])
+        if export_boxes is None:
+            export_boxes=[]
+            for index,box in enumerate(nom_export_boxes(page['boxes'],page['reading_direction'],(page['width'],page['height']))):
+                source_ids=box.pop('source_ids',[])
+                source_boxes=[source for source in page['boxes'] if source['id'] in source_ids]
+                groups={source.get('export_group') for source in source_boxes}
+                group=next(iter(groups)) if len(groups)==1 else None
+                if not group:
+                    group=f"{page['id']}-export-{index+1}"
+                alignment_ids={source.get('alignment_id') for source in source_boxes}
+                export_boxes.append({
+                    **box,
+                    'id':group,
+                    'export_group':group,
+                    'export_order':index+1,
+                    'export_character_order':0,
+                    **({'alignment_id':next(iter(alignment_ids))} if len(alignment_ids)==1 and None not in alignment_ids else {}),
+                })
+        else:
+            export_boxes.sort(key=lambda box: box.get('export_order') or 0)
+        page['export_boxes']=export_boxes
         page['ocr_skip']=bool(page['ocr_skip'])
         page['edited_fields']=json.loads(page['edited_fields'])
         for key in ('source_regions','target_regions'):

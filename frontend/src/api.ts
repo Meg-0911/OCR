@@ -53,6 +53,7 @@ export const api = {
         | 'source_text'
         | 'target_text'
         | 'boxes'
+        | 'export_boxes'
         | 'vi_boxes'
         | 'category'
         | 'reading_direction'
@@ -92,7 +93,7 @@ export const api = {
   ) =>
     request<Page>(
       `/pages/${page.id}`,
-      json('PUT', { boxes, done, category, version: page.version, reading_direction, ...texts }),
+      json('PUT', { boxes, export_boxes: page.export_boxes, done, category, version: page.version, reading_direction, ...texts }),
     ),
   duplicatePage: (page: string) => request<Page>(`/pages/${page}/duplicate`, { method: 'POST' }),
   latestOCR: (page: string) => request<OCRResult | null>(`/pages/${page}/ocr`),

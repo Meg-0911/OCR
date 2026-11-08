@@ -10,7 +10,18 @@ import {
 } from 'lucide-react';
 import type { Alignment, Box, Page } from '../types';
 import ManuscriptViewer from './ManuscriptViewer';
-import { nomExportBoxes, updateExportOrders, updateNomExportBoxes } from './nomExportBoxes';
+
+function withOrders(boxes: Box[], orders: Record<string, number>): Box[] {
+  return boxes.map((box, index) => {
+    const group = box.export_group || box.id;
+    return {
+      ...box,
+      export_group: group,
+      export_order: orders[group] ?? box.export_order ?? index + 1,
+      export_character_order: box.export_character_order ?? 0,
+    };
+  });
+}
 
 export default function AlignmentBoxEditor({
   page,
@@ -30,11 +41,10 @@ export default function AlignmentBoxEditor({
   const [orderInputs, setOrderInputs] = useState<Record<string, string>>({});
   const container = useRef<HTMLDivElement>(null);
   const boxes = useMemo(
-    () => nomExportBoxes(page.boxes, page.reading_direction, page.width, page.height),
-    [page.boxes, page.reading_direction, page.width, page.height],
+    () => withOrders(page.export_boxes, {}).sort((a, b) => (a.export_order || 0) - (b.export_order || 0)),
+    [page.export_boxes],
   );
   const selectedBox = boxes.find((box) => box.id === selected);
-  const selectedIsSingle = selectedBox?.source_ids.length === 1;
   const orderErrors = useMemo(() => {
     const values = boxes.map((box, index) => ({
       box,
@@ -74,92 +84,54 @@ export default function AlignmentBoxEditor({
         ]),
       ),
     );
-  }, [page.id, page.boxes]);
+  }, [page.id, page.export_boxes]);
 
   useEffect(() => {
-    const hasAssignments = page.boxes.some((box) => box.alignment_id);
+    const hasAssignments = page.export_boxes.some((box) => box.alignment_id);
     if (alignmentMismatch) {
       if (hasAssignments)
-        onBoxes(page.boxes.map(({ alignment_id: _alignmentId, ...box }) => box));
+        onBoxes(page.export_boxes.map(({ alignment_id: _alignmentId, ...box }) => box));
       return;
     }
     if (!alignments.length) return;
     const orders = Object.fromEntries(
       boxes.map((box, index) => [box.export_group || box.id, box.export_order ?? index + 1]),
     );
-    const normalized = updateExportOrders(
-      page.boxes,
-      orders,
-      page.reading_direction,
-      page.width,
-      page.height,
-    );
-    const orderedGroups = nomExportBoxes(
-      normalized,
-      page.reading_direction,
-      page.width,
-      page.height,
-    );
+    const normalized = withOrders(page.export_boxes, orders);
     const assignments = new Map<string, string>();
-    orderedGroups.forEach((group, index) =>
-      group.source_ids.forEach((id) => assignments.set(id, alignments[index].id)),
-    );
+    [...normalized]
+      .sort((a, b) => (a.export_order || 0) - (b.export_order || 0))
+      .forEach((box, index) => assignments.set(box.id, alignments[index].id));
     const updated = normalized.map((box) => ({
       ...box,
       alignment_id: assignments.get(box.id),
     }));
-    if (updated.some((box, index) => box.alignment_id !== page.boxes[index]?.alignment_id))
+    if (updated.some((box, index) => box.alignment_id !== page.export_boxes[index]?.alignment_id))
       onBoxes(updated);
   }, [
     alignmentMismatch,
     alignments,
     boxes,
     onBoxes,
-    page.boxes,
-    page.height,
-    page.reading_direction,
-    page.width,
+    page.export_boxes,
   ]);
 
   function applyBoxes(updated: Box[]) {
-    onBoxes(
-      updateNomExportBoxes(page.boxes, updated, page.reading_direction, page.width, page.height),
-    );
+    onBoxes(updated);
   }
 
   function updateText(text: string) {
-    if (!selectedBox || !selectedIsSingle) return;
-    const updated = updateNomExportBoxes(
-      page.boxes,
-      boxes,
-      page.reading_direction,
-      page.width,
-      page.height,
-    );
-    onBoxes(
-      updated.map((box) =>
-        box.id === selectedBox.source_ids[0] ? { ...box, transcription: text } : box,
-      ),
-    );
+    if (!selectedBox) return;
+    onBoxes(page.export_boxes.map((box) => (
+      box.id === selectedBox.id ? { ...box, transcription: text } : box
+    )));
   }
 
   function deleteSelected() {
     if (disabled || !selectedBox) return;
-    const remaining = boxes.filter((box) => box.export_group !== selectedBox.export_group);
-    const updated = updateNomExportBoxes(
-      page.boxes,
-      remaining,
-      page.reading_direction,
-      page.width,
-      page.height,
-    );
-    const orders = Object.fromEntries(
-      nomExportBoxes(updated, page.reading_direction, page.width, page.height).map((box, index) => [
-        box.export_group || box.id,
-        index + 1,
-      ]),
-    );
-    onBoxes(updateExportOrders(updated, orders, page.reading_direction, page.width, page.height));
+    const remaining = boxes.filter((box) => box.id !== selectedBox.id);
+    const orders = Object.fromEntries(remaining.map((box, index) => [box.id, index + 1]));
+    onBoxes(withOrders(remaining, orders));
     setSelected(null);
   }
 
@@ -174,9 +146,7 @@ export default function AlignmentBoxEditor({
     }
     const values = Object.values(parsed).sort((a, b) => a - b);
     if (values.some((value, index) => value !== index + 1)) return;
-    onBoxes(
-      updateExportOrders(page.boxes, parsed, page.reading_direction, page.width, page.height),
-    );
+    onBoxes(withOrders(boxes, parsed));
   }
 
   function changeOrder(groupId: string, value: string) {
@@ -207,9 +177,7 @@ export default function AlignmentBoxEditor({
       Object.entries(orders).map(([key, value]) => [key, String(value)]),
     );
     setOrderInputs(next);
-    onBoxes(
-      updateExportOrders(page.boxes, orders, page.reading_direction, page.width, page.height),
-    );
+    onBoxes(withOrders(boxes, orders));
   }
 
   async function toggleFullscreen() {
@@ -228,7 +196,7 @@ export default function AlignmentBoxEditor({
     <div className="alignment-box-editor" ref={container}>
       <div className="alignment-box-toolbar">
         <span>
-          {boxes.length} box hàng/cột để xuất · {page.boxes.length} box chữ gốc
+          {boxes.length} box nhãn xuất · {page.boxes.length} box chữ OCR
         </span>
         <div className="image-controls">
           <button
@@ -352,13 +320,13 @@ export default function AlignmentBoxEditor({
           );
         })}
       </div>
-      {selectedBox && selectedIsSingle && (
+      {selectedBox && (
         <label className="alignment-box-transcription">
-          Chữ trong box đang chọn
+          Chữ của box nhãn đang chọn
           <input
             value={selectedBox.transcription}
             disabled={disabled}
-            onChange={(event) => updateText(Array.from(event.target.value).slice(0, 1).join(''))}
+            onChange={(event) => updateText(event.target.value)}
           />
         </label>
       )}
@@ -370,7 +338,7 @@ export default function AlignmentBoxEditor({
       <small className="alignment-box-help">
         Kéo box để di chuyển, kéo góc để đổi kích thước; nhấn Delete để xóa box đang chọn. Dùng nút
         vẽ để thêm box. Sửa số thứ tự hoặc dùng mũi tên để đổi thứ tự xuất; số phải liên tục, không
-        trùng và box phải có chữ. Chỉnh sửa được lưu cùng box trang và áp dụng khi xuất Label.txt.
+        trùng và box phải có chữ. Box nhãn xuất được lưu riêng, không làm thay đổi box OCR.
       </small>
     </div>
   );

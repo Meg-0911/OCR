@@ -106,6 +106,92 @@ function targetWordsIn(text: string) {
   return text.match(/\S+/gu)?.filter((word) => /[\p{L}\p{N}]/u.test(word)) || [];
 }
 
+function VietnameseBoxEditor({
+  box,
+  index,
+  rowWordStart,
+  reviewKinds,
+  disabled,
+  onChange,
+  onFocus,
+  onSelectWord,
+}: {
+  box: Box;
+  index: number;
+  rowWordStart: number;
+  reviewKinds: (ReviewKind | undefined)[];
+  disabled: boolean;
+  onChange: (box: Box, text: string) => void;
+  onFocus: () => void;
+  onSelectWord: (wordIndex: number, boxId: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const editingText = useRef(box.transcription);
+  const composing = useRef(false);
+  const displayedText = editing ? editingText.current : box.transcription;
+  let wordIndex = rowWordStart;
+
+  function updateFromEditor(element: HTMLElement) {
+    const value = element.innerText.replace(/\r\n/g, '\n').replace(/\n$/, '');
+    if (value !== box.transcription) onChange(box, value);
+  }
+
+  return (
+    <div
+      className="workbench-vietnamese-editor"
+      role="textbox"
+      aria-label={`Vùng chữ Quốc ngữ ${index + 1}`}
+      aria-multiline="true"
+      contentEditable={!disabled}
+      suppressContentEditableWarning
+      onFocus={() => {
+        editingText.current = box.transcription;
+        setEditing(true);
+        onFocus();
+      }}
+      onBlur={(event) => {
+        composing.current = false;
+        updateFromEditor(event.currentTarget);
+        setEditing(false);
+      }}
+      onCompositionStart={() => {
+        composing.current = true;
+      }}
+      onCompositionEnd={(event) => {
+        composing.current = false;
+        updateFromEditor(event.currentTarget);
+      }}
+      onInput={(event) => {
+        if (!composing.current && !(event.nativeEvent as InputEvent).isComposing)
+          updateFromEditor(event.currentTarget);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          document.execCommand('insertText', false, '\n');
+        }
+      }}
+    >
+      {displayedText.split(/(\s+)/u).map((part, partIndex) => {
+        if (!part) return null;
+        if (/^\s+$/u.test(part)) return part;
+        if (!/[\p{L}\p{N}]/u.test(part)) return part;
+        const currentWord = wordIndex++;
+        const kind = reviewKinds[currentWord] || 'match';
+        return (
+          <span
+            key={`${currentWord}-${partIndex}`}
+            className={`review-${kind}`}
+            onClick={() => onSelectWord(currentWord, box.id)}
+          >
+            {part}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function BookWorkbench(props: Props) {
   const { pages } = props;
   const [step, setStep] = useState<1 | 2 | 3 | 4>(props.initialStep);
@@ -1239,7 +1325,6 @@ export default function BookWorkbench(props: Props) {
                             {boxes.map((box, index) => {
                               let offset = 0;
                               const rowWordStart = targetWordStart(index);
-                              let wordIndex = rowWordStart;
                               const reviewKind = language === 'han' ? box.review_kind || 'match' : undefined;
                               return (
                                 <div
@@ -1310,13 +1395,18 @@ export default function BookWorkbench(props: Props) {
                                         </div>
                                       </>
                                     ) : (
-                                      <div
-                                        className="workbench-vietnamese-editor"
-                                        role="textbox"
-                                        aria-label={`Vùng chữ Quốc ngữ ${index + 1}`}
-                                        aria-multiline="true"
-                                        contentEditable={step === 4 && !props.busy && !acting}
-                                        suppressContentEditableWarning
+                                      <VietnameseBoxEditor
+                                        box={box}
+                                        index={index}
+                                        rowWordStart={rowWordStart}
+                                        reviewKinds={page.boxes.map((item) => item.review_kind)}
+                                        disabled={step !== 4 || props.busy || acting}
+                                        onChange={updateBox}
+                                        onSelectWord={(wordIndex, boxId) => {
+                                          setEditingRegions(false);
+                                          setSelected(boxId);
+                                          selectTargetWord(wordIndex, boxId);
+                                        }}
                                         onFocus={() => {
                                           setEditingRegions(false);
                                           setSelected(box.id);
@@ -1324,36 +1414,7 @@ export default function BookWorkbench(props: Props) {
                                             setSelectedTargetWord(rowWordStart);
                                           setShowBoxes(true);
                                         }}
-                                        onInput={(event) => {
-                                          const value = event.currentTarget.innerText
-                                            .replace(/\r\n/g, '\n')
-                                            .replace(/\n$/, '');
-                                          if (value !== box.transcription) updateBox(box, value);
-                                        }}
-                                        onKeyDown={(event) => {
-                                          if (event.key === 'Enter' && !event.shiftKey) {
-                                            event.preventDefault();
-                                            document.execCommand('insertText', false, '\n');
-                                          }
-                                        }}
-                                      >
-                                        {box.transcription.split(/(\s+)/u).map((part, partIndex) => {
-                                          if (!part) return null;
-                                          if (/^\s+$/u.test(part)) return part;
-                                          if (!/[\p{L}\p{N}]/u.test(part)) return part;
-                                          const currentWord = wordIndex++;
-                                          const kind = page.boxes[currentWord]?.review_kind || 'match';
-                                          return (
-                                            <span
-                                              key={`${currentWord}-${partIndex}`}
-                                              className={`review-${kind}`}
-                                              onClick={() => selectTargetWord(currentWord, box.id)}
-                                            >
-                                              {part}
-                                            </span>
-                                          );
-                                        })}
-                                      </div>
+                                      />
                                     )}
                                   </div>
                                 </div>

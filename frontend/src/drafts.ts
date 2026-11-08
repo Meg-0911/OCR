@@ -1,7 +1,7 @@
 import type { Page } from './types';
 
 const editableFields = [
-  'boxes', 'category', 'reading_direction', 'source_text', 'target_text', 'vi_boxes',
+  'boxes', 'export_boxes', 'category', 'reading_direction', 'source_text', 'target_text', 'vi_boxes',
   'ocr_skip', 'source_regions', 'target_regions', 'ocr_languages',
 ] as const;
 type EditableField = (typeof editableFields)[number];

@@ -87,6 +87,40 @@ def test_export_box_order_metadata_is_validated_and_persisted(annotated):
     assert normalized['new-glyph']['export_order']==3
 
 
+def test_export_boxes_are_saved_and_downloaded_independently_from_ocr_boxes(annotated):
+    client,_,_,book,page=annotated
+    ocr_box=page['boxes'][0]
+    export_points=[[100,120],[180,120],[180,240],[100,240]]
+    response=client.patch(f"/api/pages/{page['id']}",json={
+        'export_boxes':[{
+            'id':'download-box','transcription':ocr_box['transcription'],
+            'points':export_points,'export_group':'download-box',
+            'export_order':1,'export_character_order':0,
+        }],
+    })
+    assert response.status_code==200,response.text
+    saved=response.json()
+    assert saved['boxes'][0]['points']==ocr_box['points']
+    assert saved['export_boxes'][0]['points']==export_points
+
+    completed=client.put(f"/api/pages/{page['id']}",json={
+        'boxes':saved['boxes'],'export_boxes':saved['export_boxes'],
+        'category':saved['category'],'done':True,'version':saved['version'],
+        'reading_direction':saved['reading_direction'],
+    })
+    assert completed.status_code==200,completed.text
+    assert completed.json()['boxes'][0]['points']==ocr_box['points']
+    assert completed.json()['export_boxes'][0]['points']==export_points
+
+    archive_response=client.get(f"/api/books/{book['id']}/export?format=labels")
+    assert archive_response.status_code==200
+    archive=zipfile.ZipFile(io.BytesIO(archive_response.content))
+    label=next(name for name in archive.namelist() if name.endswith('/ch/Label.txt'))
+    rows=json.loads(archive.read(label).decode().splitlines()[0].split('\t',1)[1])
+    assert rows[0]['points']==export_points
+    assert rows[0]['points']!=saved['boxes'][0]['points']
+
+
 def test_empty_workspace_and_real_pdf_folders_include_ref(workspace):
     client,store,_ = workspace
     data = client.get('/api/workspace').json()

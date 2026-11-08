@@ -199,8 +199,8 @@ export default function DictionaryPanel({
       </form>
       <p className="muted">
         {mode === 'reading'
-          ? character === '□'
-            ? 'Nhập âm Quốc ngữ của ô vuông, tìm chữ phù hợp rồi bấm Thay vào □ để sửa đúng box đang chọn.'
+          ? character === '□' || !character
+            ? `Nhập âm Quốc ngữ của ${character === '□' ? 'ô vuông' : 'ô trống'}, tìm chữ phù hợp rồi bấm thay để sửa box đang chọn.`
             : 'Tìm theo từng tiếng Quốc ngữ trong âm đọc Việt của Unihan và dữ liệu Nôm cục bộ; cụm nhiều tiếng được chia thành từng nhóm.'
           : 'Tra tại máy: ưu tiên bộ Nôm cục bộ nếu có, dùng Unihan dự phòng. Chỉ thay chữ khi bạn chọn áp dụng.'}
       </p>
@@ -305,9 +305,9 @@ export default function DictionaryPanel({
                       {entry.readings.join(' · ')}
                       <small>{entry.definitions.join('; ') || 'Chưa có nghĩa trong nguồn này'}</small>
                     </span>
-                    {canReplace && character === '□' && (
+                    {canReplace && (character === '□' || !character) && (
                       <button type="button" className="text-button" onClick={() => onReplace(entry.character)}>
-                        Thay vào □
+                        {character === '□' ? 'Thay vào □' : 'Thay vào ô trống'}
                       </button>
                     )}
                   </div>

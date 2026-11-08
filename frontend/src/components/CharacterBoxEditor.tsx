@@ -90,7 +90,11 @@ export default function CharacterBoxEditor({
                 >
                   <input
                     className="han-text"
-                    aria-label={`Ký tự ${box.transcription} dòng ${index + 1}`}
+                    aria-label={
+                      box.transcription
+                        ? `Ký tự ${box.transcription} dòng ${index + 1}`
+                        : `Ô trống dòng ${index + 1}`
+                    }
                     value={box.transcription}
                     disabled={disabled}
                     onFocus={() => onSelect(box.id)}
@@ -104,10 +108,12 @@ export default function CharacterBoxEditor({
                   />
                   <button
                     className="character-dictionary-button"
-                    aria-label={`Tra chữ ${box.transcription}`}
-                    title="Tra từ điển"
-                    disabled={!/\p{Script=Han}|□/u.test(box.transcription)}
-                    onClick={() => onLookup(box, Array.from(box.transcription)[0], 0)}
+                    aria-label={
+                      box.transcription ? `Tra chữ ${box.transcription}` : 'Tra âm đọc cho ô trống'
+                    }
+                    title={box.transcription ? 'Tra từ điển' : 'Tìm chữ cho ô trống'}
+                    disabled={!!box.transcription && !/\p{Script=Han}|□/u.test(box.transcription)}
+                    onClick={() => onLookup(box, Array.from(box.transcription)[0] || '', 0)}
                   >
                     <Search size={12} />
                   </button>
