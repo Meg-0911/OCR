@@ -8,7 +8,7 @@ import {
   SquareDashedMousePointer,
   Trash2,
 } from 'lucide-react';
-import type { Box, Page } from '../types';
+import type { Alignment, Box, Page } from '../types';
 import ManuscriptViewer from './ManuscriptViewer';
 import { nomExportBoxes, updateExportOrders, updateNomExportBoxes } from './nomExportBoxes';
 
@@ -16,10 +16,12 @@ export default function AlignmentBoxEditor({
   page,
   disabled,
   onBoxes,
+  alignments,
 }: {
   page: Page;
   disabled: boolean;
   onBoxes: (boxes: Box[]) => void;
+  alignments: Alignment[];
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [drawing, setDrawing] = useState(false);
@@ -61,6 +63,7 @@ export default function AlignmentBoxEditor({
       }
     return errors;
   }, [boxes, orderInputs]);
+  const alignmentMismatch = boxes.length !== alignments.length;
 
   useEffect(() => {
     setOrderInputs(
@@ -72,6 +75,51 @@ export default function AlignmentBoxEditor({
       ),
     );
   }, [page.id, page.boxes]);
+
+  useEffect(() => {
+    const hasAssignments = page.boxes.some((box) => box.alignment_id);
+    if (alignmentMismatch) {
+      if (hasAssignments)
+        onBoxes(page.boxes.map(({ alignment_id: _alignmentId, ...box }) => box));
+      return;
+    }
+    if (!alignments.length) return;
+    const orders = Object.fromEntries(
+      boxes.map((box, index) => [box.export_group || box.id, box.export_order ?? index + 1]),
+    );
+    const normalized = updateExportOrders(
+      page.boxes,
+      orders,
+      page.reading_direction,
+      page.width,
+      page.height,
+    );
+    const orderedGroups = nomExportBoxes(
+      normalized,
+      page.reading_direction,
+      page.width,
+      page.height,
+    );
+    const assignments = new Map<string, string>();
+    orderedGroups.forEach((group, index) =>
+      group.source_ids.forEach((id) => assignments.set(id, alignments[index].id)),
+    );
+    const updated = normalized.map((box) => ({
+      ...box,
+      alignment_id: assignments.get(box.id),
+    }));
+    if (updated.some((box, index) => box.alignment_id !== page.boxes[index]?.alignment_id))
+      onBoxes(updated);
+  }, [
+    alignmentMismatch,
+    alignments,
+    boxes,
+    onBoxes,
+    page.boxes,
+    page.height,
+    page.reading_direction,
+    page.width,
+  ]);
 
   function applyBoxes(updated: Box[]) {
     onBoxes(
@@ -247,8 +295,15 @@ export default function AlignmentBoxEditor({
         readOnly={disabled}
       />
       <div className="alignment-export-order-list" aria-label="Thứ tự box xuất">
+        {alignmentMismatch && (
+          <div className="alignment-box-error" role="alert">
+            Có {boxes.length} box và {alignments.length} cặp của trang này. Cần tạo đúng một cặp cho
+            mỗi box để tự gán.
+          </div>
+        )}
         {boxes.map((box, index) => {
           const groupId = box.export_group || box.id;
+          const pair = alignments.find((item) => item.id === box.alignment_id);
           return (
             <div className="alignment-export-order-row" key={groupId}>
               <input
@@ -264,6 +319,12 @@ export default function AlignmentBoxEditor({
               <span className="alignment-export-order-text">
                 {box.transcription || 'Chưa gán chữ'}
               </span>
+              {pair && (
+                <small className="alignment-box-pair">
+                  ↔ {pair.sentence_id}: {pair.source || 'chưa có Hán Nôm'} ·{' '}
+                  {pair.target || 'chưa có Quốc ngữ'}
+                </small>
+              )}
               <button
                 type="button"
                 aria-label={`Đưa box ${index + 1} lên`}

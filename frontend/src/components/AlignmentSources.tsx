@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { MouseEvent } from 'react';
-import type { Page, ReviewKind, TextReference } from '../types';
+import type { Alignment, Page, ReviewKind, TextReference } from '../types';
 import { reviewColorsForText } from '../reviewColors';
 import AlignmentBoxEditor from './AlignmentBoxEditor';
 
@@ -12,6 +12,7 @@ export default function AlignmentSources({
   busy,
   onCreate,
   onBoxes,
+  alignments,
 }: {
   page?: Page;
   pages: Page[];
@@ -19,6 +20,7 @@ export default function AlignmentSources({
   busy: boolean;
   onCreate: (source: string, target: string) => void;
   onBoxes: (page: Page, boxes: Page['boxes']) => void;
+  alignments: Alignment[];
 }) {
   const targets = pages.filter((p) => p.category === 'vi');
   const [targetId, setTargetId] = useState(
@@ -69,6 +71,7 @@ export default function AlignmentSources({
           <AlignmentBoxEditor
             page={page}
             disabled={busy}
+            alignments={alignments}
             onBoxes={(boxes) => onBoxes(page, boxes)}
           />
         </div>

@@ -8,6 +8,7 @@ export type Box = {
   export_group?: string;
   export_order?: number | null;
   export_character_order?: number;
+  alignment_id?: string;
 };
 export type Region = [number, number, number, number];
 export type TextSources = Partial<Record<'han' | 'vi', TextReference>>;

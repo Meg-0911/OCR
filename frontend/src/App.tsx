@@ -196,6 +196,14 @@ export default function App() {
         ...(alignmentSourceDraft ? draftPatch(alignmentSourceDraft) : {}),
       }
     : undefined;
+  const activeBook = workspace?.books.find((b) => b.id === bookId);
+  const alignmentPageRows = alignmentSourcePage && activeBook
+    ? rows.filter((row) =>
+        row.sentence_id.startsWith(
+          `${activeBook.name}.${String(alignmentSourcePage.number).padStart(3, '0')}.`,
+        ),
+      )
+    : [];
   const [rowsDirty, setRowsDirty] = useState(false);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
@@ -231,7 +239,6 @@ export default function App() {
   } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const activeBook = workspace?.books.find((b) => b.id === bookId);
   const libraryBook = workspace?.books.find((b) => b.id === libraryBookId);
   const page = pages.find((p) => p.id === pageId);
   const draft = page
@@ -1372,6 +1379,7 @@ export default function App() {
                       busy={busy}
                       onCreate={newRow}
                       onBoxes={(page, boxes) => updatePageDraft(page, { boxes }, false)}
+                      alignments={alignmentPageRows}
                     />
                   )}
                   <div className="alignment-notice">

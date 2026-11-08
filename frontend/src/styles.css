@@ -4161,6 +4161,13 @@ h1 {
   grid-column: 2 / -1;
   padding: 0 0 4px;
 }
+.alignment-export-order-row .alignment-box-pair {
+  grid-column: 2 / -1;
+  overflow: hidden;
+  color: #647261;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .alignment-box-help {
   display: block;
   padding: 0 10px 8px;

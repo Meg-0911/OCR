@@ -59,6 +59,7 @@ class BoxInput(BaseModel):
     export_group: str | None = Field(default=None, min_length=1, max_length=100)
     export_order: int | None = Field(default=None, ge=1)
     export_character_order: int | None = Field(default=None, ge=0)
+    alignment_id: str | None = Field(default=None, min_length=1, max_length=100)
 
     @field_validator('points')
     @classmethod
@@ -78,8 +79,11 @@ class BoxInput(BaseModel):
 def validate_export_order(boxes):
     tagged = [box for box in boxes if box.export_group is not None]
     if not tagged:
-        if any(box.export_order is not None or box.export_character_order is not None for box in boxes):
-            raise ValueError('Thông tin thứ tự nhãn thiếu nhóm box.')
+        if any(
+            box.export_order is not None or box.export_character_order is not None or box.alignment_id is not None
+            for box in boxes
+        ):
+            raise ValueError('Thông tin thứ tự/gán cặp nhãn thiếu nhóm box.')
         return boxes
     if any(
         box.export_order is not None or box.export_character_order is not None
@@ -107,9 +111,20 @@ def validate_export_order(boxes):
     ordered_groups.sort(key=lambda item: item[0])
     next_order = len(ordered_groups)
     for index, (_, _, members) in enumerate(ordered_groups, 1):
+        alignment_ids = {box.alignment_id for box in members}
+        if len(alignment_ids) != 1:
+            raise ValueError('Các ký tự trong cùng box phải gắn với cùng một cặp căn chỉnh.')
         for character_order, box in enumerate(members):
             box.export_order = index
             box.export_character_order = character_order
+    assignments = [
+        (order, members[0].alignment_id)
+        for order, _, members in ordered_groups
+        if members[0].alignment_id is not None
+    ]
+    assigned_ids = [alignment_id for _, alignment_id in assignments]
+    if len(set(assigned_ids)) != len(assigned_ids):
+        raise ValueError('Một cặp căn chỉnh chỉ được gán cho một box.')
     for box in boxes:
         if box.export_group is not None:
             continue
@@ -120,6 +135,7 @@ def validate_export_order(boxes):
         box.export_group = group
         box.export_order = next_order
         box.export_character_order = 0
+        box.alignment_id = None
     return boxes
 
 
