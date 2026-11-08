@@ -22,16 +22,22 @@ export function useBookOCR(props: ControllerProps) {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
     let lastProgress = '';
+    let lastPageRefresh = 0;
     async function poll() {
       try {
         const next = await api.ocrJob(props.bookId);
         if (cancelled) return;
-        latest.current.onJob(next);
-        // Language checkpoints can arrive before a whole page is complete.
-        if (next && (next.status === 'running' || JSON.stringify(next) !== lastProgress)) {
+        const progress = JSON.stringify(next);
+        const progressChanged = progress !== lastProgress;
+        if (progressChanged) latest.current.onJob(next);
+        // Checkpoints can update page text without changing the job progress.
+        const checkpointRefreshDue =
+          next?.status === 'running' && Date.now() - lastPageRefresh >= 5000;
+        if (next && (progressChanged || checkpointRefreshDue)) {
           latest.current.onRefresh();
+          lastPageRefresh = Date.now();
         }
-        lastProgress = JSON.stringify(next);
+        lastProgress = progress;
       } catch {
         /* retry */
       }

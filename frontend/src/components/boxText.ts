@@ -73,3 +73,66 @@ export function removeBoxAndText(boxes: Box[], text: string, id: string) {
   }
   return { boxes, text };
 }
+
+export function syncTextLinesToBoxes(boxes: Box[], previousText: string, nextText: string) {
+  const previousLines = previousText.split(/\r\n|\n|\r/u);
+  const nextLines = nextText.split(/\r\n|\n|\r/u);
+  const nextLineIndexes = new Map<string, number[]>();
+  nextLines.forEach((line, index) => {
+    nextLineIndexes.set(line, [...(nextLineIndexes.get(line) || []), index]);
+  });
+
+  const unchangedLines: { previous: number; next: number }[] = [];
+  let nextCursor = -1;
+  for (let index = 0; index < previousLines.length; index++) {
+    const matches = nextLineIndexes.get(previousLines[index]) || [];
+    const nextIndex = matches.find((candidate) => candidate > nextCursor);
+    if (nextIndex === undefined) continue;
+    unchangedLines.push({ previous: index, next: nextIndex });
+    nextCursor = nextIndex;
+  }
+
+  const boxesByLine = new Map<number, Box[]>();
+  let previousCursor = 0;
+  for (const box of boxes) {
+    const lineIndex = previousLines.findIndex(
+      (line, index) => index >= previousCursor && line === box.transcription,
+    );
+    if (lineIndex < 0) continue;
+    boxesByLine.set(lineIndex, [...(boxesByLine.get(lineIndex) || []), box]);
+    previousCursor = lineIndex + 1;
+  }
+
+  const boxTranscriptions = new Map<string, string | null>();
+  let previousStart = 0;
+  let nextStart = 0;
+  for (const anchor of [...unchangedLines, { previous: previousLines.length, next: nextLines.length }]) {
+    const previousIndexes = Array.from(
+      { length: anchor.previous - previousStart },
+      (_, index) => previousStart + index,
+    );
+    const nextIndexes = Array.from(
+      { length: anchor.next - nextStart },
+      (_, index) => nextStart + index,
+    );
+    const segmentBoxes = previousIndexes.flatMap((index) => boxesByLine.get(index) || []);
+    segmentBoxes.forEach((box, index) => {
+      boxTranscriptions.set(box.id, nextLines[nextIndexes[index]] ?? null);
+    });
+
+    if (anchor.previous < previousLines.length) {
+      for (const box of boxesByLine.get(anchor.previous) || [])
+        boxTranscriptions.set(box.id, nextLines[anchor.next]);
+    }
+    previousStart = anchor.previous + 1;
+    nextStart = anchor.next + 1;
+  }
+
+  return boxes.flatMap((box) => {
+    if (!boxTranscriptions.has(box.id)) return [box];
+    const transcription = boxTranscriptions.get(box.id);
+    return transcription === null || transcription === undefined
+      ? []
+      : [{ ...box, transcription }];
+  });
+}

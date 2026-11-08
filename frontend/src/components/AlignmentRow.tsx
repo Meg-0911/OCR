@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { CheckCheck, Link2, SplitSquareVertical, Trash2 } from 'lucide-react';
 import type { Alignment, ReviewKind, ReviewMark } from '../types';
 
@@ -26,7 +26,63 @@ function selectionOffset(element: HTMLElement) {
   const range = selection.getRangeAt(0).cloneRange();
   range.selectNodeContents(element);
   range.setEnd(selection.anchorNode!, selection.anchorOffset);
-  return range.toString().length;
+  return Array.from(range.toString()).length;
+}
+
+function AlignmentEditor({
+  side,
+  index,
+  value,
+  display,
+  className,
+  compact,
+  onChange,
+  onSelectionChange,
+}: {
+  side: 'source' | 'target';
+  index: number;
+  value: string;
+  display: ReturnType<typeof colorsFor>;
+  className: string;
+  compact: boolean;
+  onChange: (value: string) => void;
+  onSelectionChange: (element: HTMLElement) => void;
+}) {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [editing, setEditing] = useState(false);
+
+  useLayoutEffect(() => {
+    const element = editorRef.current;
+    if (!element || editing) return;
+    element.replaceChildren(
+      ...display.characters.map((character, charIndex) => {
+        const span = document.createElement('span');
+        span.className = `review-${display.kinds[charIndex]}`;
+        span.textContent = character;
+        return span;
+      }),
+    );
+  }, [display, editing, value]);
+
+  return (
+    <div
+      ref={editorRef}
+      className={`alignment-editor ${className}`}
+      role="textbox"
+      aria-label={`${side === 'source' ? 'Hán Nôm' : 'Quốc ngữ'} cặp ${index + 1}`}
+      aria-multiline="true"
+      contentEditable={!compact}
+      suppressContentEditableWarning
+      onFocus={() => setEditing(true)}
+      onBlur={() => setEditing(false)}
+      onInput={(event) => {
+        const next = event.currentTarget.innerText.replace(/\r\n/g, '\n').replace(/\n$/, '');
+        onChange(next);
+      }}
+      onKeyUp={(event) => onSelectionChange(event.currentTarget)}
+      onMouseUp={(event) => onSelectionChange(event.currentTarget)}
+    />
+  );
 }
 
 export default function AlignmentRow({
@@ -57,22 +113,16 @@ export default function AlignmentRow({
   const marks = row.marks || [];
   const sourceDisplay = colorsFor(row.source, sourceColors, marks, 'source');
   const targetDisplay = colorsFor(row.target, targetColors, marks, 'target');
-  function editor(
-    side: 'source' | 'target',
-    value: string,
-    display: ReturnType<typeof colorsFor>,
-    className = '',
-  ) {
+  function editor(side: 'source' | 'target', value: string, display: ReturnType<typeof colorsFor>, className = '') {
     return (
-      <div
-        className={`alignment-editor ${className}`}
-        role="textbox"
-        aria-label={`${side === 'source' ? 'Hán Nôm' : 'Quốc ngữ'} cặp ${index + 1}`}
-        aria-multiline="true"
-        contentEditable={!compact}
-        suppressContentEditableWarning
-        onInput={(event) => {
-          const next = event.currentTarget.innerText.replace(/\r\n/g, '\n').replace(/\n$/, '');
+      <AlignmentEditor
+        side={side}
+        index={index}
+        value={value}
+        display={display}
+        className={className}
+        compact={compact}
+        onChange={(next) => {
           if (next !== value)
             onChange({
               ...row,
@@ -81,30 +131,39 @@ export default function AlignmentRow({
               marks: [],
             });
         }}
-        onKeyUp={(event) =>
-          setCut({ side, position: selectionOffset(event.currentTarget) })
+        onSelectionChange={(element) =>
+          setCut({ side, position: selectionOffset(element) })
         }
-        onMouseUp={(event) =>
-          setCut({ side, position: selectionOffset(event.currentTarget) })
-        }
-      >
-        {display.characters.map((character, charIndex) => (
-          <span key={charIndex} className={`review-${display.kinds[charIndex]}`}>
-            {character}
-          </span>
-        ))}
-      </div>
+      />
     );
   }
   function split() {
-    const value = cut?.side === 'source' ? row.source : row.target;
-    if (!cut || cut.position <= 0 || cut.position >= value.length) {
+    const sourceCharacters = Array.from(row.source);
+    const targetCharacters = Array.from(row.target);
+    const cutValue = cut?.side === 'source' ? sourceCharacters : targetCharacters;
+    if (!cut || cut.position <= 0 || cut.position >= cutValue.length) {
       setSplitting(true);
       return;
     }
+    const sourcePosition =
+      cut.side === 'source'
+        ? cut.position
+        : Math.round((cut.position / targetCharacters.length) * sourceCharacters.length);
+    const targetPosition =
+      cut.side === 'target'
+        ? cut.position
+        : Math.round((cut.position / sourceCharacters.length) * targetCharacters.length);
+    const sourceCut =
+      sourceCharacters.length > 1
+        ? Math.min(Math.max(sourcePosition, 1), sourceCharacters.length - 1)
+        : sourceCharacters.length;
+    const targetCut =
+      targetCharacters.length > 1
+        ? Math.min(Math.max(targetPosition, 1), targetCharacters.length - 1)
+        : targetCharacters.length;
     onSplit?.(
-      cut.side === 'source' ? [row.source.slice(0, cut.position), row.source.slice(cut.position)] : [row.source, ''],
-      cut.side === 'target' ? [row.target.slice(0, cut.position), row.target.slice(cut.position)] : [row.target, ''],
+      [sourceCharacters.slice(0, sourceCut).join(''), sourceCharacters.slice(sourceCut).join('')],
+      [targetCharacters.slice(0, targetCut).join(''), targetCharacters.slice(targetCut).join('')],
     );
     setSplitting(false);
     setCut(null);
@@ -128,7 +187,9 @@ export default function AlignmentRow({
         {editor('target', row.target, targetDisplay)}
         <small className="comparison-text">Khi xuất (chữ thường, bỏ dấu câu): {exportPreview(row.target, 'target') || '—'}</small>
         {splitting && (
-          <small className="split-hint">Đặt con trỏ giữa chữ trong một ô, rồi bấm Tách. Ô còn lại sẽ ở cặp đầu.</small>
+          <small className="split-hint">
+            Đặt con trỏ giữa chữ ở một ô rồi bấm Tách; văn bản ở ô còn lại sẽ được cắt theo tỷ lệ tương ứng.
+          </small>
         )}
       </div>
       {!compact && <div className="alignment-tools">
@@ -145,7 +206,7 @@ export default function AlignmentRow({
           className="icon-button"
           title="Tách tại con trỏ trong một ô"
           aria-label={`Tách cặp ${index + 1}`}
-          disabled={row.source.length < 2 && row.target.length < 2}
+          disabled={Array.from(row.source).length < 2 && Array.from(row.target).length < 2}
           onClick={split}
         >
           <SplitSquareVertical size={16} />

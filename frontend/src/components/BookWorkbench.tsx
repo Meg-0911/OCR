@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Check,
   ArrowLeft,
@@ -34,7 +34,7 @@ import type {
 import ManuscriptViewer from './ManuscriptViewer';
 import BookOCRPanel, { useBookOCR } from './BookOCRPanel';
 import CharacterBoxEditor, { groupCharacterBoxes } from './CharacterBoxEditor';
-import { removeBoxAndText, replaceBoxText } from './boxText';
+import { removeBoxAndText, replaceBoxText, syncTextLinesToBoxes } from './boxText';
 
 type Editable = Pick<
   Page,
@@ -126,10 +126,29 @@ function VietnameseBoxEditor({
   onSelectWord: (wordIndex: number, boxId: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const editingText = useRef(box.transcription);
   const composing = useRef(false);
-  const displayedText = editing ? editingText.current : box.transcription;
-  let wordIndex = rowWordStart;
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const element = editorRef.current;
+    if (!element || editing) return;
+    let wordIndex = rowWordStart;
+    const nodes: Node[] = [];
+    for (const part of box.transcription.split(/(\s+)/u)) {
+      if (!part) continue;
+      if (/^\s+$/u.test(part) || !/[\p{L}\p{N}]/u.test(part)) {
+        nodes.push(document.createTextNode(part));
+        continue;
+      }
+      const currentWord = wordIndex++;
+      const span = document.createElement('span');
+      span.className = `review-${reviewKinds[currentWord] || 'match'}`;
+      span.dataset.wordIndex = String(currentWord);
+      span.textContent = part;
+      nodes.push(span);
+    }
+    element.replaceChildren(...nodes);
+  }, [box.transcription, editing, onSelectWord, reviewKinds, rowWordStart]);
 
   function updateFromEditor(element: HTMLElement) {
     const value = element.innerText.replace(/\r\n/g, '\n').replace(/\n$/, '');
@@ -138,6 +157,7 @@ function VietnameseBoxEditor({
 
   return (
     <div
+      ref={editorRef}
       className="workbench-vietnamese-editor"
       role="textbox"
       aria-label={`Vùng chữ Quốc ngữ ${index + 1}`}
@@ -145,7 +165,6 @@ function VietnameseBoxEditor({
       contentEditable={!disabled}
       suppressContentEditableWarning
       onFocus={() => {
-        editingText.current = box.transcription;
         setEditing(true);
         onFocus();
       }}
@@ -171,24 +190,13 @@ function VietnameseBoxEditor({
           document.execCommand('insertText', false, '\n');
         }
       }}
-    >
-      {displayedText.split(/(\s+)/u).map((part, partIndex) => {
-        if (!part) return null;
-        if (/^\s+$/u.test(part)) return part;
-        if (!/[\p{L}\p{N}]/u.test(part)) return part;
-        const currentWord = wordIndex++;
-        const kind = reviewKinds[currentWord] || 'match';
-        return (
-          <span
-            key={`${currentWord}-${partIndex}`}
-            className={`review-${kind}`}
-            onClick={() => onSelectWord(currentWord, box.id)}
-          >
-            {part}
-          </span>
-        );
-      })}
-    </div>
+      onClick={(event) => {
+        if (!(event.target instanceof HTMLElement)) return;
+        const word = event.target.closest<HTMLElement>('[data-word-index]');
+        const wordIndex = Number(word?.dataset.wordIndex);
+        if (word && Number.isInteger(wordIndex)) onSelectWord(wordIndex, box.id);
+      }}
+    />
   );
 }
 
@@ -1279,10 +1287,24 @@ export default function BookWorkbench(props: Props) {
                               className={language === 'han' ? 'han-text' : ''}
                               aria-label={`Văn bản ${language === 'han' ? 'Nôm' : 'Quốc ngữ'}`}
                               disabled={props.busy || acting}
-                              readOnly={boxes.length > 0}
+                              readOnly={language === 'han' && boxes.length > 0}
                               value={text}
                               placeholder="Văn bản sẽ xuất hiện khi OCR hoàn tất."
-                              onChange={(event) => props.onPatch({ [textKey]: event.target.value })}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                props.onPatch({
+                                  [textKey]: value,
+                                  ...(language === 'vi'
+                                    ? {
+                                        vi_boxes: syncTextLinesToBoxes(boxes, text, value),
+                                        boxes: page.boxes.map((box) => ({
+                                          ...box,
+                                          review_kind: undefined,
+                                        })),
+                                      }
+                                    : {}),
+                                });
+                              }}
                               onSelect={(event) => {
                                 const input = event.currentTarget,
                                   position = input.selectionStart;

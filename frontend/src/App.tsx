@@ -185,8 +185,20 @@ export default function App() {
     }))),
     [rows, pages, drafts],
   );
-  const alignmentSourcePage = pages.find((item) => item.id === alignmentPage) ||
-    pages.find((item) => item.ocr_languages.includes('han'));
+  const alignmentSourcePage =
+    pages.find(
+      (item) =>
+        item.id === alignmentPage &&
+        !item.ocr_skip &&
+        !['blank', 'misc'].includes(item.category) &&
+        item.ocr_languages.includes('han'),
+    ) ||
+    pages.find(
+      (item) =>
+        !item.ocr_skip &&
+        !['blank', 'misc'].includes(item.category) &&
+        item.ocr_languages.includes('han'),
+    );
   const alignmentSourceDraft = alignmentSourcePage
     ? drafts[alignmentSourcePage.id]
     : undefined;
@@ -204,6 +216,27 @@ export default function App() {
         ),
       )
     : [];
+  const alignmentPageGroups = useMemo(() => {
+    if (!activeBook) return [];
+    const rowsByPage = new Map<number, { row: Alignment; globalIndex: number }[]>();
+    const prefix = `${activeBook.name}.`;
+    rows.forEach((row, globalIndex) => {
+      if (!row.sentence_id.startsWith(prefix)) return;
+      const pageNumber = row.sentence_id.slice(prefix.length).split('.', 1)[0];
+      if (!/^\d{3,}$/u.test(pageNumber)) return;
+      const number = Number(pageNumber);
+      rowsByPage.set(number, [...(rowsByPage.get(number) || []), { row, globalIndex }]);
+    });
+    return pages
+      .filter(
+        (item) =>
+          !item.ocr_skip &&
+          !['blank', 'misc'].includes(item.category) &&
+          item.ocr_languages.includes('han'),
+      )
+      .sort((a, b) => a.number - b.number)
+      .map((page) => ({ page, rows: rowsByPage.get(page.number) || [] }));
+  }, [activeBook, pages, rows]);
   const [rowsDirty, setRowsDirty] = useState(false);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
@@ -231,6 +264,7 @@ export default function App() {
   const sessionSaves = useRef<Promise<unknown>>(Promise.resolve());
   const currentBookRef = useRef(bookId);
   currentBookRef.current = bookId;
+  const refreshingBookPages = useRef(false);
   const [dictionarySelection, setDictionarySelection] = useState<{
     pageId: string;
     boxId: string;
@@ -291,19 +325,30 @@ export default function App() {
   }
 
   async function refreshBookPages() {
+    if (refreshingBookPages.current) return;
+    refreshingBookPages.current = true;
     try {
       const id = bookId;
       const next = await api.pages(id);
       if (currentBookRef.current !== id) return;
+      const current = pagesRef.current;
+      const changed =
+        next.length !== current.length ||
+        next.some((page) => {
+          const previous = current.find((item) => item.id === page.id);
+          return !previous || page.version > previous.version;
+        });
       setPages((previous) =>
         next.map((p) => {
           const old = previous.find((q) => q.id === p.id);
-          return old && old.version > p.version ? old : p;
+          return old && old.version >= p.version ? old : p;
         }),
       );
-      void loadWorkspace();
+      if (changed) void loadWorkspace();
     } catch (error) {
       fail(error);
+    } finally {
+      refreshingBookPages.current = false;
     }
   }
 
@@ -1343,7 +1388,12 @@ export default function App() {
                       >
                         <option value="">Chọn trang Nôm</option>
                         {pages
-                          .filter((p) => p.ocr_languages.includes('han'))
+                          .filter(
+                            (p) =>
+                              !p.ocr_skip &&
+                              !['blank', 'misc'].includes(p.category) &&
+                              p.ocr_languages.includes('han'),
+                          )
                           .map((p) => (
                             <option key={p.id} value={p.id}>
                               Trang {String(p.number).padStart(3, '0')}
@@ -1392,95 +1442,134 @@ export default function App() {
                       <strong>Gán nhãn OCR</strong>; bảng dưới dùng để tách, gộp và sửa cặp.
                     </span>
                   </div>
-                  <div className="alignment-head">
-                    <span>ID CÂU</span>
-                    <span>
-                      <b>文</b> HÁN NÔM
-                    </span>
-                    <span>
-                      <b>Aa</b> QUỐC NGỮ
-                    </span>
-                    <span>THAO TÁC</span>
-                  </div>
                   {alignmentLoading ? (
                     <div className="empty-section">
                       <LoaderCircle className="spin" size={24} />
                     </div>
-                  ) : rows.length ? (
-                    <div className="alignment-rows">
-                      {rows.map((row, index) => (
-                        <AlignmentRow
-                          key={row.id}
-                          row={row}
-                          index={index}
-                          total={rows.length}
-                          sourceColors={alignmentColors.get(row.id)?.source}
-                          targetColors={alignmentColors.get(row.id)?.target}
-                          onChange={(updated) =>
-                            changeRows(rows.map((r) => (r.id === row.id ? updated : r)))
-                          }
-                          onRemove={() => changeRows(rows.filter((r) => r.id !== row.id))}
-                          onMerge={() => {
-                            const next = rows[index + 1];
-                            if (!next) return;
-                            changeRows(
-                              rows.flatMap((r, i) =>
-                                i === index
-                                  ? [
-                                      {
-                                        ...row,
-                                        source: row.source + next.source,
-                                        target: row.target + ' ' + next.target,
-                                        reviewed: false,
-                                        page_linked: false,
-                                        marks: [],
-                                      },
-                                    ]
-                                  : i === index + 1
-                                    ? []
-                                    : [r],
-                              ),
-                            );
-                          }}
-                          onSplit={(source, target) => {
-                            const match = row.sentence_id.match(/^(.*\.)(\d+)$/);
-                            if (!match) return;
-                            const prefix = match[1];
-                            const sequence =
-                              Math.max(
-                                0,
-                                ...rows
-                                  .filter((r) => r.sentence_id.startsWith(prefix))
-                                  .map((r) => Number(r.sentence_id.slice(prefix.length)) || 0),
-                              ) + 1;
-                            changeRows(
-                              rows.flatMap((r) =>
-                                r.id === row.id
-                                  ? [
-                                      {
-                                        ...r,
-                                        source: source[0],
-                                        target: target[0],
-                                        reviewed: false,
-                                        page_linked: false,
-                                        marks: [],
-                                      },
-                                      {
-                                        ...r,
-                                        id: crypto.randomUUID(),
-                                        sentence_id: prefix + sequence,
-                                        source: source[1],
-                                        target: target[1],
-                                        reviewed: false,
-                                        page_linked: false,
-                                        marks: [],
-                                      },
-                                    ]
-                                  : [r],
-                              ),
-                            );
-                          }}
-                        />
+                  ) : alignmentPageGroups.length ? (
+                    <div className="alignment-page-groups">
+                      {alignmentPageGroups.map(({ page: groupPage, rows: pageRows }) => (
+                        <details
+                          className="alignment-page-group"
+                          key={groupPage.id}
+                          open={groupPage.id === alignmentSourcePage?.id}
+                        >
+                          <summary onClick={() => setAlignmentPage(groupPage.id)}>
+                            <strong>Trang {String(groupPage.number).padStart(3, '0')}</strong>
+                            <span className={`alignment-page-status ${pageRows.length ? 'has-pairs' : ''}`}>
+                              {pageRows.length ? `Đã có ${pageRows.length} cặp` : 'Chưa căn'}
+                            </span>
+                            {pageRows.length > 0 && (
+                              <small>
+                                {pageRows.filter(({ row }) => !row.reviewed).length} cặp chờ đọc lại
+                              </small>
+                            )}
+                          </summary>
+                          {pageRows.length ? (
+                            <>
+                              <div className="alignment-head">
+                                <span>ID CÂU</span>
+                                <span>
+                                  <b>文</b> HÁN NÔM
+                                </span>
+                                <span>
+                                  <b>Aa</b> QUỐC NGỮ
+                                </span>
+                                <span>THAO TÁC</span>
+                              </div>
+                              <div className="alignment-rows">
+                                {pageRows.map(({ row, globalIndex }, index) => {
+                                  const nextEntry = pageRows[index + 1];
+                                  return (
+                                    <AlignmentRow
+                                      key={row.id}
+                                      row={row}
+                                      index={index}
+                                      total={pageRows.length}
+                                      sourceColors={alignmentColors.get(row.id)?.source}
+                                      targetColors={alignmentColors.get(row.id)?.target}
+                                      onChange={(updated) =>
+                                        changeRows(rows.map((item) => (item.id === row.id ? updated : item)))
+                                      }
+                                      onRemove={() => changeRows(rows.filter((item) => item.id !== row.id))}
+                                      onMerge={() => {
+                                        if (!nextEntry) return;
+                                        changeRows(
+                                          rows.flatMap((item, itemIndex) =>
+                                            itemIndex === globalIndex
+                                              ? [
+                                                  {
+                                                    ...row,
+                                                    source: row.source + nextEntry.row.source,
+                                                    target: row.target + ' ' + nextEntry.row.target,
+                                                    reviewed: false,
+                                                    page_linked: false,
+                                                    marks: [],
+                                                  },
+                                                ]
+                                              : itemIndex === nextEntry.globalIndex
+                                                ? []
+                                                : [item],
+                                          ),
+                                        );
+                                      }}
+                                      onSplit={(source, target) => {
+                                        const match = row.sentence_id.match(/^(.*\.)(\d+)$/);
+                                        if (!match) return;
+                                        const prefix = match[1];
+                                        const sequence =
+                                          Math.max(
+                                            0,
+                                            ...rows
+                                              .filter((item) => item.sentence_id.startsWith(prefix))
+                                              .map((item) => Number(item.sentence_id.slice(prefix.length)) || 0),
+                                          ) + 1;
+                                        changeRows(
+                                          rows.flatMap((item) =>
+                                            item.id === row.id
+                                              ? [
+                                                  {
+                                                    ...item,
+                                                    source: source[0],
+                                                    target: target[0],
+                                                    reviewed: false,
+                                                    page_linked: false,
+                                                    marks: [],
+                                                  },
+                                                  {
+                                                    ...item,
+                                                    id: crypto.randomUUID(),
+                                                    sentence_id: prefix + sequence,
+                                                    source: source[1],
+                                                    target: target[1],
+                                                    reviewed: false,
+                                                    page_linked: false,
+                                                    marks: [],
+                                                  },
+                                                ]
+                                              : [item],
+                                          ),
+                                        );
+                                      }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="alignment-page-empty">
+                              <span>Trang này chưa có cặp căn chỉnh.</span>
+                              <button
+                                className="secondary-button"
+                                disabled={busy}
+                                onClick={() => newRow('', '', groupPage.id)}
+                              >
+                                <Plus size={14} />
+                                Tạo cặp cho trang này
+                              </button>
+                            </div>
+                          )}
+                        </details>
                       ))}
                     </div>
                   ) : (
