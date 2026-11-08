@@ -59,6 +59,19 @@ def test_vertical_nom_glyphs_become_column_segments_with_real_gap():
     assert exported[0]['points']==[[70,10],[90,10],[90,80],[70,80]]
 
 
+def test_empty_drawn_box_does_not_expand_a_neighboring_export_box():
+    def box(identifier, text, left, right):
+        return {'id':identifier,'transcription':text,
+                'points':[[left,10],[right,10],[right,30],[left,30]]}
+    exported=nom_export_boxes([
+        box('first','天',10,20),
+        box('empty','',22,24),
+        box('last','地',26,36),
+    ],2)
+    assert [item['transcription'] for item in exported]==['天','','地']
+    assert exported[0]['points']==[[10,10],[20,10],[20,30],[10,30]]
+
+
 def test_red_nom_ink_is_selected_and_excluded_from_vietnamese_rows():
     image=mixed_page()
     pixels=np.asarray(image).copy()

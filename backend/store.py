@@ -114,6 +114,7 @@ def nom_export_boxes(boxes, direction, image_size=None):
             gap=b0-a1
             span=max(a1-a0,b1-b0)
             if (len(previous['transcription'])>1 or len(box['transcription'])>1 or
+                    not previous['transcription'].strip() or not box['transcription'].strip() or
                     not same_line(run[0],box) or gap>span*.75 or
                     previous['transcription'][-1:].isspace() or box['transcription'][:1].isspace()):
                 output.append(merge(run)); run=[]

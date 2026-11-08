@@ -1371,13 +1371,15 @@ export default function App() {
                       reference={reference}
                       busy={busy}
                       onCreate={newRow}
+                      onBoxes={(page, boxes) => updatePageDraft(page, { boxes }, false)}
                     />
                   )}
                   <div className="alignment-notice">
                     <CircleHelp size={16} />
                     <span>
-                      Tô màu trong bước <strong>Gán nhãn OCR</strong> khi đang dò ảnh gốc. Bảng này dùng để
-                      tách, gộp và sửa cặp; màu đã đánh giá vẫn hiển thị ở hai vế.
+                      Dùng ảnh và box hàng/cột phía trên để chỉnh nhãn đầu ra; các thay đổi được lưu
+                      cùng box chữ của trang. Tô màu khi dò chữ trong bước{' '}
+                      <strong>Gán nhãn OCR</strong>; bảng dưới dùng để tách, gộp và sửa cặp.
                     </span>
                   </div>
                   <div className="alignment-head">

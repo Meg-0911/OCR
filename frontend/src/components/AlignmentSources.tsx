@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import type { Page, ReviewKind, TextReference } from '../types';
 import { reviewColorsForText } from '../reviewColors';
+import AlignmentBoxEditor from './AlignmentBoxEditor';
 
 export default function AlignmentSources({
   page,
@@ -10,12 +11,14 @@ export default function AlignmentSources({
   reference,
   busy,
   onCreate,
+  onBoxes,
 }: {
   page?: Page;
   pages: Page[];
   reference: TextReference | null;
   busy: boolean;
   onCreate: (source: string, target: string) => void;
+  onBoxes: (page: Page, boxes: Page['boxes']) => void;
 }) {
   const targets = pages.filter((p) => p.category === 'vi');
   const [targetId, setTargetId] = useState(
@@ -58,20 +61,16 @@ export default function AlignmentSources({
       {page && (
         <div className="alignment-source-image-panel">
           <div className="alignment-source-image-heading">
-            <strong>Ảnh gốc · trang {page.number}</strong>
+            <strong>Box nhãn xuất · trang {page.number}</strong>
             <a href={page.image_url} target="_blank" rel="noreferrer">
               Mở ảnh kích thước đầy đủ
             </a>
           </div>
-          <a
-            className="alignment-source-image"
-            href={page.image_url}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`Mở ảnh gốc trang ${page.number} kích thước đầy đủ`}
-          >
-            <img src={page.image_url} alt={`Ảnh gốc trang ${page.number}`} />
-          </a>
+          <AlignmentBoxEditor
+            page={page}
+            disabled={busy}
+            onBoxes={(boxes) => onBoxes(page, boxes)}
+          />
         </div>
       )}
       <div className="alignment-source-grid">
