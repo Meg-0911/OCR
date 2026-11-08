@@ -5,6 +5,9 @@ export type Box = {
   transcription: string;
   points: [number, number][];
   review_kind?: ReviewKind;
+  export_group?: string;
+  export_order?: number | null;
+  export_character_order?: number;
 };
 export type Region = [number, number, number, number];
 export type TextSources = Partial<Record<'han' | 'vi', TextReference>>;

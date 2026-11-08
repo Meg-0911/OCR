@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .store import CATEGORIES, Store, label_groups
 from .ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
@@ -56,6 +56,9 @@ class BoxInput(BaseModel):
     transcription: str = Field(max_length=30000)
     points: list[tuple[float, float]] = Field(min_length=4, max_length=4)
     review_kind: Literal['match','mismatch','unknown'] | None = None
+    export_group: str | None = Field(default=None, min_length=1, max_length=100)
+    export_order: int | None = Field(default=None, ge=1)
+    export_character_order: int | None = Field(default=None, ge=0)
 
     @field_validator('points')
     @classmethod
@@ -72,6 +75,54 @@ class BoxInput(BaseModel):
         return points
 
 
+def validate_export_order(boxes):
+    tagged = [box for box in boxes if box.export_group is not None]
+    if not tagged:
+        if any(box.export_order is not None or box.export_character_order is not None for box in boxes):
+            raise ValueError('Thông tin thứ tự nhãn thiếu nhóm box.')
+        return boxes
+    if any(
+        box.export_order is not None or box.export_character_order is not None
+        for box in boxes if box.export_group is None
+    ):
+        raise ValueError('Box mới không được khai báo thứ tự khi chưa có nhóm.')
+    if any(box.export_order is None or box.export_character_order is None for box in tagged):
+        raise ValueError('Mỗi box nhãn phải có nhóm và thứ tự hợp lệ.')
+    groups = {}
+    for box in tagged:
+        members = groups.setdefault(box.export_group, [])
+        members.append(box)
+    ordered_groups = []
+    for group, members in groups.items():
+        group_orders = {box.export_order for box in members}
+        character_orders = [box.export_character_order for box in members]
+        if (
+            len(group_orders) != 1 or len(set(character_orders)) != len(members)
+        ):
+            raise ValueError(f'Thứ tự ký tự trong nhóm nhãn {group} không hợp lệ.')
+        ordered_groups.append((group_orders.pop(), group, sorted(members, key=lambda box: box.export_character_order)))
+    group_order_values = [order for order, _, _ in ordered_groups]
+    if len(set(group_order_values)) != len(group_order_values):
+        raise ValueError('Số thứ tự box nhãn bị trùng.')
+    ordered_groups.sort(key=lambda item: item[0])
+    next_order = len(ordered_groups)
+    for index, (_, _, members) in enumerate(ordered_groups, 1):
+        for character_order, box in enumerate(members):
+            box.export_order = index
+            box.export_character_order = character_order
+    for box in boxes:
+        if box.export_group is not None:
+            continue
+        group = box.id
+        if group in groups:
+            group = uuid4().hex
+        next_order += 1
+        box.export_group = group
+        box.export_order = next_order
+        box.export_character_order = 0
+    return boxes
+
+
 class PageInput(BaseModel):
     boxes: list[BoxInput] = Field(default_factory=list,max_length=5000)
     vi_boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
@@ -82,6 +133,13 @@ class PageInput(BaseModel):
     version: int = Field(ge=0)
     reading_direction: Literal[1, 2] = 1
     ocr_skip: bool | None = None
+
+    @model_validator(mode='after')
+    def valid_export_order(self):
+        validate_export_order(self.boxes)
+        if self.vi_boxes is not None:
+            validate_export_order(self.vi_boxes)
+        return self
 
 
 class PagePatch(BaseModel):
@@ -100,6 +158,13 @@ class PagePatch(BaseModel):
     @classmethod
     def valid_regions(cls,regions):
         return validate_regions(regions)
+
+    @model_validator(mode='after')
+    def valid_export_order(self):
+        for boxes in (self.boxes, self.vi_boxes):
+            if boxes is not None:
+                validate_export_order(boxes)
+        return self
 
 
 class PagePlan(BaseModel):

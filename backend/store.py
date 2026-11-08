@@ -85,6 +85,20 @@ def label_boxes(page, category):
 
 def nom_export_boxes(boxes, direction, image_size=None):
     """Combine edit-time glyph boxes into physical Nôm columns or rows for PPOCRLabel."""
+    if boxes and all(box.get('export_group') for box in boxes):
+        groups={}
+        for box in boxes:
+            groups.setdefault(box['export_group'],[]).append(box)
+        output=[]
+        for _,members in sorted(groups.items(),key=lambda item:item[1][0].get('export_order') or 0):
+            members.sort(key=lambda box:box.get('export_character_order') or 0)
+            x0=min(point[0] for box in members for point in box['points'])
+            y0=min(point[1] for box in members for point in box['points'])
+            x1=max(point[0] for box in members for point in box['points'])
+            y1=max(point[1] for box in members for point in box['points'])
+            output.append({'transcription':''.join(box['transcription'] for box in members),
+                           'points':[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]})
+        return output
     ordered=ordered_boxes(boxes,'ch',direction,image_size)
     if not ordered:
         return []

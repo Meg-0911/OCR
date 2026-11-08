@@ -72,6 +72,21 @@ def test_empty_drawn_box_does_not_expand_a_neighboring_export_box():
     assert exported[0]['points']==[[10,10],[20,10],[20,30],[10,30]]
 
 
+def test_saved_export_groups_keep_their_order_and_never_merge_by_proximity():
+    def box(identifier,text,left,right,group,order,char_order):
+        return {'id':identifier,'transcription':text,
+                'points':[[left,10],[right,10],[right,30],[left,30]],
+                'export_group':group,'export_order':order,
+                'export_character_order':char_order}
+    exported=nom_export_boxes([
+        box('one-a','天',10,20,'first',2,0),
+        box('two','地',21,31,'second',1,0),
+        box('one-b','玄',32,42,'first',2,1),
+    ],2)
+    assert [item['transcription'] for item in exported]==['地','天玄']
+    assert exported[1]['points']==[[10,10],[42,10],[42,30],[10,30]]
+
+
 def test_red_nom_ink_is_selected_and_excluded_from_vietnamese_rows():
     image=mixed_page()
     pixels=np.asarray(image).copy()

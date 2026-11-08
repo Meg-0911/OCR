@@ -32,6 +32,7 @@ export default function ManuscriptViewer({
   allowAltDraw = false,
   readOnly = false,
   showFullPageRegion = false,
+  onDeleteSelected,
 }: {
   page: Page;
   boxes: Box[];
@@ -45,6 +46,7 @@ export default function ManuscriptViewer({
   allowAltDraw?: boolean;
   readOnly?: boolean;
   showFullPageRegion?: boolean;
+  onDeleteSelected?: () => void;
 }) {
   const svg = useRef<SVGSVGElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -81,6 +83,7 @@ export default function ManuscriptViewer({
       drag.current = { kind: 'draw', start: point };
     else if (box) {
       setSelected(box.id);
+      if (onDeleteSelected) event.currentTarget.focus();
       if (readOnly) return;
       drag.current = {
         kind: target.dataset.corner !== undefined ? 'corner' : 'move',
@@ -179,7 +182,15 @@ export default function ManuscriptViewer({
             viewBox={`0 0 ${page.width} ${page.height}`}
             className="manuscript"
             role="img"
+            tabIndex={onDeleteSelected ? 0 : undefined}
             aria-label={`Bản quét trang ${page.number} với ${boxes.length} vùng chữ`}
+            onKeyDown={(event) => {
+              if (event.key === 'Delete' && onDeleteSelected) {
+                event.preventDefault();
+                event.stopPropagation();
+                onDeleteSelected();
+              }
+            }}
             onPointerDown={start}
             onPointerMove={move}
             onPointerUp={end}

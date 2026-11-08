@@ -49,6 +49,44 @@ def annotated(workspace):
     return client,store,root,book,page
 
 
+def test_export_box_order_metadata_is_validated_and_persisted(annotated):
+    client,_,_,_,page=annotated
+    boxes=[
+        {'id':'first','transcription':'天','points':[[20,20],[40,20],[40,40],[20,40]],
+         'export_group':'group-first','export_order':2,'export_character_order':0},
+        {'id':'first-next','transcription':'玄','points':[[42,20],[62,20],[62,40],[42,40]],
+         'export_group':'group-first','export_order':2,'export_character_order':1},
+        {'id':'second','transcription':'地','points':[[41,20],[61,20],[61,40],[41,40]],
+         'export_group':'group-second','export_order':1,'export_character_order':0},
+    ]
+    response=client.patch(f"/api/pages/{page['id']}",json={'boxes':boxes})
+    assert response.status_code==200,response.text
+    saved={box['id']:box['export_order'] for box in response.json()['boxes']}
+    assert saved=={'first':2,'first-next':2,'second':1}
+
+    boxes[0]['export_order']=1
+    invalid=client.patch(f"/api/pages/{page['id']}",json={'boxes':boxes})
+    assert invalid.status_code==422
+
+    exported=client.get(f"/api/books/{page['book_id']}/export?format=labels")
+    assert exported.status_code==200
+    archive=zipfile.ZipFile(io.BytesIO(exported.content))
+    label=next(name for name in archive.namelist() if name.endswith('/ch/Label.txt'))
+    rows=json.loads(archive.read(label).decode().splitlines()[0].split('\t',1)[1])
+    assert [box['transcription'] for box in rows]==['地','天玄']
+
+    updated_boxes=[
+        boxes[1],
+        boxes[2],
+        {'id':'new-glyph','transcription':'人','points':[[70,20],[90,20],[90,40],[70,40]]},
+    ]
+    updated=client.patch(f"/api/pages/{page['id']}",json={'boxes':updated_boxes})
+    assert updated.status_code==200,updated.text
+    normalized={box['id']:box for box in updated.json()['boxes']}
+    assert normalized['first-next']['export_character_order']==0
+    assert normalized['new-glyph']['export_order']==3
+
+
 def test_empty_workspace_and_real_pdf_folders_include_ref(workspace):
     client,store,_ = workspace
     data = client.get('/api/workspace').json()

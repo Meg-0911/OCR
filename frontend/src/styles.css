@@ -4112,6 +4112,55 @@ h1 {
   border-radius: 4px;
   font-size: 15px;
 }
+.alignment-export-order-list {
+  display: grid;
+  gap: 4px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+}
+.alignment-export-order-row {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 28px 28px;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  font-size: 11px;
+}
+.alignment-export-order-row > input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  text-align: center;
+}
+.alignment-export-order-row > input[aria-invalid='true'] {
+  border-color: #b75716;
+  background: #fff7f2;
+}
+.alignment-export-order-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.alignment-export-order-row > button {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: #385142;
+}
+.alignment-export-order-row > button:disabled {
+  opacity: 0.45;
+}
+.alignment-export-order-row .alignment-box-error {
+  grid-column: 2 / -1;
+  padding: 0 0 4px;
+}
 .alignment-box-help {
   display: block;
   padding: 0 10px 8px;

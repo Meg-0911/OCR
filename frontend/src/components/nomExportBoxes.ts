@@ -45,6 +45,35 @@ export function nomExportBoxes(
   width?: number,
   height?: number,
 ): NomExportBox[] {
+  if (boxes.length && boxes.every((box) => box.export_group)) {
+    const groups = new Map<string, Box[]>();
+    for (const box of boxes) {
+      const group = box.export_group!;
+      groups.set(group, [...(groups.get(group) || []), box]);
+    }
+    return [...groups.entries()]
+      .sort(([, a], [, b]) => (a[0].export_order || 0) - (b[0].export_order || 0))
+      .map(([group, members]) => {
+        const xs = members.flatMap((box) => box.points.map((point) => point[0]));
+        const ys = members.flatMap((box) => box.points.map((point) => point[1]));
+        const ordered = [...members].sort(
+          (a, b) => (a.export_character_order || 0) - (b.export_character_order || 0),
+        );
+        return {
+          ...ordered[0],
+          id: group,
+          export_group: group,
+          source_ids: ordered.map((box) => box.id),
+          transcription: ordered.map((box) => box.transcription).join(''),
+          points: [
+            [Math.min(...xs), Math.min(...ys)],
+            [Math.max(...xs), Math.min(...ys)],
+            [Math.max(...xs), Math.max(...ys)],
+            [Math.min(...xs), Math.max(...ys)],
+          ],
+        };
+      });
+  }
   const ordered = orderedBoxes(boxes, direction, width, height);
   const axis = direction === 1 ? 0 : 1;
   const travel = direction === 1 ? 1 : 0;
@@ -66,6 +95,7 @@ export function nomExportBoxes(
     const ys = run.flatMap((box) => box.points.map((point) => point[1]));
     output.push({
       id: run[0].id,
+      export_group: run[0].id,
       source_ids: run.map((box) => box.id),
       transcription: run.map((box) => box.transcription).join(''),
       points: [
@@ -102,7 +132,7 @@ export function nomExportBoxes(
     run.push(box);
   }
   flush();
-  return output;
+  return output.map((box, index) => ({ ...box, export_order: box.export_order ?? index + 1 }));
 }
 
 export function updateNomExportBoxes(
@@ -113,13 +143,26 @@ export function updateNomExportBoxes(
   height: number,
 ): Box[] {
   const previousGroups = nomExportBoxes(original, direction, width, height);
-  const nextGroups = new Map(
-    nomExportBoxes(updated, direction, width, height).map((box) => [box.id, box]),
-  );
-  const next = new Map(original.map((box) => [box.id, box]));
+  const normalized = new Map<string, Box>();
   for (const group of previousGroups) {
-    const changed = nextGroups.get(group.id);
-    if (!changed) continue;
+    group.source_ids.forEach((id, index) => {
+      const box = original.find((item) => item.id === id);
+      if (box)
+        normalized.set(id, {
+          ...box,
+          export_group: group.export_group,
+          export_order: group.export_order ?? previousGroups.indexOf(group) + 1,
+          export_character_order: index,
+        });
+    });
+  }
+  const next = new Map(normalized);
+  for (const group of previousGroups) {
+    const changed = updated.find((box) => box.export_group === group.export_group);
+    if (!changed) {
+      for (const id of group.source_ids) next.delete(id);
+      continue;
+    }
     const moved = group.points.some(
       (point, index) =>
         point[0] !== changed.points[index][0] || point[1] !== changed.points[index][1],
@@ -146,8 +189,47 @@ export function updateNomExportBoxes(
     }
   }
   for (const box of updated) {
-    if (previousGroups.some((group) => group.id === box.id)) continue;
-    if (!next.has(box.id)) next.set(box.id, { id: box.id, transcription: '', points: box.points });
+    if (previousGroups.some((group) => group.export_group === box.export_group)) continue;
+    if (!next.has(box.id)) {
+      const nextOrder = Math.max(0, ...previousGroups.map((group) => group.export_order || 0)) + 1;
+      next.set(box.id, {
+        id: box.id,
+        transcription: '',
+        points: box.points,
+        export_group: box.id,
+        export_order: nextOrder,
+        export_character_order: 0,
+      });
+    }
   }
   return [...next.values()];
+}
+
+export function updateExportOrders(
+  boxes: Box[],
+  orders: Record<string, number>,
+  direction: 1 | 2,
+  width: number,
+  height: number,
+): Box[] {
+  const groups = nomExportBoxes(boxes, direction, width, height);
+  const sourceGroups = new Map(
+    groups.flatMap((group) => group.source_ids.map((id) => [id, group])),
+  );
+  const normalized = boxes.map((box) => {
+    const group = sourceGroups.get(box.id);
+    if (!group) return box;
+    const groupId = group.export_group || group.id;
+    return {
+      ...box,
+      export_group: groupId,
+      export_order: orders[groupId] ?? group.export_order ?? groups.indexOf(group) + 1,
+      export_character_order: group.source_ids.indexOf(box.id),
+    };
+  });
+  return normalized.map((box) =>
+    box.export_group && orders[box.export_group] !== undefined
+      ? { ...box, export_order: orders[box.export_group] }
+      : box,
+  );
 }
