@@ -33,7 +33,10 @@ export default function CharacterBoxEditor({
   const [layout, setLayout] = useState<'number' | 'vertical' | 'horizontal'>('number');
   const selectedBox = boxes.find((box) => box.id === selected);
   const selectedIndex = selectedBox ? boxes.indexOf(selectedBox) : -1;
-  const pairedWord = selectedIndex >= 0 ? pairedWords[selectedIndex] : undefined;
+  const pairedWordIndex = selectedBox?.review_order != null
+    ? selectedBox.review_order - 1
+    : selectedIndex;
+  const pairedWord = pairedWordIndex >= 0 ? pairedWords[pairedWordIndex] : undefined;
   const orderValues = boxes.map((box, index) => box.review_order ?? (boxes.some((item) => item.review_order !== undefined) ? null : index + 1));
   const orderConflict = orderValues.some((order) => order === null) || new Set(orderValues).size !== boxes.length ||
     [...orderValues].sort((a, b) => (a || 0) - (b || 0)).some((order, index) => order !== index + 1);

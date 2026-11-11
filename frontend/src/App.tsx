@@ -39,7 +39,7 @@ import LibraryBookReader from './components/LibraryBookReader';
 import DictionaryPanel from './components/DictionaryPanel';
 import { draftPatch, patchDraft, afterAutomaticSave, type Draft } from './drafts';
 import { replaceBoxText } from './components/boxText';
-import { reviewColorsForText } from './reviewColors';
+import { reviewColorsForAlignmentRows, reviewColorsForText } from './reviewColors';
 import type {
   Alignment,
   Book,
@@ -116,20 +116,13 @@ function alignmentReviewColors(rows: Alignment[], pages: Page[]) {
   for (const page of pages) {
     const pageRows = rowsByPage.get(page.number);
     if (!pageRows?.length || !page.boxes.length) continue;
-    const sourceStream = pageRows.map((row) => row.source).join('');
-    const sourceStreamColors = reviewColorsForText(sourceStream, page.boxes, 'source');
-    const targetStream = pageRows.map((row) => row.target).join('');
-    const targetStreamColors = reviewColorsForText(targetStream, page.boxes, 'target');
-    let sourceOffset = 0;
-    let targetOffset = 0;
+    const sourceColors = reviewColorsForAlignmentRows(pageRows, page.boxes, 'source');
+    const targetColors = reviewColorsForAlignmentRows(pageRows, page.boxes, 'target');
     for (const row of pageRows) {
-      const sourceEnd = sourceOffset + Array.from(row.source).length;
-      const source = sourceStreamColors.slice(sourceOffset, sourceEnd);
-      sourceOffset = sourceEnd;
-      const targetEnd = targetOffset + Array.from(row.target).length;
-      const target = targetStreamColors.slice(targetOffset, targetEnd);
-      targetOffset = targetEnd;
-      result.set(row.id, { source, target });
+      result.set(row.id, {
+        source: sourceColors.get(row.id) || [],
+        target: targetColors.get(row.id) || [],
+      });
     }
   }
   return result;
@@ -877,6 +870,45 @@ export default function App() {
       setBusy(false);
     }
   }
+  async function setAlignmentPageReviewed(
+    groupPage: Page,
+    pageRows: { row: Alignment; globalIndex: number }[],
+    reviewed: boolean,
+  ) {
+    if (busy || !pageRows.length) return;
+    if (reviewed) {
+      const pageBoxes = draftsRef.current[groupPage.id]
+        ? draftPatch(draftsRef.current[groupPage.id]).export_boxes || groupPage.export_boxes
+        : groupPage.export_boxes;
+      const missingBoxes = pageRows.filter(({ row }) =>
+        !pageBoxes.some((box) => box.alignment_id === row.id)).length;
+      if (missingBoxes) {
+        notify(`Trang ${groupPage.number} còn ${missingBoxes} cặp chưa có box. Tạo box trước khi xác nhận.`, true);
+        return;
+      }
+      const incomplete = pageRows.filter(({ row }) => !row.source.trim() || !row.target.trim()).length;
+      if (incomplete) {
+        notify(`Trang ${groupPage.number} còn ${incomplete} cặp thiếu nội dung đối chiếu.`, true);
+        return;
+      }
+    }
+    setBusy(true);
+    try {
+      await saveDraftNow(groupPage.id);
+      const ids = new Set(pageRows.map(({ row }) => row.id));
+      const next = rows.map((row) => ids.has(row.id) ? { ...row, reviewed } : row);
+      changeRows(next);
+      clearTimeout(alignmentTimers.current.get(bookId));
+      await persistRows(bookId, next);
+      notify(reviewed
+        ? `Đã xác nhận hoàn tất ${pageRows.length} cặp của trang ${groupPage.number}.`
+        : `Đã mở lại trang ${groupPage.number} để đọc lại.`);
+    } catch (error) {
+      fail(error);
+    } finally {
+      setBusy(false);
+    }
+  }
   function newRow(source = '', target = '', sourcePageId = alignmentSourcePage?.id || alignmentPage, pageLinked = false) {
     const sourcePage =
       pages.find((p) => p.id === sourcePageId) ||
@@ -1447,6 +1479,7 @@ export default function App() {
                       targetRow={alignmentPageRows.find((row) => row.id === alignmentBoxTarget?.rowId)}
                       targetAxis={alignmentBoxTarget?.axis}
                       targetRequestId={alignmentBoxTarget?.requestId}
+                      onTargetHandled={() => setAlignmentBoxTarget(null)}
                     />
                   )}
                   <div className="alignment-notice">
@@ -1472,16 +1505,42 @@ export default function App() {
                           <summary onClick={() => setAlignmentPage(groupPage.id)}>
                             <strong>Trang {String(groupPage.number).padStart(3, '0')}</strong>
                             <span className={`alignment-page-status ${pageRows.length ? 'has-pairs' : ''}`}>
-                              {pageRows.length ? `Đã có ${pageRows.length} cặp` : 'Chưa căn'}
+                              {pageRows.length
+                                ? pageRows.every(({ row }) => row.reviewed)
+                                  ? 'Đã xác nhận xong'
+                                  : `Đã có ${pageRows.length} cặp`
+                                : 'Chưa căn'}
                             </span>
                             {pageRows.length > 0 && (
                               <small>
-                                {pageRows.filter(({ row }) => !row.reviewed).length} cặp chờ đọc lại
+                                {pageRows.every(({ row }) => row.reviewed)
+                                  ? `${pageRows.length} cặp đã hoàn tất`
+                                  : `${pageRows.filter(({ row }) => !row.reviewed).length} cặp chờ đọc lại`}
                               </small>
                             )}
                           </summary>
                           {pageRows.length ? (
                             <>
+                              <div className="alignment-page-actions">
+                                <span>
+                                  {pageRows.filter(({ row }) => row.reviewed).length}/{pageRows.length} cặp đã xác nhận
+                                </span>
+                                <button
+                                  type="button"
+                                  className={pageRows.every(({ row }) => row.reviewed) ? 'secondary-button' : 'primary-button'}
+                                  disabled={busy}
+                                  onClick={() => void setAlignmentPageReviewed(
+                                    groupPage,
+                                    pageRows,
+                                    !pageRows.every(({ row }) => row.reviewed),
+                                  )}
+                                >
+                                  <CheckCheck size={15} />
+                                  {pageRows.every(({ row }) => row.reviewed)
+                                    ? 'Mở lại trang để đọc lại'
+                                    : 'Xác nhận xong trang'}
+                                </button>
+                              </div>
                               <div className="alignment-head">
                                 <span>ID CÂU</span>
                                 <span>

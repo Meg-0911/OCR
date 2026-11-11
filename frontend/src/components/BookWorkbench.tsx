@@ -35,6 +35,7 @@ import ManuscriptViewer from './ManuscriptViewer';
 import BookOCRPanel, { useBookOCR } from './BookOCRPanel';
 import CharacterBoxEditor, { groupCharacterBoxes } from './CharacterBoxEditor';
 import { removeBoxAndText, replaceBoxText, syncTextLinesToBoxes } from './boxText';
+import { boxesInReviewOrder } from '../reviewColors';
 
 type Editable = Pick<
   Page,
@@ -105,6 +106,17 @@ function hasContent(page?: Page) {
 
 function targetWordsIn(text: string) {
   return text.match(/\S+/gu)?.filter((word) => /[\p{L}\p{N}]/u.test(word)) || [];
+}
+
+function targetWordIndexAt(text: string, position: number): number | null {
+  let wordIndex = 0;
+  for (const match of text.matchAll(/\S+/gu)) {
+    if (!/[\p{L}\p{N}]/u.test(match[0])) continue;
+    const start = match.index ?? 0;
+    if (position >= start && position <= start + match[0].length) return wordIndex;
+    wordIndex++;
+  }
+  return null;
 }
 
 function VietnameseBoxEditor({
@@ -256,6 +268,7 @@ export default function BookWorkbench(props: Props) {
   const boxes = page?.[boxesKey] || [];
   const text = page?.[textKey] || '';
   const targetWords = targetWordsIn(page?.target_text || '');
+  const orderedSourceBoxes = boxesInReviewOrder(page?.boxes || []);
   const characterEditing =
     language === 'han' &&
     boxes.length > 0;
@@ -558,6 +571,9 @@ export default function BookWorkbench(props: Props) {
   function updateBox(box: Box, value: string) {
     if (!page) return;
     const next = replaceBoxText(boxes, text, box.id, value, page.reading_direction, language === 'han');
+    const boxIndex = boxes.findIndex((current) => current.id === box.id);
+    const targetWordCountChanged =
+      language === 'vi' && targetWordCount(box.transcription) !== targetWordCount(value);
     props.onPatch({
       [boxesKey]: next.boxes.map((item) =>
         item.id === box.id && item.transcription !== value
@@ -565,11 +581,12 @@ export default function BookWorkbench(props: Props) {
           : item,
       ),
       ...(language === 'vi' && box.transcription !== value
+        && targetWordCountChanged
         ? {
             boxes: page.boxes.map((item, index) =>
-              index >= targetWordStart(boxes.findIndex((current) => current.id === box.id))
+              index >= targetWordStart(boxIndex)
                 ? { ...item, review_kind: undefined }
-                : item,
+              : item,
             ),
           }
         : {}),
@@ -1081,27 +1098,27 @@ export default function BookWorkbench(props: Props) {
                       <div className="character-review-toolbar" aria-label="Đánh dấu từ Quốc ngữ">
                         <span>
                           {selectedTargetWord !== null
-                            ? `${page.boxes[selectedTargetWord]?.transcription || '—'} ↔ ${targetWords[selectedTargetWord] || '—'}`
+                            ? `${orderedSourceBoxes[selectedTargetWord]?.transcription || '—'} ↔ ${targetWords[selectedTargetWord] || '—'}`
                             : 'Chọn một từ Quốc ngữ để đánh dấu cùng chữ Hán/Nôm thứ tự đó'}
                         </span>
                         <button
                           type="button"
-                          disabled={selectedTargetWord === null || !page.boxes[selectedTargetWord] || props.busy || acting}
-                          onClick={() => selectedTargetWord !== null && markBox(page.boxes[selectedTargetWord].id, 'match')}
+                          disabled={selectedTargetWord === null || !orderedSourceBoxes[selectedTargetWord] || props.busy || acting}
+                          onClick={() => selectedTargetWord !== null && orderedSourceBoxes[selectedTargetWord] && markBox(orderedSourceBoxes[selectedTargetWord].id, 'match')}
                         >
                           Đen
                         </button>
                         <button
                           type="button"
-                          disabled={selectedTargetWord === null || !page.boxes[selectedTargetWord] || props.busy || acting}
-                          onClick={() => selectedTargetWord !== null && markBox(page.boxes[selectedTargetWord].id, 'mismatch')}
+                          disabled={selectedTargetWord === null || !orderedSourceBoxes[selectedTargetWord] || props.busy || acting}
+                          onClick={() => selectedTargetWord !== null && orderedSourceBoxes[selectedTargetWord] && markBox(orderedSourceBoxes[selectedTargetWord].id, 'mismatch')}
                         >
                           Đỏ
                         </button>
                         <button
                           type="button"
-                          disabled={selectedTargetWord === null || !page.boxes[selectedTargetWord] || props.busy || acting}
-                          onClick={() => selectedTargetWord !== null && markBox(page.boxes[selectedTargetWord].id, 'unknown')}
+                          disabled={selectedTargetWord === null || !orderedSourceBoxes[selectedTargetWord] || props.busy || acting}
+                          onClick={() => selectedTargetWord !== null && orderedSourceBoxes[selectedTargetWord] && markBox(orderedSourceBoxes[selectedTargetWord].id, 'unknown')}
                         >
                           Thiếu từ điển
                         </button>
@@ -1366,10 +1383,14 @@ export default function BookWorkbench(props: Props) {
                                   ...(language === 'vi'
                                     ? {
                                         vi_boxes: syncTextLinesToBoxes(boxes, text, value),
-                                        boxes: page.boxes.map((box) => ({
-                                          ...box,
-                                          review_kind: undefined,
-                                        })),
+                                        ...(targetWordCount(text) !== targetWordCount(value)
+                                          ? {
+                                              boxes: page.boxes.map((box) => ({
+                                                ...box,
+                                                review_kind: undefined,
+                                              })),
+                                            }
+                                          : {}),
                                       }
                                     : {}),
                                 });
@@ -1377,6 +1398,7 @@ export default function BookWorkbench(props: Props) {
                               onSelect={(event) => {
                                 const input = event.currentTarget,
                                   position = input.selectionStart;
+                                setSelectedTargetWord(targetWordIndexAt(input.value, position));
                                 let cursor = 0;
                                 const box = boxes.find((item) => {
                                   const start = input.value.indexOf(item.transcription, cursor);

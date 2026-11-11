@@ -1719,6 +1719,22 @@ h1 {
   color: #9aa68b;
   font-size: 9px;
 }
+.alignment-page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #fcfdf9;
+  color: #647261;
+  font-size: 11px;
+}
+.alignment-page-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .alignment-head {
   display: grid;
   grid-template-columns: 180px minmax(170px, 1fr) minmax(170px, 1fr) 82px;

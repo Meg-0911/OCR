@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { CheckCheck, Link2, SplitSquareVertical, Trash2 } from 'lucide-react';
 import type { Alignment, ReviewKind, ReviewMark } from '../types';
+import { splitAlignmentText } from './alignmentSplit';
 
 function exportPreview(value: string, side: 'source' | 'target') {
   const text = value.normalize('NFC');
@@ -22,10 +23,10 @@ function colorsFor(value: string, base: (ReviewKind | undefined)[], marks: Revie
 
 function selectionOffset(element: HTMLElement) {
   const selection = window.getSelection();
-  if (!selection?.rangeCount || !element.contains(selection.anchorNode)) return 0;
+  if (!selection?.rangeCount || !element.contains(selection.focusNode)) return 0;
   const range = selection.getRangeAt(0).cloneRange();
   range.selectNodeContents(element);
-  range.setEnd(selection.anchorNode!, selection.anchorOffset);
+  range.setEnd(selection.focusNode!, selection.focusOffset);
   return Array.from(range.toString()).length;
 }
 
@@ -79,6 +80,7 @@ function AlignmentEditor({
         const next = event.currentTarget.innerText.replace(/\r\n/g, '\n').replace(/\n$/, '');
         onChange(next);
       }}
+      onSelect={(event) => onSelectionChange(event.currentTarget)}
       onKeyUp={(event) => onSelectionChange(event.currentTarget)}
       onMouseUp={(event) => onSelectionChange(event.currentTarget)}
     />
@@ -113,7 +115,7 @@ export default function AlignmentRow({
   targetColors?: (ReviewKind | undefined)[];
 }) {
   const [splitting, setSplitting] = useState(false);
-  const [cut, setCut] = useState<{ side: 'source' | 'target'; position: number } | null>(null);
+  const [cut, setCut] = useState<{ side?: 'source' | 'target'; position?: number }>({});
   const marks = row.marks || [];
   const sourceDisplay = colorsFor(row.source, sourceColors, marks, 'source');
   const targetDisplay = colorsFor(row.target, targetColors, marks, 'target');
@@ -127,13 +129,15 @@ export default function AlignmentRow({
         className={className}
         compact={compact}
         onChange={(next) => {
-          if (next !== value)
+          if (next !== value) {
+            setCut({});
             onChange({
               ...row,
               [side]: next,
               reviewed: false,
               marks: [],
             });
+          }
         }}
         onSelectionChange={(element) =>
           setCut({ side, position: selectionOffset(element) })
@@ -142,35 +146,14 @@ export default function AlignmentRow({
     );
   }
   function split() {
-    const sourceCharacters = Array.from(row.source);
-    const targetCharacters = Array.from(row.target);
-    const cutValue = cut?.side === 'source' ? sourceCharacters : targetCharacters;
-    if (!cut || cut.position <= 0 || cut.position >= cutValue.length) {
+    const parts = splitAlignmentText(row.source, row.target, cut.side, cut.position);
+    if (!parts) {
       setSplitting(true);
       return;
     }
-    const sourcePosition =
-      cut.side === 'source'
-        ? cut.position
-        : Math.round((cut.position / targetCharacters.length) * sourceCharacters.length);
-    const targetPosition =
-      cut.side === 'target'
-        ? cut.position
-        : Math.round((cut.position / sourceCharacters.length) * targetCharacters.length);
-    const sourceCut =
-      sourceCharacters.length > 1
-        ? Math.min(Math.max(sourcePosition, 1), sourceCharacters.length - 1)
-        : sourceCharacters.length;
-    const targetCut =
-      targetCharacters.length > 1
-        ? Math.min(Math.max(targetPosition, 1), targetCharacters.length - 1)
-        : targetCharacters.length;
-    onSplit?.(
-      [sourceCharacters.slice(0, sourceCut).join(''), sourceCharacters.slice(sourceCut).join('')],
-      [targetCharacters.slice(0, targetCut).join(''), targetCharacters.slice(targetCut).join('')],
-    );
+    onSplit?.(parts.source, parts.target);
     setSplitting(false);
-    setCut(null);
+    setCut({});
   }
   return (
     <div className={`alignment-row ${row.reviewed ? 'reviewed' : ''} ${compact ? 'compact' : ''}`}>
@@ -198,8 +181,8 @@ export default function AlignmentRow({
         {editor('target', row.target, targetDisplay)}
         <small className="comparison-text">Khi xuất (chữ thường, bỏ dấu câu): {exportPreview(row.target, 'target') || '—'}</small>
         {splitting && (
-          <small className="split-hint">
-            Đặt con trỏ giữa chữ ở một ô rồi bấm Tách; văn bản ở ô còn lại sẽ được cắt theo tỷ lệ tương ứng.
+          <small className="split-hint" role="status">
+            Đặt một con trỏ tại ranh giới trong một vế rồi bấm Tách lần nữa. Quốc ngữ sẽ được chia theo ranh giới từ gần nhất.
           </small>
         )}
       </div>
@@ -215,8 +198,9 @@ export default function AlignmentRow({
         </button>
         <button
           className="icon-button"
-          title="Tách tại con trỏ trong một ô"
+          title="Tách theo vị trí con trỏ trong một vế"
           aria-label={`Tách cặp ${index + 1}`}
+          aria-pressed={splitting}
           disabled={Array.from(row.source).length < 2 && Array.from(row.target).length < 2}
           onClick={split}
         >

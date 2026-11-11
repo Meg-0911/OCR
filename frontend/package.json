@@ -8,6 +8,7 @@
   },
   "scripts": {
     "check:fonts": "node scripts/check-fonts.mjs",
+    "check:alignment": "node --experimental-strip-types scripts/check-alignment-ocr.mjs",
     "prebuild": "npm run check:fonts",
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",

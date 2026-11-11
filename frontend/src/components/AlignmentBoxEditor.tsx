@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import type { Alignment, Box, Page } from '../types';
 import ManuscriptViewer from './ManuscriptViewer';
+import { allocateAlignmentOcrBoxes, boundsFromOcrBoxes } from './alignmentOcrBoxes';
+import { groupCharacterBoxes } from './boxText';
 
 function withOrders(boxes: Box[], orders: Record<string, number>): Box[] {
   return boxes.map((box, index) => {
@@ -23,6 +25,10 @@ function withOrders(boxes: Box[], orders: Record<string, number>): Box[] {
   });
 }
 
+function isLegacyPlaceholder(box: Box) {
+  return !box.box_axis;
+}
+
 export default function AlignmentBoxEditor({
   page,
   disabled,
@@ -31,6 +37,7 @@ export default function AlignmentBoxEditor({
   targetRow,
   targetAxis,
   targetRequestId,
+  onTargetHandled,
 }: {
   page: Page;
   disabled: boolean;
@@ -39,17 +46,18 @@ export default function AlignmentBoxEditor({
   targetRow?: Alignment;
   targetAxis?: 'vertical' | 'horizontal';
   targetRequestId?: string;
+  onTargetHandled?: () => void;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [drawing, setDrawing] = useState(false);
-  const [targetRowId, setTargetRowId] = useState(targetRow?.id || '');
+  const [targetRowId, setTargetRowId] = useState(targetRow?.id || alignments[0]?.id || '');
   const [drawAxis, setDrawAxis] = useState<'vertical' | 'horizontal'>(targetAxis || 'horizontal');
   const [zoom, setZoom] = useState(100);
   const [fullscreenError, setFullscreenError] = useState('');
   const [orderInputs, setOrderInputs] = useState<Record<string, string>>({});
-  const orderPage = useRef(page.id);
   const container = useRef<HTMLDivElement>(null);
   const drawnSelection = useRef<string | null>(null);
+  const handledTargetRequest = useRef<string | null>(null);
   const boxes = useMemo(
     () => withOrders(page.export_boxes, {}).sort((a, b) => (a.export_order || 0) - (b.export_order || 0)),
     [page.export_boxes],
@@ -63,7 +71,6 @@ export default function AlignmentBoxEditor({
     const errors: Record<string, string> = {};
     for (const { box, raw } of values) {
       const key = box.export_group || box.id;
-      if (!box.transcription.trim()) errors[key] = 'Box chưa có chữ.';
       if (!raw.trim()) errors[key] = 'Số thứ tự không được để trống.';
       else if (!/^[1-9]\d*$/u.test(raw)) errors[key] = 'Nhập số nguyên dương.';
       else if (values.filter((item) => item.raw === raw).length > 1)
@@ -83,28 +90,154 @@ export default function AlignmentBoxEditor({
       }
     return errors;
   }, [boxes, orderInputs]);
-  const alignmentMismatch = boxes.length !== alignments.length;
+  const linkedCount = alignments.filter((row) => boxes.some((box) => box.alignment_id === row.id)).length;
+  const alignmentMismatch = linkedCount !== alignments.length;
+  const ocrMatches = useMemo(
+    () => allocateAlignmentOcrBoxes(page.boxes, alignments),
+    [page.boxes, alignments],
+  );
+  const [drawHint, setDrawHint] = useState('');
+
+  function orderedExportBoxes(next: Box[]) {
+    const rowOrder = new Map(alignments.map((row, index) => [row.id, index]));
+    const sorted = [...next].sort((a, b) =>
+      (rowOrder.get(a.alignment_id || '') ?? alignments.length + (a.export_order || 0)) -
+      (rowOrder.get(b.alignment_id || '') ?? alignments.length + (b.export_order || 0)));
+    return withOrders(sorted, Object.fromEntries(
+      sorted.map((box, index) => [box.export_group || box.id, index + 1]),
+    ));
+  }
+
+  function createFromOcr(row: Alignment, axis: 'vertical' | 'horizontal') {
+    const matched = ocrMatches.get(row.id);
+    const points = matched && boundsFromOcrBoxes(matched, axis);
+    if (!matched || !points) {
+      const withoutPlaceholders = page.export_boxes.filter((box) => !isLegacyPlaceholder(box));
+      if (withoutPlaceholders.length !== page.export_boxes.length) onBoxes(withoutPlaceholders);
+      setDrawing(true);
+      setDrawHint(matched
+        ? 'Các chữ OCR không nằm cùng một dòng/cột theo chiều đã chọn. Chọn chiều khác hoặc kéo thủ công; giữ Shift để vẽ đè box cũ.'
+        : 'Không đủ box OCR cho số ký tự của cặp này. Kiểm tra thứ tự và số box, hoặc kéo thủ công; giữ Shift để vẽ đè box cũ.');
+      return;
+    }
+    const base = page.export_boxes.filter((box) => !isLegacyPlaceholder(box));
+    const existing = base.find((box) => box.alignment_id === row.id);
+    const id = existing?.id || crypto.randomUUID();
+    const candidate: Box = {
+      ...(existing || { id, export_group: id, export_character_order: 0 }),
+      transcription: row.source,
+      points,
+      alignment_id: row.id,
+      box_axis: axis,
+    };
+    onBoxes(orderedExportBoxes(existing
+      ? base.map((box) => box.id === id ? candidate : box)
+      : [...base, candidate]));
+    setSelected(id);
+    setDrawing(false);
+    setDrawHint(`Đã đếm ${matched.length} box OCR và tạo khung cho câu ${row.sentence_id}.`);
+  }
+
+  function chooseAxis(axis: 'vertical' | 'horizontal') {
+    setDrawAxis(axis);
+    const row = alignments.find((item) => item.id === targetRowId);
+    if (row) createFromOcr(row, axis);
+    else {
+      const withoutPlaceholders = page.export_boxes.filter((box) => !isLegacyPlaceholder(box));
+      if (withoutPlaceholders.length !== page.export_boxes.length) onBoxes(withoutPlaceholders);
+      setDrawing(true);
+      setDrawHint('Chọn câu trước khi tạo box từ chữ OCR. Có thể kéo thủ công trên ảnh.');
+    }
+  }
+
+  function createAllFromOcr() {
+    if (!alignments.length) {
+      if (
+        page.export_boxes.length &&
+        !window.confirm(`Tạo box theo dòng/cột OCR sẽ thay thế ${page.export_boxes.length} box nhãn xuất hiện có trên trang. Tiếp tục?`)
+      )
+        return;
+      const axis = page.reading_direction === 1 ? 'vertical' : 'horizontal';
+      const generated: Box[] = [];
+      let skipped = 0;
+      for (const group of groupCharacterBoxes(page.boxes, page.reading_direction)) {
+        const points = boundsFromOcrBoxes(group, axis);
+        if (!points) {
+          skipped++;
+          continue;
+        }
+        const id = crypto.randomUUID();
+        generated.push({
+          id,
+          transcription: group.map((box) => box.transcription).join(''),
+          points,
+          export_group: id,
+          export_order: generated.length + 1,
+          export_character_order: 0,
+          box_axis: axis,
+        });
+      }
+      if (generated.length) {
+        onBoxes(orderedExportBoxes(generated));
+        setDrawing(false);
+        setDrawHint(`Đã tự tạo ${generated.length} box theo dòng/cột OCR.${skipped ? ` Bỏ qua ${skipped} nhóm không khớp chiều đọc; hãy kiểm tra thủ công.` : ''}`);
+      } else {
+        setDrawHint('Không thể gom box OCR thành dòng/cột theo chiều đọc của trang. Hãy kiểm tra chiều đọc hoặc vẽ thủ công.');
+      }
+      return;
+    }
+
+    const next = page.export_boxes.filter((box) => !box.alignment_id && box.box_axis);
+    let created = 0;
+    let updated = 0;
+    for (const row of alignments) {
+      const existing = page.export_boxes.find((box) => box.alignment_id === row.id);
+      const matched = ocrMatches.get(row.id);
+      if (!matched) {
+        if (existing?.box_axis) next.push(existing);
+        continue;
+      }
+      const preferred = page.reading_direction === 1 ? 'vertical' : 'horizontal';
+      const alternate = preferred === 'vertical' ? 'horizontal' : 'vertical';
+      const axis = boundsFromOcrBoxes(matched, preferred) ? preferred : alternate;
+      const points = boundsFromOcrBoxes(matched, axis);
+      if (!points) {
+        if (existing?.box_axis) next.push(existing);
+        continue;
+      }
+      const id = existing?.id || crypto.randomUUID();
+      next.push({
+        ...existing, id, export_group: existing?.export_group || id,
+        export_character_order: 0,
+        transcription: row.source, points, alignment_id: row.id, box_axis: axis,
+      });
+      if (existing) updated++;
+      else created++;
+    }
+    if (created || updated || next.length !== page.export_boxes.length) onBoxes(orderedExportBoxes(next));
+    setDrawing(false);
+    setDrawHint(created || updated
+      ? `Đã tạo ${created}, cập nhật ${updated} box bằng cách đếm box OCR theo số ký tự từng cặp. Kiểm tra các cặp còn thiếu nếu nhóm vượt dòng/cột.`
+      : 'Chưa tạo thêm box. Các cặp đã có box, hoặc số box OCR không đủ cho số ký tự cần đếm.');
+  }
 
   useEffect(() => {
-    if (!targetRow) return;
+    if (!targetRow || !targetRequestId || handledTargetRequest.current === targetRequestId) return;
+    handledTargetRequest.current = targetRequestId;
     setTargetRowId(targetRow.id);
     setDrawAxis(targetAxis || 'horizontal');
-    setDrawing(true);
+    createFromOcr(targetRow, targetAxis || 'horizontal');
+    onTargetHandled?.();
   }, [targetRow?.id, targetAxis, targetRequestId]);
 
   useEffect(() => {
-    const changedPage = orderPage.current !== page.id;
-    orderPage.current = page.id;
-    setOrderInputs((current) => Object.fromEntries(
-        boxes.map((box, index) => [
-          box.export_group || box.id,
-          changedPage ? String(box.export_order ?? index + 1) :
-            current[box.export_group || box.id] ?? String(box.export_order ?? index + 1),
-        ]),
-      ));
+    setOrderInputs(Object.fromEntries(
+      boxes.map((box, index) => [box.export_group || box.id, String(box.export_order ?? index + 1)]),
+    ));
   }, [page.id, page.export_boxes]);
 
   useEffect(() => {
+    if (targetRequestId) return;
     const validIds = new Set(alignments.map((row) => row.id));
     const orphaned = page.export_boxes.some((box) => box.alignment_id && !validIds.has(box.alignment_id));
     if (orphaned) {
@@ -114,29 +247,11 @@ export default function AlignmentBoxEditor({
           : box));
       return;
     }
-    if (alignmentMismatch || !alignments.length) return;
-    const orders = Object.fromEntries(
-      boxes.map((box, index) => [box.export_group || box.id, box.export_order ?? index + 1]),
-    );
-    const normalized = withOrders(page.export_boxes, orders);
-    const assigned = new Set(normalized.map((box) => box.alignment_id).filter(Boolean));
-    const available = alignments.filter((row) => !assigned.has(row.id));
-    const assignments = new Map<string, string>();
-    [...normalized].filter((box) => !box.alignment_id)
-      .sort((a, b) => (a.export_order || 0) - (b.export_order || 0))
-      .forEach((box, index) => { if (available[index]) assignments.set(box.id, available[index].id); });
-    const updated = normalized.map((box) => ({
-      ...box,
-      alignment_id: box.alignment_id || assignments.get(box.id),
-    }));
-    if (updated.some((box, index) => box.alignment_id !== page.export_boxes[index]?.alignment_id))
-      onBoxes(updated);
   }, [
-    alignmentMismatch,
     alignments,
-    boxes,
     onBoxes,
     page.export_boxes,
+    targetRequestId,
   ]);
 
   function applyBoxes(updated: Box[]) {
@@ -146,10 +261,8 @@ export default function AlignmentBoxEditor({
       return;
     }
     const row = alignments.find((item) => item.id === targetRowId);
-    const linked = row ? boxes.find((box) => box.alignment_id === row.id) : undefined;
-    const slot = row ? boxes[alignments.findIndex((item) => item.id === row.id)] : undefined;
-    const existing = linked || (slot && !slot.alignment_id ? slot : undefined);
-    const base = updated.filter((box) => box.id !== added.id);
+    const base = updated.filter((box) => box.id !== added.id && !isLegacyPlaceholder(box));
+    const existing = row ? base.find((box) => box.alignment_id === row.id) : undefined;
     const candidate: Box = existing
       ? { ...existing, points: added.points, transcription: row!.source, alignment_id: row!.id, box_axis: drawAxis }
       : {
@@ -164,26 +277,18 @@ export default function AlignmentBoxEditor({
       ? base.map((box) => box.id === existing.id ? candidate : box)
       : [...base, candidate];
     drawnSelection.current = candidate.id;
-    onBoxes(withOrders(next, Object.fromEntries(next.map((box, index) => [box.export_group || box.id, index + 1]))));
-  }
-
-  function updateText(text: string) {
-    if (!selectedBox) return;
-    onBoxes(page.export_boxes.map((box) => (
-      box.id === selectedBox.id ? { ...box, transcription: text } : box
-    )));
+    onBoxes(orderedExportBoxes(next));
   }
 
   function deleteSelected() {
     if (disabled || !selectedBox) return;
     const remaining = boxes.filter((box) => box.id !== selectedBox.id);
-    const orders = Object.fromEntries(remaining.map((box, index) => [box.id, index + 1]));
+    const orders = Object.fromEntries(remaining.map((box, index) => [box.export_group || box.id, index + 1]));
     onBoxes(withOrders(remaining, orders));
     setSelected(null);
   }
 
   function applyOrderInputs(next: Record<string, string>) {
-    if (boxes.some((box) => !box.transcription.trim())) return;
     const parsed: Record<string, number> = {};
     for (const box of boxes) {
       const group = box.export_group || box.id;
@@ -207,8 +312,7 @@ export default function AlignmentBoxEditor({
     if (
       destination < 0 ||
       destination >= boxes.length ||
-      Object.keys(orderErrors).length ||
-      boxes.some((box) => !box.transcription.trim())
+      Object.keys(orderErrors).length
     )
       return;
     const orders = Object.fromEntries(
@@ -252,7 +356,10 @@ export default function AlignmentBoxEditor({
               aria-label="Chọn câu để vẽ bounding box"
               value={targetRowId}
               disabled={disabled}
-              onChange={(event) => setTargetRowId(event.target.value)}
+              onChange={(event) => {
+                setTargetRowId(event.target.value);
+                setDrawHint('');
+              }}
             >
               <option value="">Box tự do</option>
               {alignments.map((row) => (
@@ -265,11 +372,19 @@ export default function AlignmentBoxEditor({
           <button
             type="button"
             className="secondary-button"
+            disabled={disabled || !page.boxes.length}
+            onClick={createAllFromOcr}
+          >
+            Tạo box từ OCR
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
             aria-pressed={drawing && drawAxis === 'vertical'}
             disabled={disabled}
             onClick={() => {
-              setDrawing((active) => !(active && drawAxis === 'vertical'));
-              setDrawAxis('vertical');
+              if (drawing && drawAxis === 'vertical') setDrawing(false);
+              else chooseAxis('vertical');
             }}
           >
             <SquareDashedMousePointer size={14} /> Vẽ box dọc
@@ -280,13 +395,15 @@ export default function AlignmentBoxEditor({
             aria-pressed={drawing && drawAxis === 'horizontal'}
             disabled={disabled}
             onClick={() => {
-              setDrawing((active) => !(active && drawAxis === 'horizontal'));
-              setDrawAxis('horizontal');
+              if (drawing && drawAxis === 'horizontal') setDrawing(false);
+              else chooseAxis('horizontal');
             }}
           >
             <SquareDashedMousePointer size={14} /> Vẽ box ngang
           </button>
-          <small>{drawing ? 'Kéo trên ảnh để bao trọn một câu.' : 'Chọn câu và chiều box, rồi kéo trên ảnh.'}</small>
+          <small role="status">{drawHint || (drawing
+            ? 'Kéo trên ảnh để bao trọn một câu.'
+            : 'Chọn câu và chiều box để lấy khung từ các chữ OCR đã rà.')}</small>
         </div>
         <div className="image-controls">
           <button
@@ -331,7 +448,7 @@ export default function AlignmentBoxEditor({
       </div>
       {!alignments.length && (
         <small className="alignment-box-help" role="status">
-          Chưa có cặp câu trên trang này. Thêm cặp ở bên dưới để vẽ bounding cho từng câu.
+          Chưa có cặp câu trên trang này. Tạo box từ OCR để tự gom theo dòng/cột, hoặc thêm cặp bên dưới để tạo box cho từng câu.
         </small>
       )}
       <ManuscriptViewer
@@ -341,7 +458,10 @@ export default function AlignmentBoxEditor({
           orderInputs[box.export_group || box.id] ?? box.export_order ?? index + 1
         }
         selected={selected}
-        setSelected={setSelected}
+        setSelected={(id) => {
+          setSelected(id);
+          if (id) setDrawing(false);
+        }}
         showBoxes
         tool={drawing ? 'draw' : 'select'}
         zoom={zoom}
@@ -357,8 +477,8 @@ export default function AlignmentBoxEditor({
       <div className="alignment-export-order-list" aria-label="Thứ tự box xuất">
         {alignmentMismatch && (
           <div className="alignment-box-error" role="status">
-            Đã vẽ {boxes.filter((box) => box.alignment_id).length}/{alignments.length} box gắn với câu.
-            Chọn từng câu rồi vẽ box dọc hoặc ngang trên ảnh.
+            Đã tạo {linkedCount}/{alignments.length} box gắn với câu.
+            Bấm Tạo box từ OCR hoặc chọn từng câu để tạo box dọc/ngang.
           </div>
         )}
         {boxes.map((box, index) => {
@@ -377,7 +497,9 @@ export default function AlignmentBoxEditor({
                 onChange={(event) => changeOrder(groupId, event.target.value)}
               />
               <span className="alignment-export-order-text">
-                {box.transcription || 'Chưa gán chữ'}
+                {pair
+                  ? `${ocrMatches.get(pair.id)?.length ?? 0} box chữ OCR`
+                  : 'Box chưa gắn cặp'}
                 {box.box_axis && <small> · {box.box_axis === 'vertical' ? 'Dọc' : 'Ngang'}</small>}
               </span>
               {pair && (
@@ -413,25 +535,15 @@ export default function AlignmentBoxEditor({
           );
         })}
       </div>
-      {selectedBox && (
-        <label className="alignment-box-transcription">
-          Chữ của box nhãn đang chọn
-          <input
-            value={selectedBox.transcription}
-            disabled={disabled}
-            onChange={(event) => updateText(event.target.value)}
-          />
-        </label>
-      )}
       {fullscreenError && (
         <small className="alignment-box-error" role="alert">
           {fullscreenError}
         </small>
       )}
       <small className="alignment-box-help">
-        Chọn câu ở danh sách hoặc trong thanh công cụ, chọn vẽ dọc/ngang rồi kéo trên ảnh để bao trọn câu.
-        Kéo box để di chuyển, kéo góc để đổi kích thước; nhấn Delete để xóa box đang chọn. Sửa số thứ tự hoặc dùng mũi tên để đổi thứ tự xuất; số phải liên tục, không
-        trùng và box phải có chữ. Box nhãn xuất được lưu riêng, không làm thay đổi box OCR.
+        Chọn câu ở danh sách hoặc trong thanh công cụ, rồi bấm box dọc/ngang để đếm các box OCR theo số ký tự Hán Nôm của câu và tạo khung theo thứ tự đã đánh số. Không cần chữ trong từng box OCR.
+        Kéo box để di chuyển, kéo góc để đổi kích thước; chọn box rồi nhấn Delete hoặc nút thùng rác để xóa. Sửa số thứ tự hoặc dùng mũi tên để đổi thứ tự xuất; số không được
+        trùng. Box nhãn xuất được lưu riêng, không làm thay đổi box OCR.
       </small>
     </div>
   );

@@ -16,6 +16,7 @@ export default function AlignmentSources({
   targetRow,
   targetAxis,
   targetRequestId,
+  onTargetHandled,
 }: {
   page?: Page;
   pages: Page[];
@@ -27,6 +28,7 @@ export default function AlignmentSources({
   targetRow?: Alignment;
   targetAxis?: 'vertical' | 'horizontal';
   targetRequestId?: string;
+  onTargetHandled?: () => void;
 }) {
   const targets = pages.filter((p) => p.category === 'vi');
   const [targetId, setTargetId] = useState(
@@ -81,6 +83,7 @@ export default function AlignmentSources({
             targetRow={targetRow}
             targetAxis={targetAxis}
             targetRequestId={targetRequestId}
+            onTargetHandled={onTargetHandled}
             onBoxes={(boxes) => onBoxes(page, boxes)}
           />
         </div>

@@ -85,7 +85,7 @@ export default function ManuscriptViewer({
     const point = position(event);
     const target = event.target as SVGElement;
     const box = boxes.find((b) => b.id === target.dataset.box);
-    if (allowAltDraw ? event.altKey && !readOnly : tool === 'draw')
+    if (allowAltDraw ? event.altKey && !readOnly : tool === 'draw' && (!box || event.shiftKey))
       drag.current = { kind: 'draw', start: point };
     else if (box) {
       setSelected(box.id);
