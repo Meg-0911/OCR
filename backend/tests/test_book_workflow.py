@@ -314,6 +314,36 @@ def test_saved_reading_direction_is_used_by_whole_book_workflow(tmp_path):
         assert reopened.get(base+'/layout').json()==layout
 
 
+def test_horizontal_default_and_vertical_page_override(tmp_path):
+    app,client,book,pages,_,_,_=workspace(tmp_path,count=2)
+    first=client.patch(f"/api/pages/{pages[0]['id']}",json={'reading_direction_override':1})
+    assert first.status_code==200
+    assert first.json()['reading_direction_override']==1
+    job=client.post(f"/api/books/{book['id']}/workflow",json={}).json()
+    finish(app,job)
+    results=[client.get(f"/api/pages/{page['id']}/ocr").json() for page in pages]
+    assert [result['settings']['reading_direction'] for result in results]==[1,2]
+    current=client.get(f"/api/books/{book['id']}/pages").json()[0]
+    confirmed=client.put(f"/api/pages/{current['id']}",json={
+        'version':current['version'],'category':'ch','done':True,'boxes':current['boxes'],
+    })
+    assert confirmed.status_code==200
+    assert confirmed.json()['reading_direction']==1
+    client.put(f"/api/books/{book['id']}/layout",json={
+        'source_regions':[],'target_regions':[],'reading_direction':1,
+    })
+    inherited=client.get(f"/api/books/{book['id']}/pages").json()[0]
+    assert inherited['status']=='done' and inherited['version']==confirmed.json()['version']
+    client.put(f"/api/books/{book['id']}/layout",json={
+        'source_regions':[],'target_regions':[],'reading_direction':2,
+    })
+    reset=client.patch(f"/api/pages/{pages[0]['id']}",json={'reading_direction_override':None})
+    assert reset.status_code==200
+    assert reset.json()['reading_direction_override'] is None
+    assert reset.json()['reading_direction']==2
+    app.state.ocr_jobs.close()
+
+
 def test_confirmed_pages_stay_complete_and_are_excluded_from_new_ocr_jobs(tmp_path):
     app,client,book,pages,calls,vi,transport=workspace(tmp_path,count=2)
     base=f"/api/books/{book['id']}"

@@ -171,6 +171,11 @@ export default function App() {
   const [sourceLoading, setSourceLoading] = useState(false);
   const [rows, setRows] = useState<Alignment[]>([]);
   const [alignmentPage, setAlignmentPage] = useState('');
+  const [alignmentBoxTarget, setAlignmentBoxTarget] = useState<{
+    rowId: string;
+    axis: 'vertical' | 'horizontal';
+    requestId: string;
+  } | null>(null);
   const similarity = useMemo(
     () => reviewSummary(pages.map((item) => ({
       ...item,
@@ -185,20 +190,18 @@ export default function App() {
     }))),
     [rows, pages, drafts],
   );
+  const alignmentPages = useMemo(() => pages.filter((item) =>
+    !item.ocr_skip && item.category !== 'blank' &&
+    (item.ocr_languages.includes('han') || !pages.some((other) =>
+      other.id !== item.id && other.number === item.number &&
+      !other.ocr_skip && other.ocr_languages.includes('han')))
+  ).sort((a, b) => a.number - b.number), [pages]);
+  const activeBook = workspace?.books.find((b) => b.id === bookId);
   const alignmentSourcePage =
-    pages.find(
-      (item) =>
-        item.id === alignmentPage &&
-        !item.ocr_skip &&
-        !['blank', 'misc'].includes(item.category) &&
-        item.ocr_languages.includes('han'),
-    ) ||
-    pages.find(
-      (item) =>
-        !item.ocr_skip &&
-        !['blank', 'misc'].includes(item.category) &&
-        item.ocr_languages.includes('han'),
-    );
+    alignmentPages.find((item) => item.id === alignmentPage) ||
+    (activeBook && alignmentPages.find((item) => rows.some((row) =>
+      row.sentence_id.startsWith(`${activeBook.name}.${String(item.number).padStart(3, '0')}.`)))) ||
+    alignmentPages[0];
   const alignmentSourceDraft = alignmentSourcePage
     ? drafts[alignmentSourcePage.id]
     : undefined;
@@ -208,7 +211,6 @@ export default function App() {
         ...(alignmentSourceDraft ? draftPatch(alignmentSourceDraft) : {}),
       }
     : undefined;
-  const activeBook = workspace?.books.find((b) => b.id === bookId);
   const alignmentPageRows = alignmentSourcePage && activeBook
     ? rows.filter((row) =>
         row.sentence_id.startsWith(
@@ -227,16 +229,9 @@ export default function App() {
       const number = Number(pageNumber);
       rowsByPage.set(number, [...(rowsByPage.get(number) || []), { row, globalIndex }]);
     });
-    return pages
-      .filter(
-        (item) =>
-          !item.ocr_skip &&
-          !['blank', 'misc'].includes(item.category) &&
-          item.ocr_languages.includes('han'),
-      )
-      .sort((a, b) => a.number - b.number)
+    return alignmentPages
       .map((page) => ({ page, rows: rowsByPage.get(page.number) || [] }));
-  }, [activeBook, pages, rows]);
+  }, [activeBook, alignmentPages, rows]);
   const [rowsDirty, setRowsDirty] = useState(false);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
@@ -456,6 +451,9 @@ export default function App() {
   async function rerunPageOCR(target: Page, settings: OCRSettings) {
     if (pageOCRRequests.current.has(target.id)) return;
     const id = bookId;
+    let startedVersion: number | null = null;
+    let previousResultId: string | null = null;
+    let startedDraft: Draft | undefined;
     pageOCRRequests.current.add(target.id);
     setPageOCRPages((previous) => [...previous, target.id]);
     try {
@@ -466,6 +464,9 @@ export default function App() {
       if (!currentPage) throw new Error('Không tìm thấy trang cần OCR lại.');
       const draftSnapshot = draftsRef.current[target.id];
       const previousOCR = await api.latestOCR(target.id);
+      startedVersion = currentPage.version;
+      previousResultId = previousOCR?.result_id || null;
+      startedDraft = draftSnapshot;
       const result = await api.recognizePage(target.id, {
         ...settings,
         ...(previousOCR?.settings || {}),
@@ -502,6 +503,24 @@ export default function App() {
       updatePageDraft(currentPage, patch, true);
       notify(`Đã OCR lại trang ${currentPage.number}. Kiểm tra kết quả rồi lưu trang.`);
     } catch (error) {
+      // A later Quốc ngữ failure still leaves the Nôm checkpoint on the server.
+      // Bring that completed half into the editable draft immediately.
+      try {
+        const [currentPages, checkpoint] = await Promise.all([api.pages(id), api.latestOCR(target.id)]);
+        const saved = currentPages.find((item) => item.id === target.id);
+        if (currentBookRef.current === id && saved && startedVersion !== null &&
+            saved.version === startedVersion && draftsRef.current[target.id] === startedDraft &&
+            checkpoint && checkpoint.result_id !== previousResultId &&
+            checkpoint.version === startedVersion && checkpoint.completed_languages?.includes('han') &&
+            checkpoint.boxes?.length) {
+          setPages((previous) => previous.map((item) =>
+            item.id === saved.id && item.version <= saved.version ? saved : item));
+          updatePageDraft(saved, {
+            boxes: checkpoint.boxes,
+            source_text: checkpoint.text_lines.join('\n'),
+          }, true);
+        }
+      } catch { /* Preserve the original OCR error. */ }
       fail(error);
     } finally {
       pageOCRRequests.current.delete(target.id);
@@ -632,7 +651,7 @@ export default function App() {
           (p) => p.status !== 'done' && !p.ocr_skip && p.category !== 'blank',
         );
         const first =
-          unfinished.find((p) => p.id === session.page_id) || unfinished[0] || result[0];
+          result.find((p) => p.id === session.page_id) || unfinished[0] || result[0];
         setPageId(first?.id || '');
         if (session.alignment_page) setAlignmentPage(session.alignment_page);
       })
@@ -729,7 +748,7 @@ export default function App() {
     }
     setBusy(true);
     try {
-      await saveDraftNow(page.id);
+      await saveDraftNow(page.id, 'all');
       const fresh = await api.pages(bookId);
       const saved = fresh.find((p) => p.id === page.id)!;
       const snapshot = draftsRef.current[page.id];
@@ -858,12 +877,12 @@ export default function App() {
       setBusy(false);
     }
   }
-  function newRow(source = '', target = '', sourcePageId = alignmentPage, pageLinked = false) {
+  function newRow(source = '', target = '', sourcePageId = alignmentSourcePage?.id || alignmentPage, pageLinked = false) {
     const sourcePage =
       pages.find((p) => p.id === sourcePageId) ||
-      pages.find((p) => p.ocr_languages.includes('han'));
+      alignmentPages[0];
     if (!sourcePage || !activeBook) {
-      notify('Cần phân loại ít nhất một trang Hán Nôm trước khi tạo cặp.', true);
+      notify('Cần chọn ít nhất một trang nội dung trước khi tạo cặp.', true);
       return;
     }
     const prefix = `${activeBook.name}.${String(sourcePage.number).padStart(3, '0')}.`;
@@ -1383,18 +1402,11 @@ export default function App() {
                     <div className="button-group">
                       <select
                         aria-label="Trang nguồn cho cặp mới"
-                        value={alignmentPage}
+                        value={alignmentSourcePage?.id || ''}
                         onChange={(event) => setAlignmentPage(event.target.value)}
                       >
                         <option value="">Chọn trang Nôm</option>
-                        {pages
-                          .filter(
-                            (p) =>
-                              !p.ocr_skip &&
-                              !['blank', 'misc'].includes(p.category) &&
-                              p.ocr_languages.includes('han'),
-                          )
-                          .map((p) => (
+                        {alignmentPages.map((p) => (
                             <option key={p.id} value={p.id}>
                               Trang {String(p.number).padStart(3, '0')}
                             </option>
@@ -1424,7 +1436,7 @@ export default function App() {
                   </div>
                   {!alignmentLoading && (
                     <AlignmentSources
-                      key={`${bookId}-${alignmentPage || pages.find((p) => p.ocr_languages.includes('han'))?.id || ''}`}
+                      key={`${bookId}-${alignmentSourcePage?.id || ''}`}
                       page={alignmentSource}
                       pages={pages}
                       reference={reference}
@@ -1432,6 +1444,9 @@ export default function App() {
                       onCreate={newRow}
                       onBoxes={(page, boxes) => updatePageDraft(page, { export_boxes: boxes }, false)}
                       alignments={alignmentPageRows}
+                      targetRow={alignmentPageRows.find((row) => row.id === alignmentBoxTarget?.rowId)}
+                      targetAxis={alignmentBoxTarget?.axis}
+                      targetRequestId={alignmentBoxTarget?.requestId}
                     />
                   )}
                   <div className="alignment-notice">
@@ -1491,6 +1506,20 @@ export default function App() {
                                       onChange={(updated) =>
                                         changeRows(rows.map((item) => (item.id === row.id ? updated : item)))
                                       }
+                                      hasBox={(drafts[groupPage.id]
+                                        ? draftPatch(drafts[groupPage.id]).export_boxes || groupPage.export_boxes
+                                        : groupPage.export_boxes)
+                                        .some((box) => box.alignment_id === row.id)}
+                                      onDrawBox={(axis) => {
+                                        setAlignmentPage(groupPage.id);
+                                        setAlignmentBoxTarget({ rowId: row.id, axis, requestId: crypto.randomUUID() });
+                                        requestAnimationFrame(() => {
+                                          const details = document.querySelector<HTMLDetailsElement>('.alignment-sources');
+                                          if (details) details.open = true;
+                                          document.querySelector<HTMLElement>('.alignment-source-image-panel')
+                                            ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                                        });
+                                      }}
                                       onRemove={() => changeRows(rows.filter((item) => item.id !== row.id))}
                                       onMerge={() => {
                                         if (!nextEntry) return;

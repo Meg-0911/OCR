@@ -1,10 +1,19 @@
 import type { Box } from '../types';
 
-export function groupCharacterBoxes(boxes: Box[], direction: 1 | 2) {
+export function groupCharacterBoxes(boxes: Box[], direction: 1 | 2, honorOrder = true) {
   const axis = direction === 1 ? 0 : 1;
   const center = (box: Box) => box.points.reduce((sum, point) => sum + point[axis], 0) / box.points.length;
   const size = (box: Box) => Math.max(...box.points.map(point => point[axis])) - Math.min(...box.points.map(point => point[axis]));
   const groups: Box[][] = [];
+  if (honorOrder && boxes.length && boxes.every((box) => box.review_order != null)) {
+    for (const box of [...boxes].sort((a, b) => a.review_order! - b.review_order!)) {
+      const previous = groups.at(-1)?.at(-1);
+      if (previous && Math.abs(center(previous) - center(box)) < Math.max(size(previous), size(box)) * .5)
+        groups[groups.length - 1].push(box);
+      else groups.push([box]);
+    }
+    return groups;
+  }
   for (const box of [...boxes].sort((a, b) => direction === 1 ? center(b) - center(a) : center(a) - center(b))) {
     const row = groups.find(items => Math.abs(center(items[0]) - center(box)) < Math.max(size(items[0]), size(box)) * .5);
     if (row) row.push(box);

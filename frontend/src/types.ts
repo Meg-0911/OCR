@@ -5,10 +5,12 @@ export type Box = {
   transcription: string;
   points: [number, number][];
   review_kind?: ReviewKind;
+  review_order?: number | null;
   export_group?: string;
   export_order?: number | null;
   export_character_order?: number;
   alignment_id?: string;
+  box_axis?: 'vertical' | 'horizontal';
 };
 export type Region = [number, number, number, number];
 export type TextSources = Partial<Record<'han' | 'vi', TextReference>>;
@@ -25,6 +27,7 @@ export type Page = {
   image_url: string;
   version: number;
   reading_direction: 1 | 2;
+  reading_direction_override: 1 | 2 | null;
   source_text: string;
   target_text: string;
   vi_boxes: Box[];

@@ -14,7 +14,7 @@ function bounds(box: Box) {
 }
 
 type Drag = {
-  kind: 'move' | 'corner' | 'draw';
+  kind: 'move' | 'corner' | 'draw' | 'select-area';
   start: [number, number];
   box?: Box;
   corner?: number;
@@ -22,6 +22,7 @@ type Drag = {
 export default function ManuscriptViewer({
   page,
   boxes,
+  boxNumber,
   selected,
   setSelected,
   showBoxes,
@@ -30,12 +31,15 @@ export default function ManuscriptViewer({
   onBoxes,
   onDrawn,
   allowAltDraw = false,
+  selectedIds = [],
+  onSelectionChange,
   readOnly = false,
   showFullPageRegion = false,
   onDeleteSelected,
 }: {
   page: Page;
   boxes: Box[];
+  boxNumber?: (box: Box, index: number) => number | string;
   selected: string | null;
   setSelected: (id: string | null) => void;
   showBoxes: boolean;
@@ -44,6 +48,8 @@ export default function ManuscriptViewer({
   onBoxes: (boxes: Box[]) => void;
   onDrawn: () => void;
   allowAltDraw?: boolean;
+  selectedIds?: string[];
+  onSelectionChange?: (ids: string[]) => void;
   readOnly?: boolean;
   showFullPageRegion?: boolean;
   onDeleteSelected?: () => void;
@@ -79,10 +85,11 @@ export default function ManuscriptViewer({
     const point = position(event);
     const target = event.target as SVGElement;
     const box = boxes.find((b) => b.id === target.dataset.box);
-    if (tool === 'draw' || (allowAltDraw && event.altKey && !readOnly))
+    if (allowAltDraw ? event.altKey && !readOnly : tool === 'draw')
       drag.current = { kind: 'draw', start: point };
     else if (box) {
       setSelected(box.id);
+      onSelectionChange?.([box.id]);
       if (onDeleteSelected) event.currentTarget.focus();
       if (readOnly) return;
       drag.current = {
@@ -93,7 +100,9 @@ export default function ManuscriptViewer({
       };
     } else {
       setSelected(null);
-      return;
+      if (!allowAltDraw || readOnly) return;
+      onSelectionChange?.([]);
+      drag.current = { kind: 'select-area', start: point };
     }
     event.currentTarget.setPointerCapture(event.pointerId);
   }
@@ -101,13 +110,13 @@ export default function ManuscriptViewer({
     const state = drag.current;
     if (!state) return;
     const point = position(event);
-    if (state.kind === 'draw') {
+    if (state.kind === 'draw' || state.kind === 'select-area') {
       const x = Math.min(state.start[0], point[0]),
         y = Math.min(state.start[1], point[1]);
       const right = Math.max(state.start[0], point[0]),
         bottom = Math.max(state.start[1], point[1]);
       setPreview({
-        id: 'drawing',
+        id: state.kind === 'draw' ? 'drawing' : 'selecting',
         transcription: '',
         points: [
           [x, y],
@@ -150,12 +159,22 @@ export default function ManuscriptViewer({
     if (!drag.current) return;
     if (preview) {
       const b = bounds(preview);
-      if (drag.current.kind === 'draw' && b.width > 8 && b.height > 8) {
+      if (drag.current.kind === 'select-area' && b.width > 8 && b.height > 8) {
+        const ids = boxes.filter((box) => {
+          const item = bounds(box);
+          return item.x < b.x + b.width && item.x + item.width > b.x &&
+            item.y < b.y + b.height && item.y + item.height > b.y;
+        }).map((box) => box.id);
+        setSelected(ids[0] || null);
+        onSelectionChange?.(ids);
+      } else if (drag.current.kind === 'draw' && b.width > 8 && b.height > 8) {
         const created = { ...preview, id: crypto.randomUUID() };
         onBoxes([...boxes, created]);
         setSelected(created.id);
+        onSelectionChange?.([created.id]);
         onDrawn();
-      } else if (drag.current.kind !== 'draw')
+      } else if ((drag.current.kind === 'move' || drag.current.kind === 'corner') &&
+          drag.current.box && JSON.stringify(preview.points) !== JSON.stringify(drag.current.box.points))
         onBoxes(boxes.map((box) => (box.id === preview.id ? preview : box)));
     }
     drag.current = null;
@@ -219,12 +238,14 @@ export default function ManuscriptViewer({
               rendered.map((box, index) => {
                 const b = bounds(box),
                   active = selected === box.id;
+                const number = boxNumber?.(box, index) ?? index + 1;
+                const label = typeof number === 'number' ? String(number).padStart(2, '0') : number;
                 return (
                   <g key={box.id}>
                     <polygon
                       data-box={box.id}
                       points={box.points.map((p) => p.join(',')).join(' ')}
-                      className={`bounding-box ${active ? 'active' : ''}`}
+                      className={`bounding-box ${box.box_axis ? `axis-${box.box_axis}` : ''} ${active || selectedIds.includes(box.id) ? 'active' : ''}`}
                       strokeWidth={active ? 3 : 2}
                     />
                     <g pointerEvents="none">
@@ -234,7 +255,7 @@ export default function ManuscriptViewer({
                         width={29}
                         height={24}
                         rx={3}
-                        fill={active ? '#234d42' : '#68836f'}
+                        fill={box.box_axis === 'vertical' ? '#995b25' : box.box_axis === 'horizontal' ? '#345f90' : active ? '#234d42' : '#68836f'}
                       />
                       <text
                         x={b.x + 14.5}
@@ -244,7 +265,7 @@ export default function ManuscriptViewer({
                         textAnchor="middle"
                         fontFamily="sans-serif"
                       >
-                        {String(index + 1).padStart(2, '0')}
+                        {label}
                       </text>
                     </g>
                     {active &&
@@ -267,6 +288,18 @@ export default function ManuscriptViewer({
                   </g>
                 );
               })}
+            {preview?.id === 'selecting' && (
+              <rect
+                x={bounds(preview).x}
+                y={bounds(preview).y}
+                width={bounds(preview).width}
+                height={bounds(preview).height}
+                fill="rgba(35, 77, 66, .12)"
+                stroke="#234d42"
+                strokeDasharray="8 5"
+                pointerEvents="none"
+              />
+            )}
           </svg>
         )}
       </div>

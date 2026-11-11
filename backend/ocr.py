@@ -86,7 +86,7 @@ class KimHanNomOCR:
             raise OCRError('Kim Hán Nôm trả thiếu trường data.')
         return body['data']
 
-    def recognize(self, image: bytes, *, ocr_id=1, lang_type=2, reading_direction=1, epitaph=0, tag=None, font_type=0):
+    def recognize(self, image: bytes, *, ocr_id=1, lang_type=2, reading_direction=2, epitaph=0, tag=None, font_type=0):
         if not self.config.ready:
             raise OCRError('Thiếu KHN_token trong backend/.env. Thêm token rồi khởi động lại.', 503)
         with httpx.Client(

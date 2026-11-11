@@ -85,6 +85,25 @@ def test_unfinished_line_is_rejected_instead_of_silently_saving_truncated_text(t
         provider.recognize(content.getvalue())
 
 
+def test_long_line_retries_as_two_crops(tmp_path, monkeypatch):
+    provider = VietOCR(tmp_path)
+    monkeypatch.setattr(provider, 'status', lambda: {'ready': True})
+    monkeypatch.setattr('backend.vietocr.line_regions', lambda image, han_boxes: ([(0, 0, 400, 40)], False))
+    widths = []
+
+    class Recognizer:
+        def predict(self, picture):
+            widths.append(picture.width)
+            return ('Nội dung bị cắt', 60, False) if picture.width == 400 else ('Nửa dòng', 85, True)
+
+    provider.model = Recognizer()
+    content = io.BytesIO()
+    Image.new('RGB', (400, 40), 'white').save(content, format='PNG')
+    result = provider.recognize(content.getvalue())
+    assert result['text_lines'] == ['Nửa dòng Nửa dòng']
+    assert widths == [400, 200, 200]
+
+
 def test_vietocr_is_default_and_reports_missing_setup_without_network(tmp_path, monkeypatch):
     monkeypatch.delenv('VI_OCR_PROVIDER', raising=False)
     provider = create_vietnamese_ocr(tmp_path)

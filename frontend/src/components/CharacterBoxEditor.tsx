@@ -6,35 +6,62 @@ export { groupCharacterBoxes } from './boxText';
 
 export default function CharacterBoxEditor({
   boxes,
-  direction,
   selected,
   disabled,
   onSelect,
+  onHover,
   onChange,
   onLookup,
+  onOrder,
   onMark,
   onMarkAll,
   pairedWords,
 }: {
   boxes: Box[];
   pairedWords: string[];
-  direction: 1 | 2;
   selected: string | null;
   disabled: boolean;
   onSelect: (id: string) => void;
+  onHover: (id: string) => void;
   onChange: (box: Box, text: string) => void;
   onLookup: (box: Box, character: string, index: number) => void;
+  onOrder: (box: Box, order: number | null) => void;
   onMark: (id: string, kind: ReviewKind) => void;
   onMarkAll: (kind: ReviewKind) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [layout, setLayout] = useState<'number' | 'vertical' | 'horizontal'>('number');
   const selectedBox = boxes.find((box) => box.id === selected);
   const selectedIndex = selectedBox ? boxes.indexOf(selectedBox) : -1;
   const pairedWord = selectedIndex >= 0 ? pairedWords[selectedIndex] : undefined;
+  const orderValues = boxes.map((box, index) => box.review_order ?? (boxes.some((item) => item.review_order !== undefined) ? null : index + 1));
+  const orderConflict = orderValues.some((order) => order === null) || new Set(orderValues).size !== boxes.length ||
+    [...orderValues].sort((a, b) => (a || 0) - (b || 0)).some((order, index) => order !== index + 1);
+  function lookup(box: Box, input: HTMLInputElement | null) {
+    const cursor = Math.max(0, (input?.selectionStart || 0) - 1);
+    let offset = 0;
+    for (const character of Array.from(box.transcription)) {
+      if (offset + character.length > cursor) {
+        onLookup(box, character, offset);
+        return;
+      }
+      offset += character.length;
+    }
+    onLookup(box, '', 0);
+  }
   return (
     <div className="character-box-editor">
       <div className="character-box-toolbar">
         <small>{boxes.length} box ký tự</small>
+        {orderConflict && <small role="alert">Số thứ tự box bị thiếu hoặc trùng; hãy sửa trước khi hoàn thành trang.</small>}
+        <label className="character-layout-control">
+          Xem box
+          <select value={layout} onChange={(event) => setLayout(event.target.value as typeof layout)}>
+            <option value="number">Theo số box</option>
+            <option value="vertical">Theo cột dọc</option>
+            <option value="horizontal">Theo dòng ngang</option>
+          </select>
+        </label>
         <button
           type="button"
           className="text-button"
@@ -77,19 +104,26 @@ export default function CharacterBoxEditor({
         <small>Alt + 1: đen; 2: đỏ; 3: thiếu từ điển</small>
       </div>
       {!collapsed &&
-        groupCharacterBoxes(boxes, direction).map((row, index) => (
+        (layout === 'number'
+          ? [[...boxes].sort((a, b) =>
+              (a.review_order ?? boxes.indexOf(a) + 1) - (b.review_order ?? boxes.indexOf(b) + 1))]
+          : groupCharacterBoxes(boxes, layout === 'vertical' ? 1 : 2, false)
+        ).map((row, index) => (
           <div className="character-box-line" key={row[0].id}>
-            <span className="line-num">{index + 1}</span>
+            <span className="line-num">
+              {layout === 'number' ? 'Theo số' : layout === 'vertical' ? `Cột ${index + 1}` : `Dòng ${index + 1}`}
+            </span>
             <div>
               {row.map((box) => (
                 <div
                   key={box.id}
                   data-row={box.id}
                   className={`character-box-cell review-${box.review_kind || 'match'} ${selected === box.id ? 'selected' : ''} ${box.transcription.includes('□') ? 'uncertain' : ''}`}
-                  onMouseEnter={() => onSelect(box.id)}
+                  onMouseEnter={() => onHover(box.id)}
                 >
                   <input
                     className="han-text"
+                    style={{ width: `${Math.min(180, Math.max(38, Array.from(box.transcription).length * 28 + 12))}px` }}
                     aria-label={
                       box.transcription
                         ? `Ký tự ${box.transcription} dòng ${index + 1}`
@@ -100,11 +134,20 @@ export default function CharacterBoxEditor({
                     onFocus={() => onSelect(box.id)}
                     onChange={(event) => {
                       if (!(event.nativeEvent as InputEvent).isComposing)
-                        onChange(box, Array.from(event.target.value).slice(0, 1).join(''));
+                        onChange(box, event.target.value);
                     }}
-                    onCompositionEnd={(event) =>
-                      onChange(box, Array.from(event.currentTarget.value).slice(0, 1).join(''))
-                    }
+                    onCompositionEnd={(event) => onChange(box, event.currentTarget.value)}
+                  />
+                  <input
+                    className="character-order-input"
+                    type="number"
+                    min="1"
+                    aria-label={`Số thứ tự box ${box.transcription || 'trống'}`}
+                    aria-invalid={orderConflict}
+                    value={box.review_order ?? (boxes.some((item) => item.review_order !== undefined) ? '' : boxes.indexOf(box) + 1)}
+                    disabled={disabled}
+                    onFocus={() => onSelect(box.id)}
+                    onChange={(event) => onOrder(box, /^[1-9]\d*$/u.test(event.target.value) ? Number(event.target.value) : null)}
                   />
                   <button
                     className="character-dictionary-button"
@@ -112,8 +155,7 @@ export default function CharacterBoxEditor({
                       box.transcription ? `Tra chữ ${box.transcription}` : 'Tra âm đọc cho ô trống'
                     }
                     title={box.transcription ? 'Tra từ điển' : 'Tìm chữ cho ô trống'}
-                    disabled={!!box.transcription && !/\p{Script=Han}|□/u.test(box.transcription)}
-                    onClick={() => onLookup(box, Array.from(box.transcription)[0] || '', 0)}
+                    onClick={(event) => lookup(box, event.currentTarget.parentElement?.querySelector('input.han-text') || null)}
                   >
                     <Search size={12} />
                   </button>

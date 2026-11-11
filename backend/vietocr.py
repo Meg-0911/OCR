@@ -141,12 +141,29 @@ class VietOCR:
                     if len(rectangles) > 200:
                         raise OCRError('Có quá nhiều vùng dòng trên trang. Giới hạn vùng Quốc ngữ bằng mẫu cho quyển rồi thử lại.', 422)
                     for left, top, right, bottom in rectangles:
-                        text, probability, ended = self.model.predict(crop.crop((left, top, right, bottom)))
+                        line = crop.crop((left, top, right, bottom))
+                        text, probability, ended = self.model.predict(line)
+                        if not ended and line.width >= 2 * line.height:
+                            # Prefer a gap near the middle so a word is not cut in half.
+                            import numpy as np
+                            gray = np.asarray(line.convert('L'))
+                            middle = line.width // 2
+                            radius = max(1, line.width // 6)
+                            start = max(1, middle - radius)
+                            stop = min(line.width - 1, middle + radius)
+                            ink = (gray[:, start:stop] < 190).sum(axis=0)
+                            split = start + min(range(len(ink)), key=lambda index: (ink[index], abs(start + index - middle))) if len(ink) else middle
+                            first = self.model.predict(line.crop((0, 0, split, line.height)))
+                            second = self.model.predict(line.crop((split, 0, line.width, line.height)))
+                            if first[2] and second[2] and first[0].strip() and second[0].strip():
+                                text = first[0].rstrip() + ' ' + second[0].lstrip()
+                                probability = min(first[1], second[1])
+                                ended = True
                         if sum(char.isalpha() for char in text) < 2:
                             continue
                         if not ended:
                             # Never mark a silently truncated line as completed.
-                            raise OCRError('Một dòng Quốc ngữ quá dài hoặc chưa tách đúng. Thu hẹp vùng mẫu rồi thử lại; phần Nôm đã lưu.', 422)
+                            raise OCRError('Một dòng Quốc ngữ quá dài hoặc chưa tách đúng dù đã tự chia ảnh làm hai. Thu hẹp vùng mẫu rồi thử lại; phần Nôm đã lưu.', 422)
                         boxes.append({'id': 'vi-' + uuid4().hex, 'transcription': text,
                                       'points': [[left+x, top+y], [right+x, top+y], [right+x, bottom+y], [left+x, bottom+y]],
                                       'confidence': probability})

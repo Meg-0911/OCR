@@ -35,7 +35,9 @@ def replace_file(temporary,target):
             time.sleep(.02*2**attempt)
 
 
-def ordered_boxes(boxes, category, reading_direction=1, image_size=None):
+def ordered_boxes(boxes, category, reading_direction=2, image_size=None):
+    if boxes and category in ('ch', 'both') and all(box.get('review_order') is not None for box in boxes):
+        return sorted(boxes, key=lambda box: box['review_order'])
     # Two-page landscape scans are read left page first, then right page.
     # A single-page landscape scan with content on one side keeps its order.
     if image_size and image_size[0] > image_size[1] and boxes:
@@ -188,8 +190,10 @@ class Store:
               PRIMARY KEY(book_id,language));
             """)
             if 'reading_direction' not in {row['name'] for row in db.execute('PRAGMA table_info(pages)')}:
-                db.execute('ALTER TABLE pages ADD COLUMN reading_direction INTEGER NOT NULL DEFAULT 1')
+                db.execute('ALTER TABLE pages ADD COLUMN reading_direction INTEGER NOT NULL DEFAULT 2')
             columns={row['name'] for row in db.execute('PRAGMA table_info(pages)')}
+            if 'reading_direction_override' not in columns:
+                db.execute('ALTER TABLE pages ADD COLUMN reading_direction_override INTEGER DEFAULT NULL')
             for column,default in (('source_text',"''"),('target_text',"''"),('vi_boxes',"'[]'"),('export_boxes',"'null'")):
                 if column not in columns:
                     db.execute(f'ALTER TABLE pages ADD COLUMN {column} TEXT NOT NULL DEFAULT {default}')

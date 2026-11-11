@@ -93,6 +93,8 @@ export default function AlignmentRow({
   onRemove,
   onMerge,
   onSplit,
+  onDrawBox,
+  hasBox = false,
   compact = false,
   sourceColors = [],
   targetColors = [],
@@ -104,6 +106,8 @@ export default function AlignmentRow({
   onRemove?: () => void;
   onMerge?: () => void;
   onSplit?: (source: [string, string], target: [string, string]) => void;
+  onDrawBox?: (axis: 'vertical' | 'horizontal') => void;
+  hasBox?: boolean;
   compact?: boolean;
   sourceColors?: (ReviewKind | undefined)[];
   targetColors?: (ReviewKind | undefined)[];
@@ -177,6 +181,13 @@ export default function AlignmentRow({
           {row.reviewed ? <CheckCheck size={13} /> : <span className="status-dot pending" />}
           {row.reviewed ? 'Đã đọc lại' : 'Chờ đọc lại'}
         </button>
+        {onDrawBox && (
+          <div className="sentence-box-actions">
+            <small>{hasBox ? 'Đã có box cho câu' : 'Chưa có box cho câu'}</small>
+            <button type="button" onClick={() => onDrawBox('vertical')}>Vẽ box dọc</button>
+            <button type="button" onClick={() => onDrawBox('horizontal')}>Vẽ box ngang</button>
+          </div>
+        )}
       </div>
       <div>
         {editor('source', row.source, sourceDisplay, 'han-text')}

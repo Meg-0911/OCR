@@ -21,7 +21,8 @@ def workspace(tmp_path):
 
 
 def page_payload(page, **changes):
-    return {'boxes':page['boxes'], 'category':page['category'], 'done':False, 'version':page['version']} | changes
+    return {'boxes':page['boxes'], 'category':page['category'], 'done':False, 'version':page['version'],
+            'reading_direction':page['reading_direction']} | changes
 
 
 def upload_book(client, name='Book with spaces.pdf'):
@@ -38,7 +39,7 @@ def upload_book(client, name='Book with spaces.pdf'):
 def labelled_book(client):
     book, pages = upload_book(client, 'Sách kiểm thử.pdf')
     boxes = [{'id':str(i), 'transcription':f'字{i}', 'points':[[480-i*70,80],[520-i*70,80],[520-i*70,480],[480-i*70,480]]} for i in range(6)]
-    page = client.put(f"/api/pages/{pages[0]['id']}", json=page_payload(pages[0], category='ch', boxes=boxes)).json()
+    page = client.put(f"/api/pages/{pages[0]['id']}", json=page_payload(pages[0], category='ch', boxes=boxes, reading_direction=1)).json()
     return book, page
 
 
@@ -333,6 +334,7 @@ def test_xlsx_applies_page_colors_to_the_single_quoc_ngu_column_on_each_page(ann
     }).status_code==200
     assert client.patch(f"/api/pages/{second['id']}",json={
         'category':'both','source_text':'安和','target_text':'an hòa','boxes':second_boxes,
+        'reading_direction_override':1,
         'vi_boxes':[{'id':'second-vi','transcription':'an hòa','points':[[10,60],[80,60],[80,90],[10,90]]}],
     }).status_code==200
     rows=[

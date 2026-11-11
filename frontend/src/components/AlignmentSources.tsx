@@ -13,6 +13,9 @@ export default function AlignmentSources({
   onCreate,
   onBoxes,
   alignments,
+  targetRow,
+  targetAxis,
+  targetRequestId,
 }: {
   page?: Page;
   pages: Page[];
@@ -21,6 +24,9 @@ export default function AlignmentSources({
   onCreate: (source: string, target: string) => void;
   onBoxes: (page: Page, boxes: Page['boxes']) => void;
   alignments: Alignment[];
+  targetRow?: Alignment;
+  targetAxis?: 'vertical' | 'horizontal';
+  targetRequestId?: string;
 }) {
   const targets = pages.filter((p) => p.category === 'vi');
   const [targetId, setTargetId] = useState(
@@ -72,9 +78,15 @@ export default function AlignmentSources({
             page={page}
             disabled={busy}
             alignments={alignments}
+            targetRow={targetRow}
+            targetAxis={targetAxis}
+            targetRequestId={targetRequestId}
             onBoxes={(boxes) => onBoxes(page, boxes)}
           />
         </div>
+      )}
+      {!page && (
+        <p role="status">Chọn trang có chữ Nôm ở thanh phía trên để hiện ảnh và công cụ vẽ bounding theo từng câu.</p>
       )}
       <div className="alignment-source-grid">
         <label>

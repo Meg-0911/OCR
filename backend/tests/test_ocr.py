@@ -112,8 +112,8 @@ def test_page_rerun_reuses_saved_ocr_id_instead_of_normalizing_it(tmp_path):
 
     assert rerun.status_code == 200, rerun.text
     assert calls == [
-        {'file_name':'temp.jpg','ocr_id':1,'lang_type':2,'reading_direction':1,'epitaph':0,'tag':None,'font_type':0},
-        {'file_name':'temp.jpg','ocr_id':4,'lang_type':2,'reading_direction':1,'epitaph':0,'tag':None,'font_type':0},
+        {'file_name':'temp.jpg','ocr_id':1,'lang_type':2,'reading_direction':2,'epitaph':0,'tag':None,'font_type':0},
+        {'file_name':'temp.jpg','ocr_id':4,'lang_type':2,'reading_direction':2,'epitaph':0,'tag':None,'font_type':0},
     ]
 
 

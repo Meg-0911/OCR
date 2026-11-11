@@ -56,10 +56,12 @@ class BoxInput(BaseModel):
     transcription: str = Field(max_length=30000)
     points: list[tuple[float, float]] = Field(min_length=4, max_length=4)
     review_kind: Literal['match','mismatch','unknown'] | None = None
+    review_order: int | None = Field(default=None, ge=1)
     export_group: str | None = Field(default=None, min_length=1, max_length=100)
     export_order: int | None = Field(default=None, ge=1)
     export_character_order: int | None = Field(default=None, ge=0)
     alignment_id: str | None = Field(default=None, min_length=1, max_length=100)
+    box_axis: Literal['vertical','horizontal'] | None = None
 
     @field_validator('points')
     @classmethod
@@ -148,11 +150,14 @@ class PageInput(BaseModel):
     done: bool = False
     category: Category
     version: int = Field(ge=0)
-    reading_direction: Literal[1, 2] = 1
+    reading_direction: Literal[1, 2] = 2
     ocr_skip: bool | None = None
 
     @model_validator(mode='after')
     def valid_export_order(self):
+        orders = [box.review_order for box in self.boxes]
+        if any('review_order' in box.model_fields_set for box in self.boxes) and sorted(orders, key=lambda value: value or 0) != list(range(1, len(orders) + 1)):
+            raise ValueError('Số thứ tự box OCR phải liên tục từ 1 và không được trùng.')
         validate_export_order(self.boxes)
         if self.vi_boxes is not None:
             validate_export_order(self.vi_boxes)
@@ -169,6 +174,7 @@ class PagePatch(BaseModel):
     export_boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
     category: Category | None = None
     reading_direction: Literal[1,2] | None = None
+    reading_direction_override: Literal[1,2] | None = None
     ocr_skip: bool | None = None
     ocr_languages: list[Literal['han','vi']] | None = Field(default=None,min_length=1,max_length=2)
     source_regions: list[tuple[float,float,float,float]] | None = Field(default=None,max_length=100)
@@ -237,7 +243,7 @@ class OCRSettings(BaseModel):
     shared_reading_area: bool = False
     ocr_id: Literal[1, 2, 3, 4] = 1
     lang_type: Literal[0, 1, 2] = 2
-    reading_direction: Literal[1, 2] = 1
+    reading_direction: Literal[1, 2] = 2
     epitaph: Literal[0, 1] = 0
     tag: str | None = Field(default=None, max_length=200)
     mode: Literal['han','vi','bilingual'] = 'han'
@@ -513,8 +519,12 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 changed=[key for key in ('source_regions','target_regions') if json.dumps(previous[key])!=json.dumps(profile[key])]
                 direction_changed=profile.get('reading_direction',2)!=previous.get('reading_direction',2)
                 if changed or direction_changed:
-                    inherited='1=1' if direction_changed else ' OR '.join(key+' IS NULL' for key in changed)
-                    db.execute("UPDATE pages SET status='pending',version=version+1 WHERE book_id=? AND ocr_skip=0 AND category!='blank' AND ("+inherited+')',(book_id,))
+                    inherited=' OR '.join(
+                        [*(["reading_direction_override IS NULL"] if direction_changed else []),
+                         *(key+' IS NULL' for key in changed)]
+                    )
+                    db.execute("UPDATE pages SET reading_direction=CASE WHEN reading_direction_override IS NULL THEN ? ELSE reading_direction END,status='pending',version=version+1 WHERE book_id=? AND ocr_skip=0 AND category!='blank' AND ("+inherited+')',
+                               (profile.get('reading_direction',2),book_id))
             store.sync_labels(book_id)
         return profile
 
@@ -594,7 +604,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             try:
                 with store.db() as db:
                     updates=['boxes=?','status=?','category=?','reading_direction=?','source_text=?','target_text=?','vi_boxes=?']
-                    values=[json.dumps(boxes,ensure_ascii=False),'done' if data.done else 'pending',data.category,data.reading_direction,
+                    values=[json.dumps(boxes,ensure_ascii=False),'done' if data.done else 'pending',data.category,page['reading_direction_override'] or data.reading_direction,
                             source_text,target_text,json.dumps([b.model_dump(exclude_none=True) for b in data.vi_boxes],ensure_ascii=False) if data.vi_boxes is not None else json.dumps(page['vi_boxes'],ensure_ascii=False)]
                     if export_boxes is not None:
                         updates.append('export_boxes=?')
@@ -636,7 +646,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         # Field-level autosave permits editing one language while the other finishes OCR.
         with store.lock:
             page=require_page(page_id)
-            changes={key:value for key,value in data.model_dump(exclude_unset=True,mode='json').items() if value is not None or key in ('source_regions','target_regions')}
+            changes={key:value for key,value in data.model_dump(exclude_unset=True,mode='json').items() if value is not None or key in ('source_regions','target_regions','reading_direction_override')}
             if 'ocr_languages' in changes:
                 languages=[language for language in ('han','vi') if language in changes['ocr_languages']]
                 changes['ocr_languages']=json.dumps(languages)
@@ -646,6 +656,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 changes['ocr_languages']=json.dumps(['han'] if changes['category']=='ch' else ['vi'] if changes['category']=='vi' else ['han','vi'])
             elif 'category' in changes:
                 changes['ocr_languages']=json.dumps(page['ocr_languages'])
+            if 'reading_direction_override' in changes:
+                changes['reading_direction']=changes['reading_direction_override'] or store.book_layout(page['book_id']).get('reading_direction',2)
             if not changes:
                 return page
             edited=set(page['edited_fields'])
@@ -663,9 +675,14 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     changes[key]=json.dumps(changes[key])
             if 'ocr_skip' in changes:
                 changes['ocr_skip']=int(changes['ocr_skip'])
+            invalidates_review = any(key in changes for key in (
+                'source_text','target_text','boxes','vi_boxes','category','reading_direction',
+                'ocr_skip','ocr_languages','source_regions','target_regions','reading_direction_override',
+            ))
             try:
                 with store.db() as db:
-                    db.execute('UPDATE pages SET '+','.join(key+'=?' for key in changes)+",status='pending',version=version+1 WHERE id=?",(*changes.values(),page_id))
+                    status_update = ",status='pending'" if invalidates_review else ''
+                    db.execute('UPDATE pages SET '+','.join(key+'=?' for key in changes)+status_update+",version=version+1 WHERE id=?",(*changes.values(),page_id))
             except sqlite3.IntegrityError:
                 raise HTTPException(409,'Trang đã có trong nhóm này.') from None
             if 'source_text' in changes:
@@ -857,6 +874,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         if settings.get('shared_reading_area') and overrides:
             regions=[] if any(not value for value in overrides.values()) else [list(region) for region in dict.fromkeys(tuple(region) for value in overrides.values() for region in value)]
             overrides={'source_regions':regions,'target_regions':regions}
+        if page.get('reading_direction_override') is not None:
+            overrides['reading_direction']=page['reading_direction_override']
         return {**settings,'mode':mode,**overrides}
 
     jobs = OCRJobs(store, recognize_for_job,
