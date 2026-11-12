@@ -35,6 +35,56 @@ def replace_file(temporary,target):
             time.sleep(.02*2**attempt)
 
 
+def character_box_groups(boxes, reading_direction):
+    """Group character boxes into reading lines/columns in page order."""
+    if not boxes:
+        return []
+    axis = 0 if reading_direction == 1 else 1
+    travel = 1 if reading_direction == 1 else 0
+
+    def center(box):
+        return sum(point[axis] for point in box['points']) / 4
+
+    def size(box):
+        return max(point[axis] for point in box['points']) - min(point[axis] for point in box['points'])
+
+    groups = []
+    if all(box.get('review_order') is not None for box in boxes):
+        for box in sorted(boxes, key=lambda item: item['review_order']):
+            previous = groups[-1][-1] if groups else None
+            if previous and abs(center(previous) - center(box)) < max(size(previous), size(box)) * .5:
+                groups[-1].append(box)
+            else:
+                groups.append([box])
+        return groups
+
+    for box in sorted(boxes, key=center, reverse=reading_direction == 1):
+        group = next((items for items in groups
+                      if abs(center(items[0]) - center(box)) < max(size(items[0]), size(box)) * .5), None)
+        if group is None:
+            groups.append([box])
+        else:
+            group.append(box)
+    return [sorted(group, key=lambda box: min(point[travel] for point in box['points'])) for group in groups]
+
+
+def box_text_lines(boxes, reading_direction, category='ch', image_size=None):
+    """Build OCR text from its boxes so text and geometry cannot drift apart."""
+    if not boxes:
+        return []
+    if category == 'vi':
+        return [box['transcription'] for box in ordered_boxes(boxes, 'vi', 2, image_size)]
+    if image_size and image_size[0] > image_size[1]:
+        middle = image_size[0] / 2
+        left, right = [], []
+        for box in boxes:
+            (left if sum(point[0] for point in box['points']) / 4 < middle else right).append(box)
+        if left and right:
+            return box_text_lines(left, reading_direction, category) + box_text_lines(right, reading_direction, category)
+    return [''.join(box['transcription'] for box in group)
+            for group in character_box_groups(boxes, reading_direction)]
+
+
 def ordered_boxes(boxes, category, reading_direction=2, image_size=None):
     if boxes and category in ('ch', 'both') and all(box.get('review_order') is not None for box in boxes):
         return sorted(boxes, key=lambda box: box['review_order'])
@@ -48,18 +98,7 @@ def ordered_boxes(boxes, category, reading_direction=2, image_size=None):
         if left and right:
             return ordered_boxes(left,category,reading_direction)+ordered_boxes(right,category,reading_direction)
     if boxes and category in ('ch','both'):
-        # Character tops vary within a physical row; sorting by top alone scrambles text.
-        axis=0 if reading_direction==1 else 1
-        def center(box):
-            return sum(point[axis] for point in box['points'])/4
-        def size(box):
-            return max(point[axis] for point in box['points'])-min(point[axis] for point in box['points'])
-        groups=[]
-        for box in sorted(boxes,key=center,reverse=reading_direction==1):
-            row=next((row for row in groups if abs(center(row[0])-center(box))<max(size(row[0]),size(box))*.5),None)
-            if row is None:groups.append([box])
-            else:row.append(box)
-        return [box for row in groups for box in sorted(row,key=lambda box:min(point[1 if reading_direction==1 else 0] for point in box['points']))]
+        return [box for group in character_box_groups(boxes, reading_direction) for box in group]
     if category in ("ch", "both") and reading_direction == 1:
         return sorted(boxes, key=lambda b: (-max(p[0] for p in b["points"]), min(p[1] for p in b["points"])))
     return sorted(boxes, key=lambda b: (min(p[1] for p in b["points"]), min(p[0] for p in b["points"])))
@@ -277,8 +316,12 @@ class Store:
         }
 
     @staticmethod
-    def page_dict(row):
+    def page_dict(row, inherited_reading_direction=None):
         page = dict(row)
+        if page.get('reading_direction_override') in (1, 2):
+            page['reading_direction'] = page['reading_direction_override']
+        elif inherited_reading_direction in (1, 2):
+            page['reading_direction'] = inherited_reading_direction
         page["boxes"] = ordered_boxes(json.loads(page["boxes"]), page['category'], page['reading_direction'],(page['width'],page['height']))
         page['vi_boxes']=ordered_boxes(json.loads(page['vi_boxes']),'vi',2,(page['width'],page['height']))
         export_boxes=json.loads(page['export_boxes'])
@@ -313,7 +356,9 @@ class Store:
 
     def pages(self, book_id):
         with self.db() as db:
-            return [self.page_dict(row) for row in db.execute("SELECT * FROM pages WHERE book_id=? ORDER BY number,category", (book_id,))]
+            layout=db.execute('SELECT profile FROM book_layouts WHERE book_id=?',(book_id,)).fetchone()
+            direction=json.loads(layout['profile']).get('reading_direction',2) if layout else 2
+            return [self.page_dict(row,direction) for row in db.execute("SELECT * FROM pages WHERE book_id=? ORDER BY number,category", (book_id,))]
 
     def source_box_colors(self, book_id, rows):
         """Map per-box review colors onto both sides of saved alignment text."""
@@ -367,7 +412,11 @@ class Store:
     def page(self, page_id):
         with self.db() as db:
             row = db.execute("SELECT * FROM pages WHERE id=?", (page_id,)).fetchone()
-            return self.page_dict(row) if row else None
+            if not row:
+                return None
+            layout=db.execute('SELECT profile FROM book_layouts WHERE book_id=?',(row['book_id'],)).fetchone()
+            direction=json.loads(layout['profile']).get('reading_direction',2) if layout else 2
+            return self.page_dict(row,direction)
 
     def book_dir(self, book_id):
         return self.local / "books" / book_id
@@ -423,15 +472,25 @@ class Store:
                 return
             completed=completed_ocr_languages(result)
             changes={}
-            if 'han' in completed and result.get('reading_direction',page['reading_direction'])!=page['reading_direction']:
-                changes['reading_direction']=result['reading_direction']
             for language,key in (('han','boxes'),('vi','vi_boxes')):
                 if language in completed and key not in page['edited_fields'] and page[key]!=result.get(key,[]) and result.get(key):
                     changes[key]=json.dumps(result[key],ensure_ascii=False)
-            if 'han' in completed and 'source_text' not in page['edited_fields']:
-                changes['source_text']='\n'.join(result.get('text_lines',[]))
-            if 'vi' in completed and 'target_text' not in page['edited_fields']:
-                changes['target_text']='\n'.join(result.get('vi_text_lines',[]))
+            if 'han' in completed:
+                source_boxes = page['boxes'] if 'boxes' in page['edited_fields'] else result.get('boxes', [])
+                if source_boxes:
+                    changes['source_text']='\n'.join(box_text_lines(
+                        source_boxes,page['reading_direction'],'ch',(page['width'],page['height']),
+                    ))
+                elif 'source_text' not in page['edited_fields']:
+                    changes['source_text']='\n'.join(result.get('text_lines',[]))
+            if 'vi' in completed:
+                target_boxes = page['vi_boxes'] if 'vi_boxes' in page['edited_fields'] else result.get('vi_boxes', [])
+                if target_boxes:
+                    changes['target_text']='\n'.join(box_text_lines(
+                        target_boxes,2,'vi',(page['width'],page['height']),
+                    ))
+                elif 'target_text' not in page['edited_fields']:
+                    changes['target_text']='\n'.join(result.get('vi_text_lines',[]))
                 if result.get('target_origin'):
                     changes['target_origin']=result['target_origin']
             changes={key:value for key,value in changes.items() if (not isinstance(value,str) or value.strip()) and value!=(json.dumps(page[key],ensure_ascii=False) if key in ('boxes','vi_boxes') else page[key])}

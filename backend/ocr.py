@@ -68,7 +68,7 @@ class KimHanNomOCR:
         except httpx.TimeoutException:
             raise OCRError('Kim Hán Nôm xử lý quá thời gian. Hãy thử lại từng trang.', 504) from None
         except httpx.RequestError:
-            raise OCRError('Không kết nối được Kim Hán Nôm. Kiểm tra mạng và KHN_BASE_URL.') from None
+            raise OCRError('Không kết nối an toàn được Kim Hán Nôm. Kiểm tra mạng, KHN_BASE_URL và chứng chỉ HTTPS của dịch vụ.') from None
         if response.status_code in (401, 403):
             raise OCRError('Kim Hán Nôm từ chối xác thực. Cập nhật KHN_token trong backend/.env rồi khởi động lại.', 502)
         if response.status_code == 429:

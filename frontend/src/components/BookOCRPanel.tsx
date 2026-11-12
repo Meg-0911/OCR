@@ -82,6 +82,8 @@ export default function BookOCRPanel(props: {
   const { acting, onAction: act } = props;
   const job = props.job;
   const running = job && ['running', 'pausing'].includes(job.status);
+  const progress = job?.processed ?? job?.completed ?? 0;
+  const languageLabel = job?.current_language === 'han' ? 'Hán Nôm' : job?.current_language === 'vi' ? 'Quốc ngữ' : '';
   return (
     <div className="workbench-ocr-controls">
       {job && (
@@ -93,12 +95,20 @@ export default function BookOCRPanel(props: {
               : job.status === 'pausing'
                 ? 'Đang dừng OCR'
                 : job.status === 'failed'
-                  ? 'OCR gặp lỗi'
+                  ? 'OCR đã chạy tới điểm cần thử lại'
                   : 'Đang OCR'}{' '}
-          {job.completed}/{job.total}
+          {progress}/{job.total} trang đã xử lý
         </span>
       )}
-      {job && <progress aria-label="Tiến trình OCR" value={job.completed} max={job.total || 1} />}
+      {job && <progress aria-label="Tiến trình OCR" value={progress} max={job.total || 1} />}
+      {job?.current_page && (
+        <span role="status">
+          Trang {job.current_page.number}
+          {running && languageLabel ? ` · Đang OCR ${languageLabel}` : ''}
+          {job.current_page.status === 'partial' ? ' · Hán Nôm đã lưu, Quốc ngữ cần thử lại' : ''}
+          {job.current_page.status === 'failed' ? ' · Cần thử lại' : ''}
+        </span>
+      )}
       {job?.error && (
         <span className="workbench-error" role="alert">
           {job.error}

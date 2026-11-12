@@ -32,6 +32,25 @@ class OCRJobs:
         result['pages'] = pages
         result['total'] = len(pages)
         result['completed'] = sum(p['status'] in ('succeeded','skipped') for p in pages)
+        result['processed'] = sum(p['status'] in ('succeeded','skipped','partial','failed') for p in pages)
+        current = next((p for p in pages if p['status'] == 'running'), None)
+        if current is None:
+            current = next((p for p in pages if p['status'] in ('failed','partial')), None)
+        if current is None and result['status'] in ('paused','pausing'):
+            current = next((p for p in pages if p['status'] == 'pending'), None)
+        result['current_page'] = ({'page_id': current['page_id'], 'number': current['number'], 'status': current['status']}
+                                  if current else None)
+        result['current_language'] = None
+        if current:
+            page = self.store.page(current['page_id'])
+            checkpoint = self.store.latest_ocr(current['page_id'])
+            requested = (checkpoint or {}).get('requested_languages') or page.get('ocr_languages', [])
+            completed = set((checkpoint or {}).get('completed_languages', []))
+            result['current_language'] = next((language for language in ('han','vi')
+                                               if language in requested and language not in completed), None)
+            if result['current_language'] is None and current['status'] == 'running':
+                result['current_language'] = next((language for language in ('han','vi')
+                                                   if language in page.get('ocr_languages', [])), None)
         return result
 
     def latest(self, book_id):
@@ -76,7 +95,7 @@ class OCRJobs:
             with self.store.db() as db:
                 if db.execute("SELECT 1 FROM ocr_jobs WHERE status IN ('running','pausing')").fetchone():
                     raise ValueError('Đang chạy một quyển khác.')
-                db.execute("UPDATE ocr_job_pages SET status='pending',error=NULL WHERE job_id=? AND status IN ('failed','running')", (job_id,))
+                db.execute("UPDATE ocr_job_pages SET status='pending',error=NULL WHERE job_id=? AND status IN ('failed','running','partial')", (job_id,))
                 for item in job['pages']:
                     page=self.store.page(item['page_id'])
                     if page['status']!='done' and self.needs_ocr(page,job['settings']):
@@ -109,11 +128,22 @@ class OCRJobs:
                 except Exception as error:
                     # Only controlled public messages may be persisted, never request headers.
                     message = getattr(error, 'detail', None) or 'Không hoàn tất OCR trang này. Kiểm tra kết nối/cấu hình rồi tiếp tục.'
+                    checkpoint = self.store.latest_ocr(page['id'])
+                    completed = set((checkpoint or {}).get('completed_languages', []))
+                    requested = set((checkpoint or {}).get('requested_languages', []))
+                    if 'han' in completed and 'vi' in requested and 'vi' not in completed:
+                        self._page_status(job_id, page['id'], 'partial', str(message))
+                        continue
                     self._page_status(job_id, page['id'], 'failed', str(message))
                     self._status(job_id, 'failed', str(message))
                     return
                 self._page_status(job_id, page['id'], 'succeeded')
-            self._status(job_id, 'completed')
+            partial = [page for page in self.get(job_id)['pages'] if page['status'] == 'partial']
+            if partial:
+                self._status(job_id, 'failed',
+                    f"Đã chạy hết phạm vi; {len(partial)} trang còn lỗi Quốc ngữ. Kết quả Hán Nôm đã lưu. Bấm Tiếp tục OCR để thử lại các phần còn thiếu.")
+            else:
+                self._status(job_id, 'completed')
         except Exception:
             self._status(job_id, 'failed', 'Lỗi tác vụ cục bộ. Các kết quả đã lưu vẫn được giữ; khởi động lại rồi tiếp tục.')
 

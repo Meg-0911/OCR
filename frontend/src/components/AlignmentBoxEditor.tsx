@@ -49,6 +49,7 @@ export default function AlignmentBoxEditor({
   onTargetHandled?: () => void;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [drawing, setDrawing] = useState(false);
   const [targetRowId, setTargetRowId] = useState(targetRow?.id || alignments[0]?.id || '');
   const [drawAxis, setDrawAxis] = useState<'vertical' | 'horizontal'>(targetAxis || 'horizontal');
@@ -63,6 +64,9 @@ export default function AlignmentBoxEditor({
     [page.export_boxes],
   );
   const selectedBox = boxes.find((box) => box.id === selected);
+  const selectedGroupCount = new Set(boxes
+    .filter((box) => selectedIds.includes(box.id))
+    .map((box) => box.export_group || box.id)).size;
   const orderErrors = useMemo(() => {
     const values = boxes.map((box, index) => ({
       box,
@@ -97,6 +101,11 @@ export default function AlignmentBoxEditor({
     [page.boxes, alignments],
   );
   const [drawHint, setDrawHint] = useState('');
+
+  useEffect(() => {
+    setSelected(null);
+    setSelectedIds([]);
+  }, [page.id]);
 
   function orderedExportBoxes(next: Box[]) {
     const rowOrder = new Map(alignments.map((row, index) => [row.id, index]));
@@ -282,10 +291,12 @@ export default function AlignmentBoxEditor({
 
   function deleteSelected() {
     if (disabled || !selectedBox) return;
-    const remaining = boxes.filter((box) => box.id !== selectedBox.id);
+    const selectedSet = new Set(selectedIds.length > 1 ? selectedIds : [selectedBox.id]);
+    const remaining = boxes.filter((box) => !selectedSet.has(box.id));
     const orders = Object.fromEntries(remaining.map((box, index) => [box.export_group || box.id, index + 1]));
     onBoxes(withOrders(remaining, orders));
     setSelected(null);
+    setSelectedIds([]);
   }
 
   function applyOrderInputs(next: Record<string, string>) {
@@ -328,6 +339,26 @@ export default function AlignmentBoxEditor({
       Object.entries(orders).map(([key, value]) => [key, String(value)]),
     );
     setOrderInputs(next);
+    onBoxes(withOrders(boxes, orders));
+  }
+
+  function renumberSelected() {
+    const chosenGroups = new Set(boxes
+      .filter((box) => selectedIds.includes(box.id))
+      .map((box) => box.export_group || box.id));
+    if (chosenGroups.size < 2) return;
+    const groups = [...new Set(boxes.map((box) => box.export_group || box.id))];
+    const representatives = groups.map((group) => boxes.find((box) =>
+      (box.export_group || box.id) === group)!);
+    const spatialOrder = groupCharacterBoxes(
+      representatives.filter((box) => chosenGroups.has(box.export_group || box.id)),
+      page.reading_direction,
+      false,
+    ).flat().map((box) => box.export_group || box.id);
+    let cursor = 0;
+    const nextGroups = groups.map((group) => chosenGroups.has(group) ? spatialOrder[cursor++] : group);
+    const orders = Object.fromEntries(nextGroups.map((group, index) => [group, index + 1]));
+    setOrderInputs(Object.fromEntries(Object.entries(orders).map(([group, order]) => [group, String(order)])));
     onBoxes(withOrders(boxes, orders));
   }
 
@@ -376,6 +407,14 @@ export default function AlignmentBoxEditor({
             onClick={createAllFromOcr}
           >
             Tạo box từ OCR
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={disabled || selectedGroupCount < 2}
+            onClick={renumberSelected}
+          >
+            Đánh số lại ({selectedGroupCount})
           </button>
           <button
             type="button"
@@ -460,15 +499,22 @@ export default function AlignmentBoxEditor({
         selected={selected}
         setSelected={(id) => {
           setSelected(id);
+          setSelectedIds(id ? [id] : []);
           if (id) setDrawing(false);
         }}
+        selectedIds={selectedIds}
+        onSelectionChange={(ids) => setSelectedIds(ids)}
+        allowAltDraw
         showBoxes
         tool={drawing ? 'draw' : 'select'}
         zoom={zoom}
         onBoxes={applyBoxes}
         onDrawn={() => {
           setDrawing(false);
-          if (drawnSelection.current) setSelected(drawnSelection.current);
+          if (drawnSelection.current) {
+            setSelected(drawnSelection.current);
+            setSelectedIds([drawnSelection.current]);
+          }
           drawnSelection.current = null;
         }}
         onDeleteSelected={disabled ? undefined : deleteSelected}
@@ -493,7 +539,10 @@ export default function AlignmentBoxEditor({
                 aria-invalid={Boolean(orderErrors[groupId])}
                 value={orderInputs[groupId] ?? String(box.export_order ?? index + 1)}
                 disabled={disabled}
-                onFocus={() => setSelected(box.id)}
+                onFocus={() => {
+                  setSelected(box.id);
+                  setSelectedIds([box.id]);
+                }}
                 onChange={(event) => changeOrder(groupId, event.target.value)}
               />
               <span className="alignment-export-order-text">

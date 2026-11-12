@@ -6,6 +6,7 @@ from PIL import Image
 from .ocr import normalize_result, OCRError, OCRPaused
 from .vietnamese_ocr import image_regions
 from .han_layout import prepare_han_image, character_regions, pack_lines, map_characters, jpeg_bytes
+from .store import box_text_lines, ordered_boxes
 
 HAN_KEYS=('ocr_id','lang_type','reading_direction','epitaph','tag','font_type')
 
@@ -54,7 +55,22 @@ def keep_geometry(page,language,cached):
 def recognize(page,settings,force,*,cached,image_bytes,han_provider,vi_provider,save,should_pause=None):
     languages=desired_languages(settings)
     if not force and all(part_ready(cached,language,settings) for language in languages):
-        return cached | {'cached':True,'completed_languages':list(languages),'requested_languages':list(languages)}
+        result=cached | {'cached':True,'completed_languages':list(languages),'requested_languages':list(languages)}
+        if result.get('boxes'):
+            result['boxes']=ordered_boxes(
+                result['boxes'],'ch',settings['reading_direction'],(page['width'],page['height']),
+            )
+            result['text_lines']=box_text_lines(
+                result['boxes'],settings['reading_direction'],'ch',(page['width'],page['height']),
+            )
+        if result.get('vi_boxes'):
+            result['vi_boxes']=ordered_boxes(
+                result['vi_boxes'],'vi',2,(page['width'],page['height']),
+            )
+            result['vi_text_lines']=box_text_lines(
+                result['vi_boxes'],2,'vi',(page['width'],page['height']),
+            )
+        return result
     result={**(cached or {}),'page_id':page['id'],'version':page['version'],'result_id':uuid4().hex,
             'reading_direction':settings['reading_direction'],'settings':settings,'cached':False,
             'requested_languages':list(languages)}
@@ -112,6 +128,13 @@ def recognize(page,settings,force,*,cached,image_bytes,han_provider,vi_provider,
                 sx=page['width']/picture.width; sy=page['height']/picture.height
                 for box in result['boxes']:
                     box['points']=[[a*sx,b*sy] for a,b in box['points']]
+                if result['boxes']:
+                    result['boxes']=ordered_boxes(
+                        result['boxes'],'ch',settings['reading_direction'],(page['width'],page['height']),
+                    )
+                    result['text_lines']=box_text_lines(
+                        result['boxes'],settings['reading_direction'],'ch',(page['width'],page['height']),
+                    )
                 warnings.extend(han_warnings)
             else:
                 extra={'han_text_lines':result['text_lines'],'reading_direction':settings['reading_direction']} if getattr(vi_provider,'from_reference',False) else {}
@@ -124,6 +147,13 @@ def recognize(page,settings,force,*,cached,image_bytes,han_provider,vi_provider,
                     box['points']=[[a/sx,b/sy] for a,b in box['points']]
                 responses['vi']=target
                 result['vi_boxes']=target['boxes']; result['vi_text_lines']=target['text_lines']
+                if result['vi_boxes']:
+                    result['vi_boxes']=ordered_boxes(
+                        result['vi_boxes'],'vi',2,(page['width'],page['height']),
+                    )
+                    result['vi_text_lines']=box_text_lines(
+                        result['vi_boxes'],2,'vi',(page['width'],page['height']),
+                    )
                 if target.get('reference_draft'):
                     result['reference_draft']=target['reference_draft']
                     result['target_origin']=target['target_origin']

@@ -137,7 +137,10 @@ export type OCRJob = {
   status: 'running' | 'pausing' | 'paused' | 'failed' | 'completed';
   total: number;
   completed: number;
+  processed?: number;
   error: string | null;
+  current_page?: { page_id: string; number: number; status: string } | null;
+  current_language?: 'han' | 'vi' | null;
   pages: { page_id: string; number: number; status: string; error: string | null }[];
 };
 export type DictionaryEntry = {

@@ -411,31 +411,47 @@ export default function App() {
   function updateDraft(patch: Partial<Draft>) {
     if (page) updatePageDraft(page, patch, view === 'review' && workflowStep === 4);
   }
-  async function recognizeBox(box: Box, language: 'han' | 'vi') {
-    if (!draft || boxOCRRequests.current.has(draft.id)) return;
+  async function recognizeBoxes(boxes: Box[], language: 'han' | 'vi') {
+    if (!draft || !boxes.length || boxOCRRequests.current.has(draft.id)) return;
     const snapshot = draft;
     boxOCRRequests.current.add(snapshot.id);
     setBoxOCRPages((previous) => [...previous, snapshot.id]);
+    let completed = 0;
+    let stale = 0;
+    const errors: string[] = [];
     try {
-      const result = await api.recognizeBox(snapshot.id, box, language, snapshot.reading_direction);
-      const saved = pagesRef.current.find((item) => item.id === snapshot.id) || snapshot;
-      const pending = draftsRef.current[snapshot.id];
-      const current = { ...saved, ...(pending ? draftPatch(pending) : {}) };
-      const boxesKey = language === 'han' ? 'boxes' : 'vi_boxes';
-      const textKey = language === 'han' ? 'source_text' : 'target_text';
-      const latestBox = current[boxesKey].find((item) => item.id === box.id);
-      if (!latestBox || latestBox.transcription !== box.transcription ||
-          JSON.stringify(latestBox.points) !== JSON.stringify(box.points) ||
-          (saved.status === 'done' && saved.version !== snapshot.version)) {
-        notify('Box đã thay đổi trong lúc OCR. Kết quả cũ không được áp dụng.', true);
-        return;
+      for (const box of boxes) {
+        try {
+          const result = await api.recognizeBox(snapshot.id, box, language, snapshot.reading_direction);
+          const saved = pagesRef.current.find((item) => item.id === snapshot.id) || snapshot;
+          const pending = draftsRef.current[snapshot.id];
+          const current = { ...saved, ...(pending ? draftPatch(pending) : {}) };
+          const boxesKey = language === 'han' ? 'boxes' : 'vi_boxes';
+          const textKey = language === 'han' ? 'source_text' : 'target_text';
+          const latestBox = current[boxesKey].find((item) => item.id === box.id);
+          if (!latestBox || latestBox.transcription !== box.transcription ||
+              JSON.stringify(latestBox.points) !== JSON.stringify(box.points) ||
+              (saved.status === 'done' && saved.version !== snapshot.version)) {
+            stale++;
+            continue;
+          }
+          const next = replaceBoxText(current[boxesKey], current[textKey], box.id, result.text,
+            current.reading_direction, language === 'han');
+          updatePageDraft(saved, { [boxesKey]: next.boxes, [textKey]: next.text }, true);
+          completed++;
+        } catch (error) {
+          errors.push(error instanceof Error ? error.message : 'Lỗi OCR không xác định');
+        }
       }
-      const next = replaceBoxText(current[boxesKey], current[textKey], box.id, result.text,
-        current.reading_direction, language === 'han');
-      updatePageDraft(saved, { [boxesKey]: next.boxes, [textKey]: next.text }, true);
-      notify('Đã OCR lại box. Kiểm tra chữ rồi bấm Lưu & hoàn thành.');
-    } catch (error) {
-      fail(error);
+      if (boxes.length === 1 && completed === 1) {
+        notify('Đã OCR lại box. Kiểm tra chữ rồi bấm Lưu & hoàn thành.');
+      } else {
+        const details = [stale ? `${stale} box đã thay đổi nên bỏ qua.` : '',
+          errors.length ? `${errors.length} box lỗi: ${errors[0]}` : '']
+          .filter(Boolean).join(' ');
+        notify(`Đã OCR ${completed}/${boxes.length} box. ${details || 'Kiểm tra chữ rồi bấm Lưu & hoàn thành.'}`,
+          stale > 0 || errors.length > 0);
+      }
     } finally {
       boxOCRRequests.current.delete(snapshot.id);
       setBoxOCRPages((previous) => previous.filter((id) => id !== snapshot.id));
@@ -1294,7 +1310,7 @@ export default function App() {
                   dirty={!!drafts[pageId]}
                   busy={busy || loadingPages}
                   recognizingBox={boxOCRPages.includes(pageId)}
-                  onRecognizeBox={recognizeBox}
+                  onRecognizeBoxes={recognizeBoxes}
                   onRerunPage={rerunPageOCR}
                   rerunningPage={pageOCRPages.includes(pageId)}
                   onBulkTag={bulkTagPages}

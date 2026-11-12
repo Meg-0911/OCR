@@ -186,14 +186,17 @@ def test_upstream_errors_are_sanitized(tmp_path, status, payload, expected):
     assert client.get(f"/api/books/{page['book_id']}/pages").json()[0] == page
 
 
-@pytest.mark.parametrize('error,expected', [(httpx.ReadTimeout('timeout'), 504), (httpx.ConnectError('offline'), 502)])
-def test_network_failure_mapping(error, expected):
+@pytest.mark.parametrize('error,expected,message', [
+    (httpx.ReadTimeout('timeout'), 504, 'xử lý quá thời gian'),
+    (httpx.ConnectError('offline'), 502, 'chứng chỉ HTTPS'),
+])
+def test_network_failure_mapping(error, expected, message):
     def handler(request):
         raise error
     provider = KimHanNomOCR(KHNConfig(token=TOKEN), httpx.MockTransport(handler))
     with pytest.raises(OCRError) as raised:
         provider.recognize(b'jpeg')
-    assert raised.value.status_code == expected
+    assert raised.value.status_code == expected and message in str(raised.value)
 
 
 def test_malformed_json_is_handled():

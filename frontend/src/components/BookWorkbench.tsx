@@ -63,7 +63,7 @@ type Props = {
   onPatch: (patch: Partial<Editable>) => void;
   onNavigate: (id: string) => void;
   recognizingBox: boolean;
-  onRecognizeBox: (box: Box, language: 'han' | 'vi') => Promise<void>;
+  onRecognizeBoxes: (boxes: Box[], language: 'han' | 'vi') => Promise<void>;
   onRerunPage: (page: Page, settings: OCRSettings) => Promise<void>;
   rerunningPage: boolean;
   onBulkTag: (pageIds: string[], category: Category) => Promise<void>;
@@ -266,6 +266,13 @@ export default function BookWorkbench(props: Props) {
   const boxesKey = language === 'han' ? 'boxes' : 'vi_boxes';
   const textKey = language === 'han' ? 'source_text' : 'target_text';
   const boxes = page?.[boxesKey] || [];
+  const readingDirection = page
+    ? page.reading_direction_override ?? layout.reading_direction ?? page.reading_direction
+    : 2;
+  const selectedOCRBoxes = boxes.filter((box) => selectedBoxIds.includes(box.id));
+  const ocrBoxes = selectedOCRBoxes.length
+    ? selectedOCRBoxes
+    : boxes.filter((box) => box.id === selected);
   const text = page?.[textKey] || '';
   const targetWords = targetWordsIn(page?.target_text || '');
   const orderedSourceBoxes = boxesInReviewOrder(page?.boxes || []);
@@ -539,15 +546,15 @@ export default function BookWorkbench(props: Props) {
     if (previousOrdersValid && next.length < boxes.length)
       [...ordered].sort((a, b) => (a.review_order || 0) - (b.review_order || 0))
         .forEach((box, index) => { box.review_order = index + 1; });
+    const synchronizedText = characterEditing
+      ? groupCharacterBoxes(ordered, readingDirection)
+          .map((row) => row.map((item) => item.transcription).join('')).join('\n')
+      : language === 'vi'
+        ? ordered.map((box) => box.transcription).join('\n')
+        : undefined;
     props.onPatch({
       [boxesKey]: ordered,
-      ...(characterEditing && page
-        ? {
-            [textKey]: groupCharacterBoxes(ordered, page.reading_direction)
-              .map((row) => row.map((item) => item.transcription).join(''))
-              .join('\n'),
-          }
-        : {}),
+      ...(synchronizedText !== undefined ? { [textKey]: synchronizedText } : {}),
     });
   }
   function markBox(boxId: string, review_kind: ReviewKind) {
@@ -570,7 +577,14 @@ export default function BookWorkbench(props: Props) {
   }
   function updateBox(box: Box, value: string) {
     if (!page) return;
-    const next = replaceBoxText(boxes, text, box.id, value, page.reading_direction, language === 'han');
+    const next = replaceBoxText(boxes, text, box.id, value, readingDirection, language === 'han');
+    const synchronizedText = next.boxes.length
+      ? language === 'han'
+        ? groupCharacterBoxes(next.boxes, readingDirection).map((row) =>
+            row.map((item) => item.transcription).join(''),
+          ).join('\n')
+        : next.boxes.map((item) => item.transcription).join('\n')
+      : next.text;
     const boxIndex = boxes.findIndex((current) => current.id === box.id);
     const targetWordCountChanged =
       language === 'vi' && targetWordCount(box.transcription) !== targetWordCount(value);
@@ -590,7 +604,7 @@ export default function BookWorkbench(props: Props) {
             ),
           }
         : {}),
-      [textKey]: next.text,
+      [textKey]: synchronizedText,
     });
   }
   function targetWordCount(value: string) {
@@ -958,14 +972,13 @@ export default function BookWorkbench(props: Props) {
                               type="button"
                               className="secondary-button"
                               aria-label="OCR lại box đã chọn"
-                              disabled={props.busy || acting || props.recognizingBox || skipped || !boxes.some((box) => box.id === selected)}
+                              disabled={props.busy || acting || props.recognizingBox || skipped || !ocrBoxes.length}
                               onClick={() => {
-                                const box = boxes.find((item) => item.id === selected);
-                                if (box) void props.onRecognizeBox(box, language);
+                                if (ocrBoxes.length) void props.onRecognizeBoxes(ocrBoxes, language);
                               }}
                             >
                               {props.recognizingBox ? <LoaderCircle size={15} className="spin" /> : <ScanLine size={15} />}
-                              {props.recognizingBox ? 'Đang OCR box…' : 'OCR lại box'}
+                              {props.recognizingBox ? 'Đang OCR box…' : ocrBoxes.length > 1 ? 'OCR lại ' + ocrBoxes.length + ' box' : 'OCR lại box'}
                             </button>
                           )}
                         </>
@@ -1315,17 +1328,22 @@ export default function BookWorkbench(props: Props) {
                             return (
                               <div key={p.id}>
                                 <span>Trang {p.number}</span>
-                                <span>
-                                  {p.status === 'done'
-                                    ? 'Đã hoàn thành'
-                                    : state?.status === 'running'
-                                      ? 'Đang OCR'
-                                      : state?.status === 'failed'
-                                        ? 'OCR gặp lỗi'
-                                        : hasContent(p)
-                                          ? 'Chờ Gán nhãn'
-                                          : 'Chờ OCR'}
-                                </span>
+                                <div>
+                                  <span>
+                                    {p.status === 'done'
+                                      ? 'Đã hoàn thành'
+                                      : state?.status === 'running'
+                                        ? `Đang OCR${props.job?.current_page?.page_id === p.id && props.job.current_language === 'vi' ? ' Quốc ngữ' : props.job?.current_page?.page_id === p.id && props.job.current_language === 'han' ? ' Hán Nôm' : ''}`
+                                        : state?.status === 'partial'
+                                          ? 'Hán Nôm đã lưu · Quốc ngữ lỗi'
+                                          : state?.status === 'failed'
+                                            ? 'OCR gặp lỗi'
+                                            : state?.status === 'skipped' || hasContent(p)
+                                              ? 'Đã có OCR · Chờ Gán nhãn'
+                                              : 'Chờ OCR'}
+                                  </span>
+                                  {state?.error && <small className="workbench-job-page-error">{state.error}</small>}
+                                </div>
                               </div>
                             );
                           })}
@@ -1419,6 +1437,7 @@ export default function BookWorkbench(props: Props) {
                           <CharacterBoxEditor
                             boxes={boxes}
                             selected={selected}
+                            selectedIds={selectedBoxIds}
                             disabled={props.busy || acting}
                             onSelect={(id) => {
                               setSelected(id);
@@ -1442,16 +1461,24 @@ export default function BookWorkbench(props: Props) {
                               const valid = values.every((value) => value != null) &&
                                 new Set(values).size === next.length &&
                                 [...values].sort((a, b) => a! - b!).every((value, index) => value === index + 1);
-                              const sourceHasBoxCharacters = (value: string) =>
-                                Array.from(value.replace(/\s/gu, '')).sort().join('');
-                              const sourceMatchesBoxes = sourceHasBoxCharacters(page.source_text) ===
-                                sourceHasBoxCharacters(boxes.map((item) => item.transcription).join(''));
                               props.onPatch({
                                 boxes: next,
-                                ...(valid && sourceMatchesBoxes ? {
-                                  source_text: groupCharacterBoxes(next, page.reading_direction)
+                                ...(valid ? {
+                                  source_text: groupCharacterBoxes(next, readingDirection)
                                     .map((row) => row.map((item) => item.transcription).join('')).join('\n'),
                                 } : {}),
+                              });
+                            }}
+                            onRenumber={() => {
+                              const chosen = new Set(selectedBoxIds);
+                              if (chosen.size < 2) return;
+                              const reordered = groupCharacterBoxes(boxes, readingDirection, false)
+                                .flat()
+                                .map((box, index) => ({ ...box, review_order: index + 1 }));
+                              props.onPatch({
+                                boxes: reordered,
+                                source_text: groupCharacterBoxes(reordered, readingDirection)
+                                  .map((row) => row.map((item) => item.transcription).join('')).join('\n'),
                               });
                             }}
                             onMark={markBox}

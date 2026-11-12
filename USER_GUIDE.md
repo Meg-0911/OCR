@@ -171,6 +171,7 @@ Ubuntu thay đường dẫn Python bằng `.venv/bin/python`. Khi phát triển 
 
 - **Sách không xuất hiện:** xác nhận file là PDF và nằm trong `backend/data/raw_data/`; đồng bộ nguồn trong ứng dụng hoặc khởi động lại.
 - **401/403 từ OCR Hán Nôm:** token hết hạn/sai hoặc tài khoản thiếu quyền. Cập nhật `KHN_token` trong `backend/.env`, sau đó khởi động lại backend.
+- **Trình duyệt cảnh báo kết nối không an toàn khi mở Kim Hán Nôm, hoặc OCR báo lỗi chứng chỉ HTTPS:** đây là lỗi chứng chỉ của dịch vụ. Không chọn tiếp tục truy cập, không tắt xác minh chứng chỉ; hãy báo đơn vị quản trị Kim Hán Nôm gia hạn chứng chỉ rồi thử lại. Lỗi này không thể sửa bằng cách đổi token.
 - **VietOCR chưa sẵn sàng:** chạy lại `backend/setup_vietocr.py`, xem thông báo lỗi trong Cài đặt. Cần mạng để tải model lần đầu.
 - **ONNX báo `DLL load failed` trên Windows:** xác nhận Python 64-bit và cài Microsoft Visual C++ Redistributable x64.
 - **Thiếu từ điển:** chạy `backend/setup_dictionary.py`, rồi khởi động lại backend.

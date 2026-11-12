@@ -119,6 +119,69 @@ class VietOCR:
         self.lock = threading.Lock()
         self.model = None
 
+    @staticmethod
+    def _split_position(line):
+        import numpy as np
+
+        gray = np.asarray(line.convert('L'))
+        projection = (gray < 205).sum(axis=0)
+        width = line.width
+        min_width = max(28, round(line.height * 1.15))
+        if width < min_width * 2:
+            return None
+        start, stop = min_width, width - min_width
+        threshold = max(1, round(line.height * .025))
+        candidates = np.flatnonzero(projection[start:stop] <= threshold) + start
+        if len(candidates):
+            runs = []
+            run = [int(candidates[0])]
+            for column in candidates[1:]:
+                if column == run[-1] + 1:
+                    run.append(int(column))
+                else:
+                    runs.append(run)
+                    run = [int(column)]
+            runs.append(run)
+            valid = [items for items in runs if len(items) >= 2]
+            if valid:
+                gap = min(valid, key=lambda items: abs((items[0] + items[-1]) / 2 - width / 2))
+                return (gap[0] + gap[-1] + 1) // 2, ' '
+        split = min(range(start, stop), key=lambda column: (int(projection[column]), abs(column - width / 2)))
+        if projection[split] > max(3, round(line.height * .12)):
+            return None
+        return split, ''
+
+    def _recognize_line(self, line, depth=0):
+        text, probability, ended = self.model.predict(line)
+        if ended and text.strip():
+            return text.strip(), probability, True
+        if depth >= 8:
+            return text.strip(), probability, ended
+        split = self._split_position(line)
+        if split is None:
+            return text.strip(), probability, ended
+        position, separator = split
+        first = self._recognize_line(line.crop((0, 0, position, line.height)), depth + 1)
+        second = self._recognize_line(line.crop((position, 0, line.width, line.height)), depth + 1)
+        if first[2] and second[2] and first[0] and second[0]:
+            return first[0].rstrip() + separator + second[0].lstrip(), min(first[1], second[1]), True
+        return text.strip(), probability, False
+
+    def _tesseract_line(self, line):
+        if not self.fallback.status()['ready']:
+            return None
+        content = io.BytesIO()
+        line.save(content, format='PNG')
+        try:
+            result = self.fallback.recognize(content.getvalue(), psm=7)
+        except OCRError:
+            return None
+        text = ' '.join(result.get('text_lines', [])).strip()
+        if not text:
+            return None
+        confidence = min((box.get('confidence', 50) for box in result.get('boxes', [])), default=50)
+        return text, confidence, True
+
     def status(self):
         ready = all((self.folder / name).is_file() for name in ('encoder_fp16.onnx', 'decoder_fp16.onnx', 'vocab.txt'))
         ready = ready and all(importlib.util.find_spec(name) is not None for name in ('numpy', 'onnxruntime'))
@@ -142,23 +205,11 @@ class VietOCR:
                         raise OCRError('Có quá nhiều vùng dòng trên trang. Giới hạn vùng Quốc ngữ bằng mẫu cho quyển rồi thử lại.', 422)
                     for left, top, right, bottom in rectangles:
                         line = crop.crop((left, top, right, bottom))
-                        text, probability, ended = self.model.predict(line)
-                        if not ended and line.width >= 2 * line.height:
-                            # Prefer a gap near the middle so a word is not cut in half.
-                            import numpy as np
-                            gray = np.asarray(line.convert('L'))
-                            middle = line.width // 2
-                            radius = max(1, line.width // 6)
-                            start = max(1, middle - radius)
-                            stop = min(line.width - 1, middle + radius)
-                            ink = (gray[:, start:stop] < 190).sum(axis=0)
-                            split = start + min(range(len(ink)), key=lambda index: (ink[index], abs(start + index - middle))) if len(ink) else middle
-                            first = self.model.predict(line.crop((0, 0, split, line.height)))
-                            second = self.model.predict(line.crop((split, 0, line.width, line.height)))
-                            if first[2] and second[2] and first[0].strip() and second[0].strip():
-                                text = first[0].rstrip() + ' ' + second[0].lstrip()
-                                probability = min(first[1], second[1])
-                                ended = True
+                        text, probability, ended = self._recognize_line(line)
+                        if not ended:
+                            fallback = self._tesseract_line(line)
+                            if fallback:
+                                text, probability, ended = fallback
                         if sum(char.isalpha() for char in text) < 2:
                             continue
                         if not ended:

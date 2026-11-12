@@ -22,7 +22,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from .store import CATEGORIES, Store, label_groups
+from .store import CATEGORIES, Store, box_text_lines, label_groups
 from .ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
 from .sources import source_files
 from .dictionary import Dictionary
@@ -585,6 +585,18 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 raise HTTPException(422, 'ID box bị trùng.')
             source_text=page['source_text'] if data.source_text is None else data.source_text
             target_text=page['target_text'] if data.target_text is None else data.target_text
+            if data.boxes:
+                source_text='\n'.join(box_text_lines(
+                    [box.model_dump(mode='json',exclude_none=True) for box in data.boxes],
+                    page['reading_direction'],'ch',(page['width'],page['height']),
+                ))
+            target_boxes=([box.model_dump(mode='json',exclude_none=True) for box in data.vi_boxes]
+                          if data.vi_boxes is not None else page['vi_boxes'])
+            if target_boxes:
+                target_text='\n'.join(box_text_lines(
+                    target_boxes,
+                    2,'vi',(page['width'],page['height']),
+                ))
             if data.done and ('□' in source_text or any('□' in box.transcription for box in data.boxes)):
                 raise HTTPException(422,'Còn ký tự □ chưa nhận dạng. Sửa các ô này trước khi hoàn thành trang.')
             if data.done and any(not box.transcription.strip() for box in data.boxes):
@@ -658,6 +670,17 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 changes['ocr_languages']=json.dumps(page['ocr_languages'])
             if 'reading_direction_override' in changes:
                 changes['reading_direction']=changes['reading_direction_override'] or store.book_layout(page['book_id']).get('reading_direction',2)
+            effective_direction=changes.get('reading_direction',page['reading_direction'])
+            source_boxes=changes.get('boxes',page['boxes'])
+            if source_boxes and ('boxes' in changes or 'source_text' in changes):
+                changes['source_text']='\n'.join(box_text_lines(
+                    source_boxes,effective_direction,'ch',(page['width'],page['height']),
+                ))
+            target_boxes=changes.get('vi_boxes',page['vi_boxes'])
+            if target_boxes and ('vi_boxes' in changes or 'target_text' in changes):
+                changes['target_text']='\n'.join(box_text_lines(
+                    target_boxes,2,'vi',(page['width'],page['height']),
+                ))
             if not changes:
                 return page
             edited=set(page['edited_fields'])
@@ -874,8 +897,13 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         if settings.get('shared_reading_area') and overrides:
             regions=[] if any(not value for value in overrides.values()) else [list(region) for region in dict.fromkeys(tuple(region) for value in overrides.values() for region in value)]
             overrides={'source_regions':regions,'target_regions':regions}
-        if page.get('reading_direction_override') is not None:
-            overrides['reading_direction']=page['reading_direction_override']
+        # The page's effective direction is user configuration (book default or
+        # page override). Reused OCR settings must never replace it with an old value.
+        overrides['reading_direction'] = page.get('reading_direction_override')
+        if overrides['reading_direction'] is None:
+            overrides['reading_direction'] = store.book_layout(page['book_id']).get(
+                'reading_direction', 2,
+            )
         return {**settings,'mode':mode,**overrides}
 
     jobs = OCRJobs(store, recognize_for_job,
