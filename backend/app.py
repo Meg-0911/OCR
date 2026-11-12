@@ -35,6 +35,7 @@ from . import bilingual
 from .han_layout import PIPELINE_VERSION
 from .han_layout import jpeg_bytes
 from .region_ocr import crop_selection
+from .auto_alignment import page_rows as automatic_page_rows, boxes_for_rows
 
 Category = Literal['ch', 'vi', 'both', 'intro', 'ref', 'toc', 'blank', 'misc']
 
@@ -1030,6 +1031,57 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             row = db.execute('SELECT rows FROM alignments WHERE book_id=?',(book_id,)).fetchone()
         return json.loads(row['rows']) if row else []
 
+    @app.post('/api/books/{book_id}/alignments/prepare')
+    def prepare_alignments(book_id: str):
+        """Fill untouched OCR pages and their export boxes before human review."""
+        book = require_book(book_id)
+        with store.lock:
+            pages = store.pages(book_id)
+            with store.db() as db:
+                saved = db.execute('SELECT rows FROM alignments WHERE book_id=?', (book_id,)).fetchone()
+            rows = json.loads(saved['rows']) if saved else []
+            source_pages = [page for page in pages if not page['ocr_skip']
+                            and page['category'] not in ('blank', 'misc')
+                            and 'han' in page['ocr_languages']]
+            reference = text_sources(book_id).get('vi', {}).get('text', '')
+            if reference and not (re.search(r'^\s*\*+\s*Page\s+\d+\s*\*+\s*$', reference, re.I | re.M)
+                                  or '\f' in reference or len(source_pages) == 1):
+                reference = ''
+            created = 0
+            boxes_created = 0
+            for page in source_pages:
+                prefix = f"{book['name']}.{page['number']:03d}."
+                page_pairs = [row for row in rows if row['sentence_id'].startswith(prefix)]
+                if not page_pairs:
+                    page_pairs = automatic_page_rows(page, pages, book['name'], reference)
+                    rows.extend(page_pairs)
+                    created += len(page_pairs)
+                if not page_pairs or not page['boxes']:
+                    continue
+                existing = [box for box in page['export_boxes'] if box.get('box_axis')]
+                assigned = {box.get('alignment_id') for box in existing}
+                generated = [box for box in boxes_for_rows(page, page_pairs)
+                             if box['alignment_id'] not in assigned]
+                if not generated:
+                    continue
+                offset = max((box.get('export_order') or 0 for box in existing), default=0)
+                for index, box in enumerate(generated, 1):
+                    box['export_order'] = offset + index
+                with store.db() as db:
+                    db.execute('UPDATE pages SET export_boxes=?,version=version+1 WHERE id=?',
+                               (json.dumps(existing + generated, ensure_ascii=False), page['id']))
+                boxes_created += len(generated)
+            if created:
+                rows.sort(key=lambda row: (int(row['sentence_id'].rsplit('.', 2)[1]),
+                                           int(row['sentence_id'].rsplit('.', 1)[1])))
+                with store.db() as db:
+                    db.execute('INSERT INTO alignments VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET rows=excluded.rows',
+                               (book_id, json.dumps(rows, ensure_ascii=False)))
+            if created or boxes_created:
+                store.sync_labels(book_id)
+                store.sync_results(book_id, 'prepare_alignments')
+        return {'rows': rows, 'created': created, 'boxes_created': boxes_created}
+
     @app.put('/api/books/{book_id}/alignments')
     def save_alignments(book_id: str, data: AlignmentsInput):
         book = require_book(book_id)
@@ -1150,6 +1202,52 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 sheet.freeze_panes = 'A2'
                 workbook.save(path)
         return FileResponse(path,filename=path.name)
+
+    @app.get('/api/results/archive')
+    def all_results_archive():
+        """One download containing every book's current snapshots and available exports."""
+        books = [book for book in store.books() if not store.book(book['id'])['demo']]
+        if not books:
+            raise HTTPException(404, 'Chưa có sách để tải kết quả.')
+        output = store.data / 'output_alignment'
+        path = output / 'tat-ca-ket-qua.zip'
+        temporary = output / 'tat-ca-ket-qua.zip.tmp'
+        with store.lock:
+            omitted = []
+            omitted_by_book = {}
+            for book in books:
+                book_id = book['id']
+                prepare_alignments(book_id)
+                store.sync_results(book_id)
+                export(book_id, 'labels')
+                for format in ('csv', 'xlsx'):
+                    try:
+                        export(book_id, format)
+                    except HTTPException as error:
+                        if error.status_code != 400:
+                            raise
+                        omitted_by_book.setdefault(book_id, set()).add(format)
+                        omitted.append({'book': book['name'], 'book_id': book_id,
+                                        'format': format, 'reason': error.detail})
+            with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
+                summary = output / 'summary.json'
+                if summary.is_file():
+                    archive.write(summary, 'summary.json')
+                for book in books:
+                    folder = output / book['id']
+                    prefix = f"books/{book['name']}__{book['id']}/"
+                    for result in sorted(folder.iterdir()):
+                        if any(result.name == f"{book['name']}.{format}"
+                               for format in omitted_by_book.get(book['id'], ())):
+                            continue
+                        if result.is_file() and not result.name.endswith('.tmp'):
+                            archive.write(result, prefix + result.name)
+                archive.writestr('manifest.json', json.dumps({
+                    'books': [{'id': book['id'], 'name': book['name']} for book in books],
+                    'omitted_exports': omitted,
+                }, ensure_ascii=False, indent=2))
+            os.replace(temporary, path)
+        return FileResponse(path, filename=path.name, media_type='application/zip')
 
     @app.get('/api/books/{book_id}/results/{filename}')
     def result_file(book_id: str,filename: Literal['summary.json','pages.json','alignments.json','pairs.csv','events.jsonl']):

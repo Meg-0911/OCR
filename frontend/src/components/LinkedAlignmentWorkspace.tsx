@@ -33,7 +33,7 @@ export default function LinkedAlignmentWorkspace({ page, pages, bookName, rows, 
   const availableTargets = targets.filter((target) => !claimedElsewhere.has(`${target.pageId}:${target.lineIndex}`));
 
   useEffect(() => {
-    if (initialized.current || pageRows.length || !sourceLines.length) return;
+    if (initialized.current || pageRows.length || !sourceLines.length || !availableTargets.length) return;
     initialized.current = true;
     const created = defaultLinkedRows(page, bookName, availableTargets, () => crypto.randomUUID());
     onRows([...rows, ...created].sort((a, b) => pageNumber(a, bookName) - pageNumber(b, bookName)), true);

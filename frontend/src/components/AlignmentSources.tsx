@@ -140,8 +140,8 @@ export default function AlignmentSources({
         </label>
       </div>
       <p>
-        Tự căn toàn sách ghép theo số trang và thứ tự dòng; hãy kiểm tra lại trên ảnh vì đây chỉ là
-        gợi ý, không xác nhận tương đồng ngữ nghĩa.
+        Cặp được tự ghép theo trang và thứ tự dòng OCR. Kiểm tra lại trên ảnh trước khi xác nhận
+        vì thứ tự dòng không bảo đảm hai vế tương ứng về nghĩa.
       </p>
       <div className="alignment-source-selection">
         <button

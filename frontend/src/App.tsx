@@ -35,7 +35,7 @@ import Stat from './components/Stat';
 import PairProgress from './components/PairProgress';
 import AlignmentSources from './components/AlignmentSources';
 import LinkedAlignmentWorkspace from './components/LinkedAlignmentWorkspace';
-import BookWorkbench, { referenceForPage } from './components/BookWorkbench';
+import BookWorkbench from './components/BookWorkbench';
 import LibraryBookReader from './components/LibraryBookReader';
 import DictionaryPanel from './components/DictionaryPanel';
 import { draftPatch, patchDraft, afterAutomaticSave, type Draft } from './drafts';
@@ -725,19 +725,26 @@ export default function App() {
     setRows([]);
     setReference(null);
     (async () => {
-      if (view === 'alignment') await saveBookDrafts('all');
-      return Promise.all([api.alignments(bookId), view === 'alignment' ? api.reference(bookId) : Promise.resolve(null)]);
+      let cached: Alignment[] | null = null;
+      try { cached = JSON.parse(localStorage.getItem(`nom-alignment-${bookId}`) || 'null'); } catch { /* server copy */ }
+      if (view === 'alignment') {
+        const bookPages = await api.pages(bookId);
+        for (const bookPage of bookPages) await saveDraftNow(bookPage.id, 'all');
+        if (cached) {
+          await api.saveAlignments(bookId, cached);
+          try { localStorage.removeItem(`nom-alignment-${bookId}`); } catch { /* server copy */ }
+        }
+        const prepared = await api.prepareAlignments(bookId);
+        const [freshPages, referenceText] = await Promise.all([api.pages(bookId), api.reference(bookId)]);
+        return { result: prepared.rows, referenceText, freshPages, cached: null };
+      }
+      return { result: cached || await api.alignments(bookId), referenceText: null, freshPages: null, cached };
     })()
-      .then(([result, referenceText]) => {
+      .then(({ result, referenceText, freshPages, cached }) => {
         if (cancelled) return;
         setReference(referenceText);
-        let cached: Alignment[] | null = null;
-        try {
-          cached = JSON.parse(localStorage.getItem(`nom-alignment-${bookId}`) || 'null');
-        } catch {
-          /* use saved rows */
-        }
-        setRows(cached || result);
+        if (freshPages) setPages(freshPages);
+        setRows(result);
         setRowsDirty(!!cached);
         if (cached) queueRows(bookId, cached);
       })
@@ -977,129 +984,28 @@ export default function App() {
       },
     ]);
   }
-  async function autoAlignBook() {
-    if (!activeBook) return;
-    const protectedRows = rows.filter((row) => row.page_linked ||
-      pages.some((page) => page.linked_page_ids.length &&
-        row.sentence_id.startsWith(`${activeBook.name}.${String(page.number).padStart(3, '0')}.`)));
-    const protectedNumbers = new Set(protectedRows.map((row) =>
-      Number(row.sentence_id.match(/\.(\d{3,})\.\d+$/u)?.[1])));
-    const sourcePages = pages.filter(
-      (item) =>
-        !item.ocr_skip &&
-        !item.linked_page_ids.length &&
-        !protectedNumbers.has(item.number) &&
-        !['blank', 'misc'].includes(item.category) &&
-        item.ocr_languages.includes('han'),
-    );
-    if (!sourcePages.length) {
-      notify('Không có trang Hán Nôm thông thường để tự căn; các trang liên kết được căn riêng.', true);
-      return;
-    }
-    const referenceHasPages =
-      !!reference?.text &&
-      (/^\s*\*+\s*Page\s+\d+\s*\*+\s*$/im.test(reference.text) || reference.text.includes('\f'));
-    const existing = rows.length - protectedRows.length;
-    if (
-      !window.confirm(
-        `Tự căn ${sourcePages.length} trang theo thứ tự dòng và thay ${existing} cặp thông thường hiện tại? Các cặp mới sẽ ở trạng thái chưa duyệt để bạn kiểm tra.`,
-      )
-    )
-      return;
+  async function downloadAllResults() {
     setBusy(true);
     try {
-      const next: Alignment[] = [...protectedRows];
-      let skipped = 0;
-      const sequences = new Map<number, number>();
-      for (const [pageIndex, sourcePage] of sourcePages.entries()) {
-        const sourceText =
-          sourcePage.source_text || sourcePage.boxes.map((box) => box.transcription).join('\n');
-        const samePageTarget = sourcePage.target_text;
-        const separateTarget = pages.find(
-          (item) => item.number === sourcePage.number && item.category === 'vi',
-        );
-        const targetText =
-          samePageTarget ||
-          separateTarget?.target_text ||
-          separateTarget?.boxes.map((box) => box.transcription).join('\n') ||
-          (referenceHasPages
-            ? referenceForPage(reference?.text || '', sourcePage.number)
-            : sourcePages.length === 1
-              ? reference?.text || ''
-              : '');
-        const sourceLines = sourceText.split(/\r?\n/).filter((line) => line.trim());
-        const targetLines = targetText.split(/\r?\n/).filter((line) => line.trim());
-        if (!sourceLines.length || !targetLines.length) {
-          skipped++;
-          continue;
-        }
-        const prefix = `${activeBook.name}.${String(sourcePage.number).padStart(3, '0')}.`;
-        for (let index = 0; index < Math.max(sourceLines.length, targetLines.length); index++) {
-          const sequence = (sequences.get(sourcePage.number) || 0) + 1;
-          sequences.set(sourcePage.number, sequence);
-          next.push({
-            id: crypto.randomUUID(),
-            sentence_id: `${prefix}${sequence}`,
-            source: sourceLines[index] || '',
-            target: targetLines[index] || '',
-            reviewed: false,
-          });
-        }
-        if (pageIndex % 15 === 14) await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      await saveBookDrafts('all');
+      if (rowsDirty && bookId) {
+        clearTimeout(alignmentTimers.current.get(bookId));
+        await persistRows(bookId, rowsRef.current);
       }
-      if (next.length === protectedRows.length) {
-        notify('Chưa có cặp trang nào có cả văn bản Hán Nôm và Quốc ngữ để tự căn.', true);
-        return;
-      }
-      next.sort((a, b) => {
-        const aId = a.sentence_id.match(/\.(\d{3,})\.(\d+)$/u);
-        const bId = b.sentence_id.match(/\.(\d{3,})\.(\d+)$/u);
-        return Number(aId?.[1] || 0) - Number(bId?.[1] || 0) ||
-          Number(aId?.[2] || 0) - Number(bId?.[2] || 0);
-      });
-      changeRows(next);
-      notify(
-        `Đã tự căn ${next.length} cặp từ ${sourcePages.length - skipped}/${sourcePages.length} trang. ${skipped} trang thiếu văn bản hai bên; tất cả cặp mới cần đọc lại.`,
-      );
-    } catch (error) {
-      fail(error);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function download(format: 'csv' | 'xlsx' | 'labels') {
-    if (!activeBook) return;
-    if (format === 'labels' && pages.some((p) => drafts[p.id])) {
-      notify('Hãy lưu các bản nháp trang vào máy trước khi xuất nhãn.', true);
-      return;
-    }
-    try {
-      if (format !== 'labels' && localStorage.getItem(`nom-alignment-${bookId}`)) {
-        notify('Hãy lưu căn chỉnh vào máy trước khi xuất CSV hoặc Excel.', true);
-        return;
-      }
-    } catch {
-      /* Browser storage may be unavailable; the server export remains usable. */
-    }
-    setBusy(true);
-    try {
-      if (format !== 'labels') {
-        for (const page of pages) await saveDraftNow(page.id, 'all');
-      }
-      const response = await fetch(api.exportUrl(bookId, format));
+      const response = await fetch(api.allResultsUrl);
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail);
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không thể tạo gói kết quả.');
       }
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${activeBook.name}${format === 'labels' ? '_' + format + '.zip' : '.' + format}`;
+      link.download = 'tat-ca-ket-qua.zip';
       document.body.appendChild(link);
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10000);
-      notify('Đã xuất file. Bản sao cũng được lưu trong backend/data/output_alignment/.');
+      notify('Đã tải kết quả của tất cả sách. Bản sao được lưu trong backend/data/output_alignment/.');
     } catch (error) {
       fail(error);
     } finally {
@@ -1483,7 +1389,7 @@ export default function App() {
                         <Link2 size={19} />
                         Cặp ngữ liệu song song <span className="count-badge">{rows.length}</span>
                       </h2>
-                      <p>Tự căn hàng loạt theo số trang và thứ tự dòng, sau đó kiểm tra thủ công.</p>
+                      <p>Cặp và box từ OCR đã được tự tạo, lưu sẵn. Kiểm tra rồi xác nhận từng trang.</p>
                     </div>
                     <div className="button-group">
                       <select
@@ -1501,14 +1407,6 @@ export default function App() {
                       <button className="secondary-button" disabled={busy} onClick={() => newRow()}>
                         <Plus size={15} />
                         Thêm cặp
-                      </button>
-                      <button
-                        className="secondary-button"
-                        disabled={busy || alignmentLoading}
-                        onClick={() => void autoAlignBook()}
-                      >
-                        <SplitSquareVertical size={15} />
-                        Tự căn toàn sách
                       </button>
                       <button
                         className="primary-button"
@@ -1737,11 +1635,7 @@ export default function App() {
                     <div className="empty-section">
                       <Link2 size={34} />
                       <h3>Chưa có cặp căn chỉnh</h3>
-                      <p>Tự ghép dòng Hán Nôm và Quốc ngữ theo thứ tự trên các trang có văn bản hai bên, rồi rà từng cặp.</p>
-                      <button className="primary-button" disabled={busy} onClick={() => void autoAlignBook()}>
-                        <SplitSquareVertical size={15} />
-                        Tự căn toàn sách
-                      </button>
+                      <p>Chưa có trang nào đủ văn bản Hán Nôm và Quốc ngữ để tự tạo cặp. Kiểm tra OCR hoặc tạo cặp thủ công.</p>
                       <button className="secondary-button" onClick={() => newRow()}>
                         <Plus size={15} />
                         Tạo cặp thủ công
@@ -1772,86 +1666,23 @@ export default function App() {
                       <Download size={26} />
                     </span>
                     <div>
-                      <h2>Gói dữ liệu của {formatBookTitle(activeBook?.name)}</h2>
+                      <h2>Gói kết quả của tất cả sách</h2>
                       <p>
-                        {pendingCount
-                          ? `${pendingCount} trang chưa hoàn thành. Có thể xuất bản làm việc để kiểm tra định dạng.`
-                          : 'Các trang đã được duyệt. Kiểm tra căn chỉnh và chất lượng trước khi bàn giao.'}
+                        Tải một file ZIP gồm kết quả hiện có của mọi cuốn. Có thể tải sớm để kiểm tra
+                        hoặc tải lại sau khi hoàn thành tất cả.
                       </p>
+                      <button className="primary-button" disabled={busy || !workspace?.books.length}
+                        onClick={() => void downloadAllResults()}>
+                        <Download size={16} /> Tải tất cả kết quả (.ZIP)
+                      </button>
                     </div>
                   </div>
                   <div className="book-ocr-panel">
                     <h3>Kết quả và nhật ký được cập nhật tự động</h3>
                     <p>
-                      Thống kê đếm cặp căn chỉnh đã lưu; OCR xong không tự tạo cặp. Các file dưới
-                      đây phục vụ đối chiếu tiến trình và tổng hợp cuối cùng.
+                      Mỗi cuốn có bản tóm tắt, dữ liệu trang, cặp song ngữ, CSV tiến trình,
+                      nhãn OCR và các bản xuất CSV/Excel khi cặp đã đủ hai vế.
                     </p>
-                    <div className="button-group">
-                      {(
-                        [
-                          'summary.json',
-                          'pages.json',
-                          'alignments.json',
-                          'pairs.csv',
-                          'events.jsonl',
-                        ] as const
-                      ).map((file) => (
-                        <a
-                          className="secondary-button"
-                          key={file}
-                          href={api.resultUrl(bookId, file)}
-                          download
-                        >
-                          {file}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="export-grid">
-                    {[
-                      {
-                        format: 'csv',
-                        title: 'Ngữ liệu CSV',
-                        description:
-                          'UTF-8 có BOM, 4 cột; tự bỏ dấu câu hai vế và viết thường Quốc ngữ.',
-                        label: '.CSV',
-                        icon: FileText,
-                      },
-                      {
-                        format: 'xlsx',
-                        title: 'Bảng tính Excel',
-                        description:
-                          'Bốn cột; tự bỏ dấu câu, viết thường Quốc ngữ và tô đen/đỏ theo đánh giá đã lưu.',
-                        label: '.XLSX',
-                        icon: FileCheck2,
-                      },
-                      {
-                        format: 'labels',
-                        title: 'Nhãn PPOCRLabel',
-                        description:
-                          'Label.txt đã bỏ dấu câu, viết thường Quốc ngữ; kèm fileState.txt và ảnh JPEG.',
-                        label: '.ZIP',
-                        icon: Boxes,
-                      },
-                    ].map((item) => (
-                      <div className="export-card" key={item.format}>
-                        <div className="export-icon">
-                          <item.icon size={27} />
-                          <span>{item.label}</span>
-                        </div>
-                        <h3>{item.title}</h3>
-                        <p>{item.description}</p>
-                        <button
-                          className="secondary-button"
-                          disabled={busy}
-                          onClick={() => void download(item.format as 'csv' | 'xlsx' | 'labels')}
-                        >
-                          <Download size={15} />
-                          Xuất {item.label}
-                          <ArrowRight size={15} />
-                        </button>
-                      </div>
-                    ))}
                   </div>
                   <div className="export-schema">
                     <h3>Cấu trúc ngữ liệu song song</h3>

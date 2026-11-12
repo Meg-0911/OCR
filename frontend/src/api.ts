@@ -130,6 +130,10 @@ export const api = {
   alignments: (book: string) => request<Alignment[]>(`/books/${book}/alignments`),
   saveAlignments: (book: string, rows: Alignment[]) =>
     request<Alignment[]>(`/books/${book}/alignments`, json('PUT', { rows })),
+  prepareAlignments: (book: string) =>
+    request<{ rows: Alignment[]; created: number; boxes_created: number }>(
+      `/books/${book}/alignments/prepare`, { method: 'POST' }),
+  allResultsUrl: '/api/results/archive',
   exportUrl: (book: string, format: 'csv' | 'xlsx' | 'labels') =>
     `/api/books/${book}/export?format=${format}`,
   resultUrl: (
