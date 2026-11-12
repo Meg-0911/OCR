@@ -18,7 +18,7 @@ def test_page_links_preserve_ocr_and_export_source_image_id(tmp_path):
     finish(app, job)
     before = client.get(f'/api/books/{book_id}/pages').json()
     assert client.put(f"/api/pages/{first['id']}", json={
-        'version': before[0]['version'], 'category': 'ch', 'boxes': before[0]['boxes'], 'done': True,
+        'version': before[0]['version'], 'category': 'ch', 'boxes': before[0]['boxes'], 'ocr_granularity': 'phrase', 'done': True,
     }).status_code == 200
     assert client.put(f"/api/pages/{second['id']}", json={
         'version': before[1]['version'], 'category': 'vi', 'vi_boxes': [VI_BOX], 'done': True,
@@ -85,7 +85,7 @@ def test_linked_page_can_confirm_unequal_language_box_counts(tmp_path):
     current = client.get(f"/api/books/{book['id']}/pages").json()[0]
     response = client.put(f"/api/pages/{page['id']}", json={
         'version': current['version'], 'category': 'both', 'boxes': [HAN_BOX],
-        'vi_boxes': [VI_BOX, {**VI_BOX, 'id': 'second-vi'}], 'done': True,
+        'vi_boxes': [VI_BOX, {**VI_BOX, 'id': 'second-vi'}], 'ocr_granularity': 'phrase', 'done': True,
     })
     assert response.status_code == 200, response.text
     assert response.json()['status'] == 'done'

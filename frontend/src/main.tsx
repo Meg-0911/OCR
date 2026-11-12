@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -8,8 +9,18 @@ import '@fontsource/be-vietnam-pro/700.css';
 import './fonts.css';
 import './styles.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const mounted = globalThis as typeof globalThis & { __nomReactRoot?: ReactDOM.Root };
+mounted.__nomReactRoot?.unmount();
+const host = document.getElementById('root')!;
+host.replaceChildren();
+const root = ReactDOM.createRoot(host);
+mounted.__nomReactRoot = root;
+root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
 );
+import.meta.hot?.dispose(() => {
+  root.unmount();
+  if (mounted.__nomReactRoot === root) delete mounted.__nomReactRoot;
+});

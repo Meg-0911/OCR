@@ -70,7 +70,7 @@ def test_unmapped_character_must_be_corrected_before_completion(tmp_path):
     box={'id':'unknown','transcription':'□','points':[[10,10],[30,10],[30,40],[10,40]]}
     payload={'version':0,'category':'both','source_text':'□','boxes':[box],'done':True}
     assert client.put(url,json=payload).status_code==422
-    payload.update(category='ch',source_text='𠊛',boxes=[dict(box,transcription='𠊛')])
+    payload.update(category='ch',source_text='𠊛',boxes=[dict(box,transcription='𠊛')],ocr_granularity='character')
     assert client.put(url,json=payload).json()['status']=='done'
     app.state.ocr_jobs.close()
 
@@ -80,7 +80,7 @@ def test_text_only_page_remains_pending_until_real_box_is_added(tmp_path):
     url=f"/api/pages/{page['id']}"
     assert client.put(url,json={'version':0,'category':'ch','done':True,'source_text':'天地','target_text':'Thiên địa'}).status_code==422
     box={'id':'source','transcription':'天地','points':[[10,10],[30,10],[30,40],[10,40]]}
-    result=client.put(url,json={'version':0,'category':'ch','done':True,'source_text':'天地','target_text':'Thiên địa','boxes':[box]}).json()
+    result=client.put(url,json={'version':0,'category':'ch','done':True,'source_text':'天地','target_text':'Thiên địa','boxes':[box],'ocr_granularity':'phrase'}).json()
     assert result['status']=='done' and result['boxes']==[box] and result['vi_boxes']==[]
     assert result['source_text']=='天地' and result['target_text']=='Thiên địa'
     with zipfile.ZipFile(io.BytesIO(client.get(f"/api/books/{book['id']}/export?format=labels").content)) as archive:
@@ -186,7 +186,7 @@ def test_empty_vi_result_is_not_marked_complete_and_han_checkpoint_survives(tmp_
 
 def test_previously_reviewed_han_page_uses_box_text_when_adding_vi(tmp_path):
     app,client,book,page,calls=setup(tmp_path)
-    page=client.put(f"/api/pages/{page['id']}",json={'version':0,'category':'ch','source_text':'Nôm đã Gán nhãn','target_text':'','boxes':[{'id':'source','transcription':'天地','points':[[10,10],[30,10],[30,40],[10,40]]}],'done':True}).json()
+    page=client.put(f"/api/pages/{page['id']}",json={'version':0,'category':'ch','source_text':'Nôm đã Gán nhãn','target_text':'','boxes':[{'id':'source','transcription':'天地','points':[[10,10],[30,10],[30,40],[10,40]]}],'ocr_granularity':'phrase','done':True}).json()
     client.patch(f"/api/pages/{page['id']}",json={'category':'both'})
     job=client.post(f"/api/books/{book['id']}/ocr-job",json={'mode':'bilingual'}).json()
     app.state.ocr_jobs.futures[job['id']].result(timeout=10)

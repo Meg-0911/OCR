@@ -22,7 +22,7 @@ def workspace(tmp_path):
 
 def page_payload(page, **changes):
     return {'boxes':page['boxes'], 'category':page['category'], 'done':False, 'version':page['version'],
-            'reading_direction':page['reading_direction']} | changes
+            'reading_direction':page['reading_direction'], 'ocr_granularity':'phrase'} | changes
 
 
 def upload_book(client, name='Book with spaces.pdf'):
@@ -108,7 +108,7 @@ def test_export_boxes_are_saved_and_downloaded_independently_from_ocr_boxes(anno
     completed=client.put(f"/api/pages/{page['id']}",json={
         'boxes':saved['boxes'],'export_boxes':saved['export_boxes'],
         'category':saved['category'],'done':True,'version':saved['version'],
-        'reading_direction':saved['reading_direction'],
+        'reading_direction':saved['reading_direction'], 'ocr_granularity':'phrase',
     })
     assert completed.status_code==200,completed.text
     assert completed.json()['boxes'][0]['points']==ocr_box['points']
@@ -508,7 +508,7 @@ def test_bilingual_labels_contain_real_images_and_only_their_language(workspace)
     vi={'id':'vi','transcription':'Thiên, Địa!','points':[[40,10],[100,10],[100,40],[40,40]]}
     response=client.put(f"/api/pages/{pages[0]['id']}",json={
         'version':pages[0]['version'],'category':'both','boxes':[han],'vi_boxes':[vi],
-        'source_text':'天地','target_text':'Thiên địa','done':True})
+        'source_text':'天地','target_text':'Thiên địa','ocr_granularity':'phrase','done':True})
     assert response.status_code==200,response.text
     response=client.put(f"/api/pages/{pages[1]['id']}",json={
         'version':pages[1]['version'],'category':'blank','boxes':[],'done':True})
@@ -536,7 +536,7 @@ def test_translated_intro_is_in_special_and_both_language_folders(workspace):
     vi={'id':'vi','transcription':'Lời tựa','points':[[40,10],[100,10],[100,40],[40,40]]}
     response=client.put(f"/api/pages/{pages[0]['id']}",json={
         'version':pages[0]['version'],'category':'intro','boxes':[han],'vi_boxes':[vi],
-        'source_text':'序','target_text':'Lời tựa','done':True})
+        'source_text':'序','target_text':'Lời tựa','ocr_granularity':'character','done':True})
     assert response.status_code==200,response.text
     row={'id':'intro','sentence_id':'Intro Book.001.1','source':'序','target':'Lời tựa','reviewed':True}
     assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[row]}).status_code==200

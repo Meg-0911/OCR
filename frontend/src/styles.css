@@ -4156,6 +4156,23 @@ h1 {
   border-radius: 6px;
   background: #f8f8f3;
 }
+.alignment-source-image-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.alignment-source-image-pair > div { min-width: 0; }
+.alignment-target-image {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+  background: #fafbf7;
+}
+.alignment-target-image .manuscript-stage {
+  height: min(55vh, 600px);
+  min-height: 280px;
+  padding: 12px 16px;
+}
 .alignment-source-image-heading {
   display: flex;
   align-items: center;
@@ -6316,6 +6333,9 @@ h1 {
   padding: 9px 10px;
   font-size: 11px;
 }
+.workbench-confirm-actions { display: flex; flex-direction: column; align-items: stretch; gap: 7px; }
+.workbench-phrase-toggle { display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 11px; cursor: pointer; }
+.workbench-phrase-toggle input { margin: 0; accent-color: var(--green); }
 .workbench-navigation {
   justify-content: space-between;
   padding: 5px 12px;
@@ -6558,7 +6578,9 @@ h1 {
   border-radius: 8px;
   background: #f8faf6;
 }
-.linked-alignment summary { cursor: pointer; font-weight: 700; }
+.linked-alignment h3 { margin: 0; font-size: 14px; }
+.linked-alignment-title { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.linked-alignment-title > div { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #566453; }
 .linked-alignment p { color: #566453; font-size: 12px; line-height: 1.6; }
 .linked-alignment-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 12px 0; }
 .linked-alignment-controls input[type='search'] { max-width: 250px; }
@@ -6576,7 +6598,9 @@ h1 {
 .linked-alignment-pool { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .linked-alignment-pool > strong { flex-basis: 100%; font-size: 12px; }
 .linked-alignment-column { display: flex; flex-direction: column; gap: 6px; min-width: 180px; max-width: 320px; max-height: 240px; overflow: auto; padding: 8px; background: #edf2e9; border-radius: 5px; }
+.linked-alignment-unmatched { display: flex; flex-direction: column; gap: 5px; padding: 8px; border: 1px dashed #a5b49e; border-radius: 5px; background: white; }
 @media (max-width: 700px) {
+  .alignment-source-image-pair { grid-template-columns: 1fr; }
   .linked-alignment { padding: 10px; }
   .linked-alignment-grid { gap: 5px; }
 }

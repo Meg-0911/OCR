@@ -85,6 +85,12 @@ def box_text_lines(boxes, reading_direction, category='ch', image_size=None):
             for group in character_box_groups(boxes, reading_direction)]
 
 
+def source_box_text_lines(boxes, reading_direction, image_size=None, granularity=None):
+    if granularity == 'phrase':
+        return [box['transcription'] for box in ordered_boxes(boxes, 'ch', reading_direction, image_size)]
+    return box_text_lines(boxes, reading_direction, 'ch', image_size)
+
+
 def ordered_boxes(boxes, category, reading_direction=2, image_size=None):
     if boxes and category in ('ch', 'both') and all(box.get('review_order') is not None for box in boxes):
         return sorted(boxes, key=lambda box: box['review_order'])
@@ -253,6 +259,14 @@ class Store:
                     db.execute(f'ALTER TABLE pages ADD COLUMN {column} TEXT DEFAULT NULL')
             if 'ocr_languages' not in columns:
                 db.execute("ALTER TABLE pages ADD COLUMN ocr_languages TEXT DEFAULT NULL")
+            if 'ocr_granularity' not in columns:
+                db.execute('ALTER TABLE pages ADD COLUMN ocr_granularity TEXT DEFAULT NULL')
+                # Pages confirmed before this field existed keep their completed state.
+                for old in db.execute("SELECT id,boxes FROM pages WHERE status='done'").fetchall():
+                    old_boxes = json.loads(old['boxes'])
+                    if old_boxes:
+                        granularity = 'character' if all(len(box['transcription'].strip()) == 1 for box in old_boxes) else 'phrase'
+                        db.execute('UPDATE pages SET ocr_granularity=? WHERE id=?', (granularity, old['id']))
             db.execute("UPDATE pages SET reading_direction_override=NULL,reading_direction=2 WHERE category='vi' AND (reading_direction_override IS NOT NULL OR reading_direction!=2)")
             if 'source_regions' not in columns:
                 db.execute("UPDATE pages SET category='both' WHERE category='misc' AND NOT EXISTS (SELECT 1 FROM pages other WHERE other.book_id=pages.book_id AND other.number=pages.number AND other.category='both')")
@@ -520,6 +534,8 @@ class Store:
                     changes['target_origin']=result['target_origin']
             changes={key:value for key,value in changes.items() if (not isinstance(value,str) or value.strip()) and value!=(json.dumps(page[key],ensure_ascii=False) if key in ('boxes','vi_boxes') else page[key])}
             if changes:
+                if 'boxes' in changes:
+                    changes['ocr_granularity'] = None
                 with self.db() as db:
                     db.execute('UPDATE pages SET '+','.join(key+'=?' for key in changes)+",status='pending',version=version+1 WHERE id=?",
                                (*changes.values(),page['id']))
@@ -714,7 +730,7 @@ class Store:
                 tmp.write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf-8')
                 replace_file(tmp,path)
             write_json(folder/'summary.json',summary)
-            write_json(folder/'pages.json',[{key:p[key] for key in ('id','number','category','ocr_skip','status','source_text','target_text','target_origin','version','linked_page_ids')} |
+            write_json(folder/'pages.json',[{key:p[key] for key in ('id','number','category','ocr_skip','status','ocr_granularity','source_text','target_text','target_origin','version','linked_page_ids')} |
                                            {'completed_languages':languages.get(p['id'],[])} for p in pages])
             write_json(folder/'alignments.json',rows)
             csv_path=folder/'pairs.csv'; tmp=csv_path.with_suffix('.csv.tmp')

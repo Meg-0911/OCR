@@ -22,7 +22,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from .store import CATEGORIES, Store, box_text_lines, label_groups
+from .store import CATEGORIES, Store, box_text_lines, source_box_text_lines, label_groups
 from .ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
 from .han_ocr import HanFallbackConfig, PPOCRv5, HanOCRWithFallback
 from .sources import source_files
@@ -35,7 +35,7 @@ from . import bilingual
 from .han_layout import PIPELINE_VERSION
 from .han_layout import jpeg_bytes
 from .region_ocr import crop_selection
-from .auto_alignment import page_rows as automatic_page_rows, boxes_for_rows
+from .auto_alignment import page_rows as automatic_page_rows, boxes_for_rows, is_redundant_phrase_export_box
 
 Category = Literal['ch', 'vi', 'both', 'intro', 'ref', 'toc', 'blank', 'misc']
 
@@ -154,6 +154,7 @@ class PageInput(BaseModel):
     version: int = Field(ge=0)
     reading_direction: Literal[1, 2] = 2
     ocr_skip: bool | None = None
+    ocr_granularity: Literal['character','phrase'] | None = None
 
     @model_validator(mode='after')
     def valid_export_order(self):
@@ -179,6 +180,7 @@ class PagePatch(BaseModel):
     reading_direction_override: Literal[1,2] | None = None
     ocr_skip: bool | None = None
     ocr_languages: list[Literal['han','vi']] | None = Field(default=None,min_length=1,max_length=2)
+    ocr_granularity: Literal['character','phrase'] | None = None
     source_regions: list[tuple[float,float,float,float]] | None = Field(default=None,max_length=100)
     target_regions: list[tuple[float,float,float,float]] | None = Field(default=None,max_length=100)
 
@@ -606,9 +608,10 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             source_text=page['source_text'] if data.source_text is None else data.source_text
             target_text=page['target_text'] if data.target_text is None else data.target_text
             if data.boxes:
-                source_text='\n'.join(box_text_lines(
+                source_text='\n'.join(source_box_text_lines(
                     [box.model_dump(mode='json',exclude_none=True) for box in data.boxes],
-                    page['reading_direction'],'ch',(page['width'],page['height']),
+                    page['reading_direction'],(page['width'],page['height']),
+                    data.ocr_granularity or page['ocr_granularity'],
                 ))
             target_boxes=([box.model_dump(mode='json',exclude_none=True) for box in data.vi_boxes]
                           if data.vi_boxes is not None else page['vi_boxes'])
@@ -631,13 +634,17 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 vi_boxes = data.vi_boxes if data.vi_boxes is not None else page['vi_boxes']
                 if ('han' in languages and not data.boxes) or ('vi' in languages and not vi_boxes):
                     raise HTTPException(422, 'Trang cần box thật cho từng ngôn ngữ trước khi hoàn thành. Kiểm tra OCR hoặc vẽ box thủ công.')
+                if 'han' in languages and not data.ocr_granularity and not page['ocr_granularity']:
+                    raise HTTPException(422, 'Chọn OCR theo chữ hoặc theo cụm trước khi hoàn thành trang.')
+                if 'han' in languages and (data.ocr_granularity or page['ocr_granularity']) == 'character' and any(len(box.transcription.strip()) != 1 for box in data.boxes):
+                    raise HTTPException(422, 'OCR theo chữ cần mỗi box Hán Nôm chứa đúng một chữ. Hãy tách box hoặc chọn theo cụm.')
             boxes = [b.model_dump(mode='json',exclude_none=True) for b in data.boxes]
             export_boxes = [b.model_dump(mode='json',exclude_none=True) for b in data.export_boxes] if data.export_boxes is not None else None
             try:
                 with store.db() as db:
-                    updates=['boxes=?','status=?','category=?','reading_direction=?','source_text=?','target_text=?','vi_boxes=?']
+                    updates=['boxes=?','status=?','category=?','reading_direction=?','source_text=?','target_text=?','vi_boxes=?','ocr_granularity=?']
                     values=[json.dumps(boxes,ensure_ascii=False),'done' if data.done else 'pending',data.category,2 if languages==['vi'] else page['reading_direction_override'] or data.reading_direction,
-                            source_text,target_text,json.dumps([b.model_dump(exclude_none=True) for b in data.vi_boxes],ensure_ascii=False) if data.vi_boxes is not None else json.dumps(page['vi_boxes'],ensure_ascii=False)]
+                            source_text,target_text,json.dumps([b.model_dump(exclude_none=True) for b in data.vi_boxes],ensure_ascii=False) if data.vi_boxes is not None else json.dumps(page['vi_boxes'],ensure_ascii=False),data.ocr_granularity or page['ocr_granularity']]
                     if languages==['vi']:
                         updates.append('reading_direction_override=?')
                         values.append(None)
@@ -700,9 +707,10 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 changes['reading_direction']=changes['reading_direction_override'] or store.book_layout(page['book_id']).get('reading_direction',2)
             effective_direction=changes.get('reading_direction',page['reading_direction'])
             source_boxes=changes.get('boxes',page['boxes'])
-            if source_boxes and ('boxes' in changes or 'source_text' in changes):
-                changes['source_text']='\n'.join(box_text_lines(
-                    source_boxes,effective_direction,'ch',(page['width'],page['height']),
+            if source_boxes and ('boxes' in changes or 'source_text' in changes or 'ocr_granularity' in changes):
+                changes['source_text']='\n'.join(source_box_text_lines(
+                    source_boxes,effective_direction,(page['width'],page['height']),
+                    changes.get('ocr_granularity',page['ocr_granularity']),
                 ))
             target_boxes=changes.get('vi_boxes',page['vi_boxes'])
             if target_boxes and ('vi_boxes' in changes or 'target_text' in changes):
@@ -728,7 +736,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 changes['ocr_skip']=int(changes['ocr_skip'])
             invalidates_review = any(key in changes for key in (
                 'source_text','target_text','boxes','vi_boxes','category','reading_direction',
-                'ocr_skip','ocr_languages','source_regions','target_regions','reading_direction_override',
+                'ocr_skip','ocr_languages','ocr_granularity','source_regions','target_regions','reading_direction_override',
             ))
             try:
                 with store.db() as db:
@@ -1042,16 +1050,48 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             rows = json.loads(saved['rows']) if saved else []
             source_pages = [page for page in pages if not page['ocr_skip']
                             and page['category'] not in ('blank', 'misc')
-                            and 'han' in page['ocr_languages']]
+                            and 'han' in page['ocr_languages'] and page['status'] == 'done'
+                            and page['ocr_granularity']]
             reference = text_sources(book_id).get('vi', {}).get('text', '')
             if reference and not (re.search(r'^\s*\*+\s*Page\s+\d+\s*\*+\s*$', reference, re.I | re.M)
                                   or '\f' in reference or len(source_pages) == 1):
                 reference = ''
             created = 0
             boxes_created = 0
+            boxes_removed = 0
             for page in source_pages:
                 prefix = f"{book['name']}.{page['number']:03d}."
                 page_pairs = [row for row in rows if row['sentence_id'].startswith(prefix)]
+                if page_pairs and page['ocr_granularity'] == 'phrase' and len(page_pairs) < len(page['boxes']):
+                    fresh = automatic_page_rows(page, pages, book['name'], reference)
+                    old_boxes = {box.get('alignment_id'): box for box in page['export_boxes'] if box.get('alignment_id')}
+                    expected_boxes = boxes_for_rows(page, page_pairs)
+                    untouched = (
+                        len(fresh) == len(page['boxes']) and len(expected_boxes) == len(page_pairs)
+                        and all(not row['reviewed'] and not row.get('marks')
+                                and row.get('source_page_id') == page['id']
+                                and row.get('source_line_index') == index
+                                and row['target'] == fresh[index]['target']
+                                and row.get('target_page_id') == fresh[index].get('target_page_id')
+                                and row.get('target_line_index') == fresh[index].get('target_line_index')
+                                for index, row in enumerate(page_pairs))
+                        and ''.join(row['source'] for row in page_pairs) == ''.join(box['transcription'] for box in page['boxes'])
+                        and all(box['alignment_id'] in old_boxes
+                                and box['points'] == old_boxes[box['alignment_id']]['points']
+                                and box['transcription'] == old_boxes[box['alignment_id']]['transcription']
+                                for box in expected_boxes)
+                    )
+                    if untouched:
+                        obsolete = {row['id'] for row in page_pairs}
+                        page['export_boxes'] = [box for box in page['export_boxes']
+                                                if box.get('alignment_id') not in obsolete]
+                        rows = [row for row in rows if row['id'] not in obsolete] + fresh
+                        created += len(fresh) - len(page_pairs)
+                        page_pairs = fresh
+                        with store.db() as db:
+                            db.execute('UPDATE pages SET export_boxes=?,source_text=?,version=version+1 WHERE id=?',
+                                       (json.dumps(page['export_boxes'], ensure_ascii=False),
+                                        '\n'.join(box['transcription'] for box in page['boxes']), page['id']))
                 if not page_pairs:
                     page_pairs = automatic_page_rows(page, pages, book['name'], reference)
                     rows.extend(page_pairs)
@@ -1059,10 +1099,17 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 if not page_pairs or not page['boxes']:
                     continue
                 existing = [box for box in page['export_boxes'] if box.get('box_axis')]
+                removed_here = 0
+                if page['ocr_granularity'] == 'phrase':
+                    kept = [box for box in existing
+                            if not is_redundant_phrase_export_box(page, box, page_pairs)]
+                    removed_here = len(existing) - len(kept)
+                    boxes_removed += removed_here
+                    existing = kept
                 assigned = {box.get('alignment_id') for box in existing}
                 generated = [box for box in boxes_for_rows(page, page_pairs)
                              if box['alignment_id'] not in assigned]
-                if not generated:
+                if not generated and not removed_here:
                     continue
                 offset = max((box.get('export_order') or 0 for box in existing), default=0)
                 for index, box in enumerate(generated, 1):
@@ -1077,10 +1124,11 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 with store.db() as db:
                     db.execute('INSERT INTO alignments VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET rows=excluded.rows',
                                (book_id, json.dumps(rows, ensure_ascii=False)))
-            if created or boxes_created:
+            if created or boxes_created or boxes_removed:
                 store.sync_labels(book_id)
                 store.sync_results(book_id, 'prepare_alignments')
-        return {'rows': rows, 'created': created, 'boxes_created': boxes_created}
+        return {'rows': rows, 'created': created, 'boxes_created': boxes_created,
+                'boxes_removed': boxes_removed}
 
     @app.put('/api/books/{book_id}/alignments')
     def save_alignments(book_id: str, data: AlignmentsInput):

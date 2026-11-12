@@ -36,6 +36,7 @@ export type Page = {
   source_regions: Region[] | null;
   target_regions: Region[] | null;
   ocr_languages: ('han' | 'vi')[];
+  ocr_granularity: 'character' | 'phrase' | null;
   linked_page_ids: string[];
 };
 export type Book = {

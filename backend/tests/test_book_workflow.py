@@ -243,7 +243,7 @@ def test_shared_crop_page_override_and_skips_are_used_by_ocr(tmp_path):
     assert len(calls)==2 and vi.calls==2 and saved[2]['boxes']==[]
     assert saved[0]['boxes'][0]['points'][0]==[10,50]
     assert saved[1]['boxes'][0]['points'][0]==[160,275]
-    confirmed=client.put(f"/api/pages/{saved[0]['id']}",json={'version':saved[0]['version'],'category':'both','boxes':saved[0]['boxes'],'vi_boxes':[VI_BOX],'done':True}).json()
+    confirmed=client.put(f"/api/pages/{saved[0]['id']}",json={'version':saved[0]['version'],'category':'both','boxes':saved[0]['boxes'],'vi_boxes':[VI_BOX],'ocr_granularity':'phrase','done':True}).json()
     assert confirmed['status']=='done' and 'boxes' not in confirmed['edited_fields']
     assert client.patch(f"/api/pages/{first['id']}",json={'source_regions':[[0,0,2,1]]}).status_code==422
     reset=client.patch(f"/api/pages/{first['id']}",json={'source_regions':None}).json()
@@ -275,7 +275,7 @@ def test_autosave_needs_confirmation_and_edits_invalidate_confirmation(tmp_path)
     url=f"/api/pages/{pages[0]['id']}"
     draft=client.patch(url,json={'source_text':'天地'}).json()
     assert draft['status']=='pending' and client.get('/api/workspace').json()['books'][0]['done']==0
-    saved=client.put(url,json={'version':draft['version'],'category':'ch','source_text':'天地','boxes':[HAN_BOX],'done':True}).json()
+    saved=client.put(url,json={'version':draft['version'],'category':'ch','source_text':'天地','boxes':[HAN_BOX],'ocr_granularity':'phrase','done':True}).json()
     assert saved['status']=='done'
     changed=client.patch(url,json={'source_text':'天地玄黃'}).json()
     assert changed['status']=='pending'
@@ -297,7 +297,7 @@ def test_cannot_confirm_page_while_ocr_is_still_running(tmp_path):
     finish(app,job)
     page=client.get(f"/api/books/{book['id']}/pages").json()[0]
     assert page['status']=='pending'
-    assert client.put(f"/api/pages/{page['id']}",json={'version':page['version'],'category':'both','boxes':page['boxes'],'vi_boxes':[VI_BOX],'done':True}).json()['status']=='done'
+    assert client.put(f"/api/pages/{page['id']}",json={'version':page['version'],'category':'both','boxes':page['boxes'],'vi_boxes':[VI_BOX],'ocr_granularity':'phrase','done':True}).json()['status']=='done'
     app.state.ocr_jobs.close()
 
 
@@ -328,7 +328,7 @@ def test_horizontal_default_and_vertical_page_override(tmp_path):
     assert [result['settings']['reading_direction'] for result in results]==[1,2]
     current=client.get(f"/api/books/{book['id']}/pages").json()[0]
     confirmed=client.put(f"/api/pages/{current['id']}",json={
-        'version':current['version'],'category':'ch','done':True,'boxes':current['boxes'],
+        'version':current['version'],'category':'ch','done':True,'boxes':current['boxes'],'ocr_granularity':'phrase',
     })
     assert confirmed.status_code==200
     assert confirmed.json()['reading_direction']==1
@@ -381,7 +381,7 @@ def test_confirmed_pages_stay_complete_and_are_excluded_from_new_ocr_jobs(tmp_pa
     job=start(client,book,pages);finish(app,job)
     saved=client.get(base+'/pages').json()
     first=saved[0]
-    complete=client.put(f"/api/pages/{first['id']}",json={'version':first['version'],'category':'both','boxes':first['boxes'],'vi_boxes':[VI_BOX],'done':True}).json()
+    complete=client.put(f"/api/pages/{first['id']}",json={'version':first['version'],'category':'both','boxes':first['boxes'],'vi_boxes':[VI_BOX],'ocr_granularity':'phrase','done':True}).json()
     assert complete['status']=='done'
     state={'view':'review','page_id':first['id'],'workflow_step':4}
     assert client.put(base+'/session',json=state).status_code==200
@@ -401,7 +401,7 @@ def test_confirmed_pages_stay_complete_and_are_excluded_from_new_ocr_jobs(tmp_pa
         remaining=[p for p in reopened.get(base+'/pages').json() if p['status']!='done']
         assert [p['id'] for p in remaining]==[saved[1]['id']]
         last=remaining[0]
-        assert reopened.put(f"/api/pages/{last['id']}",json={'version':last['version'],'category':'both','boxes':last['boxes'],'vi_boxes':[VI_BOX],'done':True}).json()['status']=='done'
+        assert reopened.put(f"/api/pages/{last['id']}",json={'version':last['version'],'category':'both','boxes':last['boxes'],'vi_boxes':[VI_BOX],'ocr_granularity':'phrase','done':True}).json()['status']=='done'
         summary=reopened.get('/api/workspace').json()['books'][0]
         assert summary['done']==summary['pages']==2
         assert reopened.post(base+'/workflow',json={}).status_code==409

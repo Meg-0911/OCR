@@ -97,10 +97,38 @@ export default function AlignmentBoxEditor({
   const linkedCount = alignments.filter((row) => boxes.some((box) => box.alignment_id === row.id)).length;
   const alignmentMismatch = linkedCount !== alignments.length;
   const ocrMatches = useMemo(
-    () => allocateAlignmentOcrBoxes(page.boxes, alignments),
-    [page.boxes, alignments],
+    () => allocateAlignmentOcrBoxes(page.boxes, alignments, page.ocr_granularity),
+    [page.boxes, alignments, page.ocr_granularity],
   );
   const [drawHint, setDrawHint] = useState('');
+
+  function isOcrDerivedPhraseBox(box: Box) {
+    if (page.ocr_granularity !== 'phrase' || box.alignment_id || !box.box_axis) return false;
+    const expected = box.transcription.replace(/\s/gu, '');
+    if (!expected) return false;
+    const represented = new Map(alignments
+      .filter((row) => row.source_page_id === page.id && row.source_line_index != null)
+      .map((row) => [row.source_line_index, row.source.replace(/\s/gu, '')]));
+    const bounds = (points: Box['points']) => [
+      Math.min(...points.map((point) => point[0])), Math.min(...points.map((point) => point[1])),
+      Math.max(...points.map((point) => point[0])), Math.max(...points.map((point) => point[1])),
+    ];
+    for (let start = 0; start < page.boxes.length; start++) {
+      let text = '';
+      const members: Box[] = [];
+      for (let index = start; index < page.boxes.length; index++) {
+        if (represented.get(index) !== page.boxes[index].transcription.replace(/\s/gu, '')) break;
+        members.push(page.boxes[index]);
+        text += page.boxes[index].transcription;
+        if (text.replace(/\s/gu, '').length > expected.length) break;
+        if (text.replace(/\s/gu, '') !== expected) continue;
+        const points = boundsFromOcrBoxes(members, box.box_axis);
+        if (points && bounds(points).every((value, offset) =>
+          Math.abs(value - bounds(box.points)[offset]) < .01)) return true;
+      }
+    }
+    return false;
+  }
 
   useEffect(() => {
     setSelected(null);
@@ -129,7 +157,8 @@ export default function AlignmentBoxEditor({
         : 'Không đủ box OCR cho số ký tự của cặp này. Kiểm tra thứ tự và số box, hoặc kéo thủ công; giữ Shift để vẽ đè box cũ.');
       return;
     }
-    const base = page.export_boxes.filter((box) => !isLegacyPlaceholder(box));
+    const base = page.export_boxes.filter((box) => !isLegacyPlaceholder(box) &&
+      !isOcrDerivedPhraseBox(box));
     const existing = base.find((box) => box.alignment_id === row.id);
     const id = existing?.id || crypto.randomUUID();
     const candidate: Box = {
@@ -169,7 +198,9 @@ export default function AlignmentBoxEditor({
       const axis = page.reading_direction === 1 ? 'vertical' : 'horizontal';
       const generated: Box[] = [];
       let skipped = 0;
-      for (const group of groupCharacterBoxes(page.boxes, page.reading_direction)) {
+      for (const group of page.ocr_granularity === 'phrase'
+        ? page.boxes.map((box) => [box])
+        : groupCharacterBoxes(page.boxes, page.reading_direction)) {
         const points = boundsFromOcrBoxes(group, axis);
         if (!points) {
           skipped++;
@@ -196,7 +227,8 @@ export default function AlignmentBoxEditor({
       return;
     }
 
-    const next = page.export_boxes.filter((box) => !box.alignment_id && box.box_axis);
+    const next = page.export_boxes.filter((box) => !box.alignment_id && box.box_axis &&
+      !isOcrDerivedPhraseBox(box));
     let created = 0;
     let updated = 0;
     for (const row of alignments) {

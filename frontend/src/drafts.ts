@@ -2,7 +2,7 @@ import type { Page } from './types';
 
 const editableFields = [
   'boxes', 'export_boxes', 'category', 'reading_direction', 'reading_direction_override', 'source_text', 'target_text', 'vi_boxes',
-  'ocr_skip', 'source_regions', 'target_regions', 'ocr_languages',
+  'ocr_skip', 'source_regions', 'target_regions', 'ocr_languages', 'ocr_granularity',
 ] as const;
 type EditableField = (typeof editableFields)[number];
 export type Draft = Pick<Page, 'boxes' | 'category'> & Partial<Pick<Page, EditableField>> & {

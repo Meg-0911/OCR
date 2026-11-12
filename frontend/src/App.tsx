@@ -229,6 +229,8 @@ export default function App() {
     return alignmentPages
       .map((page) => ({ page, rows: rowsByPage.get(page.number) || [] }));
   }, [activeBook, alignmentPages, rows]);
+  const visibleAlignmentPageGroups = alignmentPageGroups.filter(({ page }) =>
+    page.id === alignmentSourcePage?.id && !page.linked_page_ids.length);
   const [rowsDirty, setRowsDirty] = useState(false);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
@@ -800,7 +802,9 @@ export default function App() {
             true,
             current.category,
             current.reading_direction,
-            { source_text: current.source_text, target_text: current.target_text, vi_boxes: current.vi_boxes },
+            { source_text: current.source_text, target_text: current.target_text, vi_boxes: current.vi_boxes,
+              ocr_granularity: current.ocr_granularity ??
+                (current.category === 'ch' || current.category === 'vi' ? 'phrase' : 'character') },
           )
         : current;
       setPages((previous) => previous.map((p) => (p.id === updated.id ? updated : p)));
@@ -1425,6 +1429,11 @@ export default function App() {
                       pages={alignmentContentPages}
                       bookName={activeBook.name}
                       rows={rows}
+                      busy={busy}
+                      onReviewPage={(reviewed) => {
+                        const group = alignmentPageGroups.find(({ page }) => page.id === alignmentSourcePage.id);
+                        if (group) void setAlignmentPageReviewed(group.page, group.rows, reviewed);
+                      }}
                       onRows={(next, immediate) => {
                         changeRows(next);
                         if (immediate) {
@@ -1450,21 +1459,21 @@ export default function App() {
                       onTargetHandled={() => setAlignmentBoxTarget(null)}
                     />
                   )}
-                  <div className="alignment-notice">
+                  {!alignmentSourcePage?.linked_page_ids.length && <div className="alignment-notice">
                     <CircleHelp size={16} />
                     <span>
                       Dùng ảnh và box nhãn xuất phía trên để chỉnh dữ liệu tải về; chúng được lưu
                       riêng với box chữ OCR. Tô màu khi dò chữ trong bước{' '}
                       <strong>Gán nhãn OCR</strong>; bảng dưới dùng để tách, gộp và sửa cặp.
                     </span>
-                  </div>
+                  </div>}
                   {alignmentLoading ? (
                     <div className="empty-section">
                       <LoaderCircle className="spin" size={24} />
                     </div>
-                  ) : alignmentPageGroups.length ? (
+                  ) : visibleAlignmentPageGroups.length ? (
                     <div className="alignment-page-groups">
-                      {alignmentPageGroups.map(({ page: groupPage, rows: pageRows }) => (
+                      {visibleAlignmentPageGroups.map(({ page: groupPage, rows: pageRows }) => (
                         <details
                           className="alignment-page-group"
                           key={groupPage.id}
@@ -1631,7 +1640,7 @@ export default function App() {
                         </details>
                       ))}
                     </div>
-                  ) : (
+                  ) : alignmentSourcePage?.linked_page_ids.length ? null : (
                     <div className="empty-section">
                       <Link2 size={34} />
                       <h3>Chưa có cặp căn chỉnh</h3>

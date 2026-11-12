@@ -70,7 +70,7 @@ def test_editing_alignment_boxes_does_not_unfinish_ocr_review(tmp_path):
         url = f"/api/pages/{page['id']}"
         confirmed = client.put(url, json={
             'version': page['version'], 'category': 'ch', 'done': True,
-            'boxes': [box('a', 1)], 'source_text': '字',
+            'boxes': [box('a', 1)], 'source_text': '字', 'ocr_granularity': 'character',
         })
         assert confirmed.status_code == 200
         assert confirmed.json()['status'] == 'done'

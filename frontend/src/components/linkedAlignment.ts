@@ -7,8 +7,14 @@ export function linkedLines(text: string) {
   return text.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
 }
 
+export function linkedSourceLines(page: Page) {
+  return page.ocr_granularity === 'phrase'
+    ? page.boxes.map((box) => box.transcription.trim()).filter(Boolean)
+    : linkedLines(page.source_text || page.boxes.map((box) => box.transcription).join('\n'));
+}
+
 export function defaultLinkedRows(page: Page, bookName: string, targets: Target[], id: () => string): Alignment[] {
-  const sourceLines = linkedLines(page.source_text || page.boxes.map((box) => box.transcription).join('\n'));
+  const sourceLines = linkedSourceLines(page);
   const prefix = `${bookName}.${String(page.number).padStart(3, '0')}.`;
   return sourceLines.map((source, index) => ({
     id: id(),

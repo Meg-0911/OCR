@@ -4,11 +4,27 @@ export function characterCount(text: string) {
   return Array.from(text.normalize('NFC').replace(/[\p{P}\s]/gu, '')).length;
 }
 
-export function allocateAlignmentOcrBoxes(ocrBoxes: Box[], alignments: Alignment[]) {
+export function allocateAlignmentOcrBoxes(ocrBoxes: Box[], alignments: Alignment[], granularity: 'character' | 'phrase' | null = 'character') {
   const ordered = ocrBoxes.every((box) => box.review_order != null)
     ? [...ocrBoxes].sort((a, b) => a.review_order! - b.review_order!)
     : ocrBoxes;
   const matches = new Map<string, Box[]>();
+  if (granularity === 'phrase') {
+    const used = new Set<number>();
+    for (const row of alignments) {
+      const normalized = row.source.replace(/\s/gu, '');
+      const index = row.source_line_index != null &&
+        ordered[row.source_line_index]?.transcription.replace(/\s/gu, '') === normalized
+        ? row.source_line_index
+        : ordered.findIndex((box, position) => !used.has(position) &&
+          box.transcription.replace(/\s/gu, '') === normalized);
+      if (index >= 0 && !used.has(index)) {
+        matches.set(row.id, [ordered[index]]);
+        used.add(index);
+      }
+    }
+    return matches;
+  }
   let cursor = 0;
 
   for (const row of alignments) {

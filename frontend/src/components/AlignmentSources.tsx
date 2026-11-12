@@ -4,6 +4,7 @@ import type { MouseEvent } from 'react';
 import type { Alignment, Page, ReviewKind, TextReference } from '../types';
 import { reviewColorsForText } from '../reviewColors';
 import AlignmentBoxEditor from './AlignmentBoxEditor';
+import ManuscriptViewer from './ManuscriptViewer';
 
 export default function AlignmentSources({
   page,
@@ -33,13 +34,15 @@ export default function AlignmentSources({
   const targets = pages.filter((p) => p.id !== page?.id && p.ocr_languages.includes('vi'));
   const [targetId, setTargetId] = useState(
     targets.find((p) => page?.linked_page_ids.includes(p.id))?.id ||
-    targets.find((p) => p.number === page?.number)?.id || targets[0]?.id || '',
+    targets.find((p) => p.number === page?.number)?.id || '',
   );
   const [sourceSelection, setSourceSelection] = useState('');
   const [targetSelection, setTargetSelection] = useState('');
-  const sourceText =
-    page?.source_text || page?.boxes.map((box) => box.transcription).join('\n') || '';
+  const sourceText = page?.ocr_granularity === 'phrase'
+    ? page.boxes.map((box) => box.transcription).join('\n')
+    : page?.source_text || page?.boxes.map((box) => box.transcription).join('\n') || '';
   const selectedTarget = targets.find((p) => p.id === targetId);
+  const imageTarget = page?.linked_page_ids.length ? selectedTarget : page?.vi_boxes.length ? page : selectedTarget;
   const targetText = page?.linked_page_ids.length
     ? selectedTarget?.target_text || selectedTarget?.vi_boxes.map((box) => box.transcription).join('\n') || page.target_text || ''
     : page?.target_text || reference?.text || selectedTarget?.target_text ||
@@ -68,22 +71,35 @@ export default function AlignmentSources({
       <summary>Nguồn đối chiếu của sách</summary>
       {page && (
         <div className="alignment-source-image-panel">
-          <div className="alignment-source-image-heading">
-            <strong>Box nhãn xuất · trang {page.number}</strong>
-            <a href={page.image_url} target="_blank" rel="noreferrer">
-              Mở ảnh kích thước đầy đủ
-            </a>
+          <div className="alignment-source-image-pair">
+            <div>
+              <div className="alignment-source-image-heading">
+                <strong>Ảnh Hán Nôm · trang {String(page.number).padStart(3, '0')}</strong>
+                <a href={page.image_url} target="_blank" rel="noreferrer">Mở ảnh gốc</a>
+              </div>
+              <AlignmentBoxEditor
+                page={page}
+                disabled={busy}
+                alignments={alignments}
+                targetRow={targetRow}
+                targetAxis={targetAxis}
+                targetRequestId={targetRequestId}
+                onTargetHandled={onTargetHandled}
+                onBoxes={(boxes) => onBoxes(page, boxes)}
+              />
+            </div>
+            {imageTarget && <div>
+              <div className="alignment-source-image-heading">
+                <strong>Ảnh Quốc ngữ · trang {String(imageTarget.number).padStart(3, '0')}</strong>
+                <a href={imageTarget.image_url} target="_blank" rel="noreferrer">Mở ảnh gốc</a>
+              </div>
+              <div className="alignment-target-image">
+                <ManuscriptViewer page={imageTarget} boxes={imageTarget.vi_boxes}
+                  selected={null} setSelected={() => {}} showBoxes tool="select" zoom={100}
+                  onBoxes={() => {}} onDrawn={() => {}} readOnly />
+              </div>
+            </div>}
           </div>
-          <AlignmentBoxEditor
-            page={page}
-            disabled={busy}
-            alignments={alignments}
-            targetRow={targetRow}
-            targetAxis={targetAxis}
-            targetRequestId={targetRequestId}
-            onTargetHandled={onTargetHandled}
-            onBoxes={(boxes) => onBoxes(page, boxes)}
-          />
         </div>
       )}
       {!page && (

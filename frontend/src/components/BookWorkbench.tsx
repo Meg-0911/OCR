@@ -48,6 +48,7 @@ type Editable = Pick<
   | 'source_regions'
   | 'target_regions'
   | 'ocr_languages'
+  | 'ocr_granularity'
   | 'reading_direction_override'
 >;
 type Props = {
@@ -277,6 +278,8 @@ export default function BookWorkbench(props: Props) {
   const boxesKey = language === 'han' ? 'boxes' : 'vi_boxes';
   const textKey = language === 'han' ? 'source_text' : 'target_text';
   const boxes = page?.[boxesKey] || [];
+  const ocrGranularity = page?.ocr_granularity ??
+    (page?.category === 'ch' || page?.category === 'vi' ? 'phrase' : 'character');
   const readingDirection = page && language === 'han' && page.ocr_languages.includes('han')
     ? page.reading_direction_override ?? layout.reading_direction ?? page.reading_direction
     : 2;
@@ -286,11 +289,14 @@ export default function BookWorkbench(props: Props) {
     : boxes.filter((box) => box.id === selected);
   const text = language === 'vi' && boxes.length
     ? boxes.map((box) => box.transcription).join('\n')
+    : language === 'han' && ocrGranularity === 'phrase' && boxes.length
+      ? boxes.map((box) => box.transcription).join('\n')
     : page?.[textKey] || '';
   const targetWords = targetWordsIn(language === 'vi' ? text : page?.target_text || '');
   const orderedSourceBoxes = boxesInReviewOrder(page?.boxes || []);
   const characterEditing =
     language === 'han' &&
+    ocrGranularity === 'character' &&
     boxes.length > 0;
   const effectiveSource = source === 'txt' && sources[language] ? 'txt' : 'ocr';
   const settings: OCRSettings = {
@@ -579,7 +585,9 @@ export default function BookWorkbench(props: Props) {
     const next = replaceBoxText(boxes, text, box.id, value, readingDirection, language === 'han');
     const synchronizedText = next.boxes.length
       ? language === 'han'
-        ? groupCharacterBoxes(next.boxes, readingDirection).map((row) =>
+        ? ocrGranularity === 'phrase'
+          ? next.boxes.map((item) => item.transcription).join('\n')
+          : groupCharacterBoxes(next.boxes, readingDirection).map((row) =>
             row.map((item) => item.transcription).join(''),
           ).join('\n')
         : next.boxes.map((item) => item.transcription).join('\n')
@@ -1695,6 +1703,7 @@ export default function BookWorkbench(props: Props) {
                         <span role="status">
                           {props.dirty ? 'Chưa lưu' : page.status === 'done' ? 'Đã lưu & hoàn thành' : 'Chưa hoàn thành'}
                         </span>
+                        <div className="workbench-confirm-actions">
                         <button
                           className="primary-button"
                           disabled={
@@ -1716,6 +1725,13 @@ export default function BookWorkbench(props: Props) {
                           <Save size={15} />
                           Lưu & hoàn thành
                         </button>
+                        {!skipped && <label className="workbench-phrase-toggle">
+                          <input type="checkbox" checked={ocrGranularity === 'phrase'}
+                            disabled={props.busy || acting}
+                            onChange={(event) => props.onPatch({ ocr_granularity: event.target.checked ? 'phrase' : 'character' })} />
+                          Chia theo cụm
+                        </label>}
+                        </div>
                       </>
                     )}
                   </div>

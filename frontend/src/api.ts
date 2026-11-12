@@ -63,6 +63,7 @@ export const api = {
         | 'source_regions'
         | 'target_regions'
         | 'ocr_languages'
+        | 'ocr_granularity'
       >
     >,
   ) => request<Page>(`/pages/${page}`, json('PATCH', patch)),
@@ -91,7 +92,7 @@ export const api = {
     done: boolean,
     category: Category,
     reading_direction: 1 | 2 = page.reading_direction,
-    texts: Partial<Pick<Page, 'source_text' | 'target_text' | 'vi_boxes'>> = {},
+    texts: Partial<Pick<Page, 'source_text' | 'target_text' | 'vi_boxes' | 'ocr_granularity'>> = {},
   ) =>
     request<Page>(
       `/pages/${page.id}`,
