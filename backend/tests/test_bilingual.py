@@ -184,14 +184,14 @@ def test_empty_vi_result_is_not_marked_complete_and_han_checkpoint_survives(tmp_
     app.state.ocr_jobs.close()
 
 
-def test_previously_reviewed_han_only_page_can_add_vi_without_overwriting_edits(tmp_path):
+def test_previously_reviewed_han_page_uses_box_text_when_adding_vi(tmp_path):
     app,client,book,page,calls=setup(tmp_path)
     page=client.put(f"/api/pages/{page['id']}",json={'version':0,'category':'ch','source_text':'Nôm đã Gán nhãn','target_text':'','boxes':[{'id':'source','transcription':'天地','points':[[10,10],[30,10],[30,40],[10,40]]}],'done':True}).json()
     client.patch(f"/api/pages/{page['id']}",json={'category':'both'})
     job=client.post(f"/api/books/{book['id']}/ocr-job",json={'mode':'bilingual'}).json()
     app.state.ocr_jobs.futures[job['id']].result(timeout=10)
     updated=client.get(f"/api/books/{book['id']}/pages").json()[0]
-    assert updated['source_text']=='Nôm đã Gán nhãn' and updated['target_text']=='Thiên địa huyền hoàng.'
+    assert updated['source_text']=='\u5929\u5730' and updated['target_text']=='Thi\xean \u0111\u1ecba huy\u1ec1n ho\xe0ng.'
     assert updated['status']=='pending' and len(calls)==0 and updated['boxes']
     app.state.ocr_jobs.close()
 

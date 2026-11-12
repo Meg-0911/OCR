@@ -68,7 +68,7 @@ def test_ocr_upload_recognize_preview_save_and_horizontal_label_order(tmp_path):
     response = client.post(url + '/ocr', json={'version':page['version'], 'ocr_id':4, 'lang_type':1, 'reading_direction':2})
     assert response.status_code == 200, response.text
     result = response.json()
-    assert result['text_lines'] == ['天地', '玄黃'] and len(result['boxes']) == 2
+    assert result['text_lines'] == ['\u5929\u5730\u7384\u9ec3'] and len(result['boxes']) == 2
     assert len(calls) == 2 and TOKEN not in response.text
     saved = client.get(f"/api/books/{page['book_id']}/pages").json()[0]
     assert saved == page  # Recognition is a preview, never an automatic edit.

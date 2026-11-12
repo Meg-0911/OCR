@@ -40,6 +40,7 @@ def labelled_book(client):
     book, pages = upload_book(client, 'Sách kiểm thử.pdf')
     boxes = [{'id':str(i), 'transcription':f'字{i}', 'points':[[480-i*70,80],[520-i*70,80],[520-i*70,480],[480-i*70,480]]} for i in range(6)]
     page = client.put(f"/api/pages/{pages[0]['id']}", json=page_payload(pages[0], category='ch', boxes=boxes, reading_direction=1)).json()
+    page = client.patch(f"/api/pages/{page['id']}", json={'reading_direction_override':1}).json()
     return book, page
 
 

@@ -104,7 +104,10 @@ def test_partial_language_streams_and_editing_while_ocr_does_not_fail_or_overwri
         assert vi.entered.wait(10)
         current=client.get(f"/api/books/{book['id']}/pages").json()[0]
         assert current['source_text']=='天地\n玄黃' and current['target_text']==''
-        edited=client.patch(f"/api/pages/{pages[0]['id']}",json={'source_text':'Nôm đã sửa','target_text':'Quốc ngữ đang tự nhập'}).json()
+        edited=client.patch(f"/api/pages/{pages[0]['id']}",json={
+            'boxes':[dict(current['boxes'][0],transcription='N\xf4m \u0111\xe3 s\u1eeda')],
+            'target_text':'Qu\u1ed1c ng\u1eef \u0111ang t\u1ef1 nh\u1eadp',
+        }).json()
         assert edited['source_text']=='Nôm đã sửa'
     finally:vi.release.set()
     finish(app,job)
@@ -199,7 +202,7 @@ def test_intentionally_cleared_edit_stays_empty_when_other_language_finishes(tmp
     job=start(client,book,pages)
     try:
         assert vi.entered.wait(10)
-        assert client.patch(f"/api/pages/{pages[0]['id']}",json={'source_text':''}).status_code==200
+        assert client.patch(f"/api/pages/{pages[0]['id']}",json={'source_text':'','boxes':[]}).status_code==200
     finally:vi.release.set()
     finish(app,job)
     saved=client.get(f"/api/books/{book['id']}/pages").json()[0]
@@ -386,7 +389,7 @@ def test_confirmed_pages_stay_complete_and_are_excluded_from_new_ocr_jobs(tmp_pa
     # Even different OCR settings only queue the unfinished page.
     next_job=client.post(base+'/workflow',json={'reading_direction':1}).json();finish(app,next_job)
     assert [p['page_id'] for p in next_job['pages']]==[saved[1]['id']]
-    assert len(calls)==3
+    assert len(calls)==2
     still_complete=client.get(base+'/pages').json()[0]
     assert still_complete['status']=='done' and still_complete['version']==complete['version']
     result=client.get(f"/api/pages/{first['id']}/ocr").json()
@@ -402,7 +405,7 @@ def test_confirmed_pages_stay_complete_and_are_excluded_from_new_ocr_jobs(tmp_pa
         summary=reopened.get('/api/workspace').json()['books'][0]
         assert summary['done']==summary['pages']==2
         assert reopened.post(base+'/workflow',json={}).status_code==409
-        assert len(calls)==3
+        assert len(calls)==2
 
 
 def test_pause_between_languages_keeps_han_checkpoint_and_resumes_vi_only(tmp_path):
