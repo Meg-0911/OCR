@@ -1422,6 +1422,7 @@ export default function App() {
                       </button>
                     </div>
                   </div>
+                  <div key={`${bookId}:${alignmentSourcePage?.id || 'none'}`} className="alignment-active-page">
                   {!alignmentLoading && alignmentSourcePage?.linked_page_ids.length && activeBook && (
                     <LinkedAlignmentWorkspace
                       key={`${bookId}-${alignmentSourcePage.id}`}
@@ -1651,6 +1652,7 @@ export default function App() {
                       </button>
                     </div>
                   )}
+                  </div>
                   <div className="alignment-footer">
                     <span>
                       <span className="status-dot pending" />

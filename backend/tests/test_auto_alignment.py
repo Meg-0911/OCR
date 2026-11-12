@@ -167,9 +167,13 @@ def test_prepare_removes_redundant_phrase_export_boxes(tmp_path):
         }).status_code == 200
         assert client.post(f"/api/books/{book['id']}/alignments/prepare").status_code == 200
         saved = client.get(f"/api/books/{book['id']}/pages").json()[0]
+        shifted = [{**item, 'export_order': item['export_order'] + 10}
+                   for item in saved['export_boxes']]
         duplicates = []
         for index, source in enumerate((first, second), 1):
-            duplicates.append({**source, 'id': f'extra-{index}', 'alignment_id': None,
+            duplicates.append({**source, 'id': f'extra-{index}',
+                               'transcription': 'văn bản cũ' if index == 1 else source['transcription'],
+                               'alignment_id': None,
                                'box_axis': 'vertical', 'export_group': f'extra-{index}',
                                'export_order': index + 2, 'export_character_order': 0})
         duplicates.append({'id': 'joined', 'transcription': '天地玄黃',
@@ -178,12 +182,14 @@ def test_prepare_removes_redundant_phrase_export_boxes(tmp_path):
                            'export_order': 5, 'export_character_order': 0})
         with app.state.store.db() as db:
             db.execute('UPDATE pages SET export_boxes=? WHERE id=?',
-                       (json.dumps(saved['export_boxes'] + duplicates), page['id']))
+                       (json.dumps(shifted + duplicates), page['id']))
         repaired = client.post(f"/api/books/{book['id']}/alignments/prepare")
         assert repaired.status_code == 200, repaired.text
         assert repaired.json()['boxes_removed'] == 3
+        assert repaired.json()['boxes_renumbered'] == 2
         saved = client.get(f"/api/books/{book['id']}/pages").json()[0]
         assert len(saved['export_boxes']) == 2
+        assert [box['export_order'] for box in saved['export_boxes']] == [1, 2]
         assert all(box['alignment_id'] for box in saved['export_boxes'])
 
 

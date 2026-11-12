@@ -35,7 +35,7 @@ from . import bilingual
 from .han_layout import PIPELINE_VERSION
 from .han_layout import jpeg_bytes
 from .region_ocr import crop_selection
-from .auto_alignment import page_rows as automatic_page_rows, boxes_for_rows, is_redundant_phrase_export_box
+from .auto_alignment import page_rows as automatic_page_rows, boxes_for_rows
 
 Category = Literal['ch', 'vi', 'both', 'intro', 'ref', 'toc', 'blank', 'misc']
 
@@ -1059,6 +1059,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             created = 0
             boxes_created = 0
             boxes_removed = 0
+            boxes_renumbered = 0
             for page in source_pages:
                 prefix = f"{book['name']}.{page['number']:03d}."
                 page_pairs = [row for row in rows if row['sentence_id'].startswith(prefix)]
@@ -1098,25 +1099,35 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     created += len(page_pairs)
                 if not page_pairs or not page['boxes']:
                     continue
-                existing = [box for box in page['export_boxes'] if box.get('box_axis')]
+                existing = [dict(box) for box in page['export_boxes'] if box.get('box_axis')]
                 removed_here = 0
                 if page['ocr_granularity'] == 'phrase':
-                    kept = [box for box in existing
-                            if not is_redundant_phrase_export_box(page, box, page_pairs)]
+                    valid_ids = {row['id'] for row in page_pairs}
+                    kept = [box for box in existing if box.get('alignment_id') in valid_ids]
                     removed_here = len(existing) - len(kept)
                     boxes_removed += removed_here
                     existing = kept
                 assigned = {box.get('alignment_id') for box in existing}
                 generated = [box for box in boxes_for_rows(page, page_pairs)
                              if box['alignment_id'] not in assigned]
-                if not generated and not removed_here:
-                    continue
                 offset = max((box.get('export_order') or 0 for box in existing), default=0)
                 for index, box in enumerate(generated, 1):
                     box['export_order'] = offset + index
+                prepared_boxes = sorted(existing + generated,
+                                        key=lambda box: box.get('export_order') or float('inf'))
+                group_orders = {}
+                for box in prepared_boxes:
+                    group = box.get('export_group') or box['id']
+                    group_orders.setdefault(group, len(group_orders) + 1)
+                    order = group_orders[group]
+                    if box.get('export_order') != order:
+                        boxes_renumbered += 1
+                    box['export_order'] = order
+                if prepared_boxes == page['export_boxes']:
+                    continue
                 with store.db() as db:
                     db.execute('UPDATE pages SET export_boxes=?,version=version+1 WHERE id=?',
-                               (json.dumps(existing + generated, ensure_ascii=False), page['id']))
+                               (json.dumps(prepared_boxes, ensure_ascii=False), page['id']))
                 boxes_created += len(generated)
             if created:
                 rows.sort(key=lambda row: (int(row['sentence_id'].rsplit('.', 2)[1]),
@@ -1124,11 +1135,11 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 with store.db() as db:
                     db.execute('INSERT INTO alignments VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET rows=excluded.rows',
                                (book_id, json.dumps(rows, ensure_ascii=False)))
-            if created or boxes_created or boxes_removed:
+            if created or boxes_created or boxes_removed or boxes_renumbered:
                 store.sync_labels(book_id)
                 store.sync_results(book_id, 'prepare_alignments')
         return {'rows': rows, 'created': created, 'boxes_created': boxes_created,
-                'boxes_removed': boxes_removed}
+                'boxes_removed': boxes_removed, 'boxes_renumbered': boxes_renumbered}
 
     @app.put('/api/books/{book_id}/alignments')
     def save_alignments(book_id: str, data: AlignmentsInput):

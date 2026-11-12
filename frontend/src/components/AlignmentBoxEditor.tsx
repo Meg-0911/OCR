@@ -25,6 +25,16 @@ function withOrders(boxes: Box[], orders: Record<string, number>): Box[] {
   });
 }
 
+function pageBoxesFromOne(boxes: Box[]): Box[] {
+  const ordered = withOrders(boxes, {}).sort((a, b) => (a.export_order || 0) - (b.export_order || 0));
+  const groups = new Map<string, number>();
+  return ordered.map((box) => {
+    const group = box.export_group || box.id;
+    if (!groups.has(group)) groups.set(group, groups.size + 1);
+    return { ...box, export_order: groups.get(group)! };
+  });
+}
+
 function isLegacyPlaceholder(box: Box) {
   return !box.box_axis;
 }
@@ -59,9 +69,12 @@ export default function AlignmentBoxEditor({
   const container = useRef<HTMLDivElement>(null);
   const drawnSelection = useRef<string | null>(null);
   const handledTargetRequest = useRef<string | null>(null);
+  const validAlignmentIds = useMemo(() => new Set(alignments.map((row) => row.id)), [alignments]);
   const boxes = useMemo(
-    () => withOrders(page.export_boxes, {}).sort((a, b) => (a.export_order || 0) - (b.export_order || 0)),
-    [page.export_boxes],
+    () => pageBoxesFromOne(page.ocr_granularity === 'phrase' && alignments.length
+      ? page.export_boxes.filter((box) => box.alignment_id && validAlignmentIds.has(box.alignment_id))
+      : page.export_boxes),
+    [page.export_boxes, page.ocr_granularity, alignments.length, validAlignmentIds],
   );
   const selectedBox = boxes.find((box) => box.id === selected);
   const selectedGroupCount = new Set(boxes
@@ -279,17 +292,25 @@ export default function AlignmentBoxEditor({
 
   useEffect(() => {
     if (targetRequestId) return;
-    const validIds = new Set(alignments.map((row) => row.id));
-    const orphaned = page.export_boxes.some((box) => box.alignment_id && !validIds.has(box.alignment_id));
+    if (page.ocr_granularity === 'phrase' && alignments.length) {
+      const assigned = page.export_boxes.filter((box) =>
+        box.box_axis && box.alignment_id && validAlignmentIds.has(box.alignment_id));
+      if (assigned.length !== page.export_boxes.length) {
+        onBoxes(pageBoxesFromOne(assigned));
+        return;
+      }
+    }
+    const orphaned = page.export_boxes.some((box) => box.alignment_id && !validAlignmentIds.has(box.alignment_id));
     if (orphaned) {
       onBoxes(page.export_boxes.map((box) =>
-        box.alignment_id && !validIds.has(box.alignment_id)
+        box.alignment_id && !validAlignmentIds.has(box.alignment_id)
           ? { ...box, alignment_id: undefined }
           : box));
       return;
     }
   }, [
     alignments,
+    validAlignmentIds,
     onBoxes,
     page.export_boxes,
     targetRequestId,

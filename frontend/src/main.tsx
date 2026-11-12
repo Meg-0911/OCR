@@ -11,8 +11,10 @@ import './styles.css';
 
 const mounted = globalThis as typeof globalThis & { __nomReactRoot?: ReactDOM.Root };
 mounted.__nomReactRoot?.unmount();
-const host = document.getElementById('root')!;
-host.replaceChildren();
+const previousHost = document.getElementById('root')!;
+const host = document.createElement('div');
+host.id = 'root';
+previousHost.replaceWith(host);
 const root = ReactDOM.createRoot(host);
 mounted.__nomReactRoot = root;
 root.render(
