@@ -51,7 +51,7 @@ def test_saved_ocr_is_restored_without_resending_after_restart(tmp_path):
         assert len(calls)==2
 
 
-def test_failed_book_job_resumes_only_unfinished_pages_after_restart(tmp_path):
+def test_book_job_continues_after_page_failure_and_retries_only_failed_page(tmp_path):
     write_book(tmp_path)
     count=0
     def handler(request):
@@ -66,7 +66,8 @@ def test_failed_book_job_resumes_only_unfinished_pages_after_restart(tmp_path):
         job=client.post(f"/api/books/{book['id']}/ocr-job",json={'include_unclassified':True}).json()
         app.state.ocr_jobs.futures[job['id']].result(timeout=10)
         failed=client.get(f"/api/books/{book['id']}/ocr-job").json()
-        assert failed['status']=='failed' and failed['completed']==1
+        assert failed['status']=='failed' and failed['completed']==2 and failed['processed']==3
+        assert [item['status'] for item in failed['pages']]==['succeeded','failed','succeeded']
     resumed_calls=[]
     def resumed_handler(request):
         if request.url.path.endswith('image-upload'):
@@ -81,10 +82,43 @@ def test_failed_book_job_resumes_only_unfinished_pages_after_restart(tmp_path):
         app.state.ocr_jobs.futures[job['id']].result(timeout=10)
         completed=client.get(f"/api/books/{book['id']}/ocr-job").json()
         assert completed['status']=='completed' and completed['completed']==3
-        assert len(resumed_calls)==2
+        assert len(resumed_calls)==1
         pages=client.get(f"/api/books/{book['id']}/pages").json()
         assert all(p['boxes'] and p['status']=='pending' for p in pages)
         assert all(client.get(f"/api/pages/{p['id']}/ocr").json()['text_lines']==['天地'] for p in pages)
+
+
+def test_book_job_continues_when_primary_and_fallback_both_fail(tmp_path):
+    write_book(tmp_path)
+    calls=[]
+
+    class EmptyFallback:
+        ready=True
+
+        def status(self):
+            return {'ready':True, 'provider':'ppocrv5_cpu', 'device':'cpu', 'setup':''}
+
+        def recognize(self, image, **kwargs):
+            return {'result_ocr_text':[], 'result_bbox':[], 'provider':'ppocrv5_cpu'}
+
+    def handler(request):
+        if request.url.path.endswith('image-upload'):
+            return response({'file_name':'image.jpg'})
+        calls.append(1)
+        return httpx.Response(502) if len(calls)==2 else ocr_response()
+
+    app=create_app(tmp_path,ocr_config=KHNConfig(token='secret'),
+                   ocr_transport=httpx.MockTransport(handler),han_fallback_provider=EmptyFallback())
+    with TestClient(app) as client:
+        book=client.get('/api/workspace').json()['books'][0]
+        job=client.post(f"/api/books/{book['id']}/ocr-job",json={'include_unclassified':True}).json()
+        app.state.ocr_jobs.futures[job['id']].result(timeout=10)
+        finished=client.get(f"/api/books/{book['id']}/ocr-job").json()
+        assert len(calls)==3
+        assert finished['processed']==3 and finished['completed']==2
+        assert [item['status'] for item in finished['pages']]==['succeeded','failed','succeeded']
+        assert finished['pages'][1]['error']
+        assert finished['status']=='failed'
 
 
 def test_pause_waits_for_inflight_page_and_new_jobs_are_serialized(tmp_path):

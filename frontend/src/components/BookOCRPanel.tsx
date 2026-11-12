@@ -95,7 +95,7 @@ export default function BookOCRPanel(props: {
               : job.status === 'pausing'
                 ? 'Đang dừng OCR'
                 : job.status === 'failed'
-                  ? 'OCR đã chạy tới điểm cần thử lại'
+                  ? 'OCR đã chạy hết phạm vi, còn trang cần thử lại'
                   : 'Đang OCR'}{' '}
           {progress}/{job.total} trang đã xử lý
         </span>

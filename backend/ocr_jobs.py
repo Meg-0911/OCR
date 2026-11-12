@@ -34,9 +34,9 @@ class OCRJobs:
         result['completed'] = sum(p['status'] in ('succeeded','skipped') for p in pages)
         result['processed'] = sum(p['status'] in ('succeeded','skipped','partial','failed') for p in pages)
         current = next((p for p in pages if p['status'] == 'running'), None)
-        if current is None:
+        if current is None and result['status'] == 'failed':
             current = next((p for p in pages if p['status'] in ('failed','partial')), None)
-        if current is None and result['status'] in ('paused','pausing'):
+        if current is None and result['status'] in ('running','paused','pausing'):
             current = next((p for p in pages if p['status'] == 'pending'), None)
         result['current_page'] = ({'page_id': current['page_id'], 'number': current['number'], 'status': current['status']}
                                   if current else None)
@@ -135,13 +135,19 @@ class OCRJobs:
                         self._page_status(job_id, page['id'], 'partial', str(message))
                         continue
                     self._page_status(job_id, page['id'], 'failed', str(message))
-                    self._status(job_id, 'failed', str(message))
-                    return
+                    continue
                 self._page_status(job_id, page['id'], 'succeeded')
-            partial = [page for page in self.get(job_id)['pages'] if page['status'] == 'partial']
-            if partial:
+            pages = self.get(job_id)['pages']
+            partial = [page for page in pages if page['status'] == 'partial']
+            failed = [page for page in pages if page['status'] == 'failed']
+            if partial or failed:
+                details = []
+                if failed:
+                    details.append(f"{len(failed)} trang chưa có kết quả OCR")
+                if partial:
+                    details.append(f"{len(partial)} trang còn lỗi Quốc ngữ (Hán Nôm đã lưu)")
                 self._status(job_id, 'failed',
-                    f"Đã chạy hết phạm vi; {len(partial)} trang còn lỗi Quốc ngữ. Kết quả Hán Nôm đã lưu. Bấm Tiếp tục OCR để thử lại các phần còn thiếu.")
+                    f"Đã chạy hết phạm vi; {', '.join(details)}. Bấm Tiếp tục OCR để thử lại các trang còn lỗi.")
             else:
                 self._status(job_id, 'completed')
         except Exception:
