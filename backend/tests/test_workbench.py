@@ -408,6 +408,83 @@ def test_correcting_placeholder_updates_saved_pairs_after_split_and_merge(worksp
     assert [row['source'] for row in client.get(f"/api/books/{book['id']}/alignments").json()]==['地天玄']
 
 
+def test_correcting_vietnamese_boxes_updates_ocr_text_and_existing_pairs(workspace):
+    client,_,_=workspace
+    book,pages=upload_book(client,'Vietnamese corrections.pdf')
+    first=client.patch(f"/api/pages/{pages[0]['id']}",json={
+        'category':'both','source_text':'天地\n玄黃',
+        'vi_boxes':[{'id':'vi-one','transcription':'Thiên địa','points':[[10,100],[100,100],[100,120],[10,120]]}],
+    }).json()
+    second=client.patch(f"/api/pages/{pages[1]['id']}",json={
+        'category':'vi',
+        'vi_boxes':[{'id':'vi-two','transcription':'Huyền hoàng','points':[[10,100],[100,100],[100,120],[10,120]]}],
+    }).json()
+    rows=[
+        {'id':'same-page','sentence_id':f"{book['name']}.001.1",'source':'天地',
+         'target':'Thiên địa','reviewed':True},
+        {'id':'linked-page','sentence_id':f"{book['name']}.001.2",'source':'玄黃',
+         'target':'Huyền hoàng','reviewed':True,'source_page_id':first['id'],
+         'source_line_index':1,'target_page_id':second['id'],'target_line_index':0},
+        {'id':'manual','sentence_id':f"{book['name']}.001.3",'source':'Giải thích',
+         'target':'Bản dịch viết tay','reviewed':True},
+    ]
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':rows}).status_code==200
+    corrected=client.patch(f"/api/pages/{first['id']}",json={
+        'vi_boxes':[{**first['vi_boxes'][0],'transcription':'Thiên địa đã sửa'}],
+    }).json()
+    assert corrected['target_text']=='Thiên địa đã sửa'
+    corrected=client.put(f"/api/pages/{second['id']}",json=page_payload(second,
+        category='vi',vi_boxes=[{**second['vi_boxes'][0],'transcription':'Huyền hoàng đã sửa'}],
+    )).json()
+    assert corrected['target_text']=='Huyền hoàng đã sửa'
+    saved=client.get(f"/api/books/{book['id']}/alignments").json()
+    assert [row['target'] for row in saved]==['Thiên địa đã sửa','Huyền hoàng đã sửa','Bản dịch viết tay']
+    assert [row['reviewed'] for row in saved]==[False,False,True]
+    assert [row['id'] for row in saved]==['same-page','linked-page','manual']
+
+
+def test_loading_pairs_repairs_older_ocr_text_after_saved_correction(workspace):
+    client,store,_=workspace
+    book,pages=upload_book(client,'Older pairs.pdf')
+    page=client.patch(f"/api/pages/{pages[0]['id']}",json={
+        'category':'both','source_text':'天地',
+        'vi_boxes':[{'id':'vi','transcription':'Thiên địa đã sửa',
+                     'points':[[10,100],[100,100],[100,120],[10,120]]}],
+    }).json()
+    with store.db() as db:
+        db.execute('INSERT INTO ocr_results(id,page_id,version,settings,result,created_at) VALUES (?,?,?,?,?,?)',
+                   ('old-ocr',page['id'],0,'{}',json.dumps({'vi_text_lines':['Thiên địa']}),'2026-01-01'))
+    row={'id':'old-pair','sentence_id':f"{book['name']}.001.1",'source':'天地',
+         'target':'Thiên địa','reviewed':True}
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[row]}).status_code==200
+    saved=client.get(f"/api/books/{book['id']}/alignments").json()
+    assert saved[0]['target']=='Thiên địa đã sửa'
+    assert saved[0]['reviewed'] is False
+
+
+def test_reopening_store_repairs_stale_vietnamese_page_text(workspace):
+    client,store,root=workspace
+    book,pages=upload_book(client,'Stale page text.pdf')
+    page=client.patch(f"/api/pages/{pages[0]['id']}",json={
+        'category':'both','source_text':'天地',
+        'vi_boxes':[{'id':'corrected','transcription':'Thiên địa đã sửa',
+                     'points':[[10,100],[100,100],[100,120],[10,120]]}],
+    }).json()
+    row={'id':'stale-pair','sentence_id':f"{book['name']}.001.1",'source':'天地',
+         'target':'Thiên địa','reviewed':True}
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[row]}).status_code==200
+    with store.db() as db:
+        db.execute('UPDATE pages SET target_text=? WHERE id=?',('Thiên địa',page['id']))
+    reopened=Store(root)
+    with reopened.db() as db:
+        saved=db.execute('SELECT target_text,version FROM pages WHERE id=?',(page['id'],)).fetchone()
+        pair=json.loads(db.execute('SELECT rows FROM alignments WHERE book_id=?',(book['id'],)).fetchone()['rows'])[0]
+    assert saved['target_text']=='Thiên địa đã sửa'
+    assert saved['version']==page['version']+1
+    assert pair['target']=='Thiên địa đã sửa'
+    assert pair['reviewed'] is False
+
+
 def test_label_archive_and_alignment_validation(annotated):
     client,_,_,book,_ = annotated
     response=client.get(f"/api/books/{book['id']}/export?format=labels")

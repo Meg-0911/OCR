@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from backend.app import create_app
 from backend.ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
+from backend.han_ocr import HanFallbackConfig, PPOCRv5
 
 TOKEN = 'test-secret-never-return'
 POINTS = [[10, 10], [100, 10], [100, 50], [10, 50]]
@@ -16,8 +17,8 @@ def success(data):
     return httpx.Response(200, json={'is_success':True, 'code':'000000', 'message':None, 'data':data})
 
 
-def client_with_page(tmp_path, handler, token=TOKEN):
-    client = TestClient(create_app(tmp_path, ocr_config=KHNConfig(token=token), ocr_transport=httpx.MockTransport(handler)))
+def client_with_page(tmp_path, handler, token=TOKEN, fallback=None):
+    client = TestClient(create_app(tmp_path, ocr_config=KHNConfig(token=token), ocr_transport=httpx.MockTransport(handler), han_fallback_provider=fallback))
     with pymupdf.open() as document:
         document.new_page(width=200, height=200)
         book = client.post('/api/books/upload', files={'file':('OCR.pdf', document.tobytes(), 'application/pdf')}).json()
@@ -227,3 +228,98 @@ def test_invalid_ocr_response_is_archived_without_changing_page(tmp_path):
     assert response.status_code == 502
     assert len(list((tmp_path / 'backend/data/.workspace/ocr' / page['id']).glob('*.json'))) == 1
     assert client.get(f"/api/books/{page['book_id']}/pages").json()[0] == page
+
+
+class FakeHanFallback:
+    ready = True
+
+    def __init__(self):
+        self.calls = []
+
+    def status(self):
+        return {'provider':'ppocrv5_cpu', 'ready':True, 'device':'cpu', 'setup':'test'}
+
+    def recognize(self, image, **kwargs):
+        self.calls.append((image, kwargs))
+        return {'result_ocr_text':['天地'], 'result_bbox':[[[1,1],[40,1],[40,20],[1,20]]],
+                'provider':'ppocrv5_cpu'}
+
+
+@pytest.mark.parametrize('primary_response', [
+    httpx.Response(502),
+    success({'result_ocr_text':[], 'result_bbox':[]}),
+    success({'result_ocr_text':{'bad':'shape'}, 'result_bbox':[]}),
+])
+def test_han_fallback_keeps_page_boxes_and_checkpoint(tmp_path, primary_response):
+    fallback = FakeHanFallback()
+    def handler(request):
+        return success({'file_name':'image.jpg'}) if request.url.path.endswith('image-upload') else primary_response
+    client, page = client_with_page(tmp_path, handler, fallback=fallback)
+    response = client.post(f"/api/pages/{page['id']}/ocr", json={'version':page['version']})
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result['text_lines'] == ['天地'] and len(result['boxes']) == 1
+    assert any('PP-OCRv5 CPU' in warning for warning in result['warnings'])
+    assert len(fallback.calls) == 1
+    archive = next((tmp_path / 'backend/data/.workspace/ocr' / page['id']).glob('*.json'))
+    assert json.loads(archive.read_text(encoding='utf-8'))['response']['provider'] == 'ppocrv5_cpu'
+
+
+def test_han_fallback_without_token_and_region_ocr(tmp_path):
+    fallback = FakeHanFallback()
+    def handler(_request):
+        pytest.fail('Kim Han Nom must not be called without a token')
+    client, page = client_with_page(tmp_path, handler, token='', fallback=fallback)
+    assert client.get('/api/workspace').json()['ocr_ready'] is True
+    assert client.post(f"/api/pages/{page['id']}/ocr", json={'version':page['version']}).status_code == 200
+    region = client.post(f"/api/pages/{page['id']}/ocr-region", json={
+        'language':'han', 'reading_direction':2,
+        'box':{'id':'selected', 'transcription':'', 'points':[[10,10],[100,10],[100,50],[10,50]]},
+    })
+    assert region.status_code == 200, region.text
+    assert region.json()['text'] == '天地'
+    assert len(fallback.calls) == 2
+
+
+def test_han_fallback_without_token_runs_book_job(tmp_path):
+    fallback = FakeHanFallback()
+    client, page = client_with_page(tmp_path, lambda _request: pytest.fail('Kim Han Nom must not be called'),
+                                    token='', fallback=fallback)
+    with client:
+        response = client.post(f"/api/books/{page['book_id']}/ocr-job", json={'include_unclassified':True})
+        assert response.status_code == 200, response.text
+        job = response.json()
+        client.app.state.ocr_jobs.futures[job['id']].result(timeout=15)
+        assert client.get(f"/api/books/{page['book_id']}/ocr-job").json()['status'] == 'completed'
+        assert len(fallback.calls) == 1
+
+
+def test_primary_han_result_does_not_call_fallback(tmp_path):
+    fallback = FakeHanFallback()
+    def handler(request):
+        return success({'file_name':'image.jpg'}) if request.url.path.endswith('image-upload') else success({
+            'result_ocr_text':['漢字'], 'result_bbox':[POINTS]})
+    client, page = client_with_page(tmp_path, handler, fallback=fallback)
+    response = client.post(f"/api/pages/{page['id']}/ocr", json={'version':page['version']})
+    assert response.status_code == 200 and response.json()['text_lines'] == ['漢字']
+    assert fallback.calls == []
+
+
+def test_ppocrv5_cpu_adapter_maps_polygons_to_existing_contract(monkeypatch):
+    from PIL import Image
+    from io import BytesIO
+    monkeypatch.setattr(PPOCRv5, 'ready', property(lambda self: True))
+    provider = PPOCRv5(HanFallbackConfig())
+    class Engine:
+        def predict(self, image):
+            assert image.shape == (60, 100, 3)
+            return [type('Prediction', (), {'json': {'res': {
+                'rec_texts':['天地', ''],
+                'rec_polys':[[[1,1],[40,1],[40,20],[1,20]], [[45,1],[70,1],[70,20],[45,20]]],
+            }}})()]
+    provider._engine = Engine()
+    buffer = BytesIO()
+    Image.new('RGB', (100, 60), 'white').save(buffer, format='JPEG')
+    raw = provider.recognize(buffer.getvalue())
+    assert raw['provider'] == 'ppocrv5_cpu'
+    assert normalize_result(raw, 100, 60)['text_lines'] == ['天地']

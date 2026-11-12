@@ -6,12 +6,12 @@ Nôm Workspace là ứng dụng web chạy trên máy cá nhân để xây dựn
 
 - **Backend:** Python 3.13, FastAPI và SQLite. PyMuPDF đọc/render PDF; dữ liệu sách, trang, box, căn chỉnh và checkpoint được lưu cục bộ.
 - **Frontend:** React 19, TypeScript và Vite. Giao diện được build thành `frontend/dist/` và phục vụ cùng backend tại `http://127.0.0.1:8000`.
-- **OCR Hán Nôm:** gọi dịch vụ Kim Hán Nôm qua Internet, cần token cá nhân trong `backend/.env`. Ảnh trang được gửi tới dịch vụ này khi chạy OCR Hán Nôm.
+- **OCR Hán Nôm:** ưu tiên dịch vụ Kim Hán Nôm qua Internet; khi dịch vụ lỗi hoặc không trả chữ, dùng PP-OCRv5 chạy CPU cục bộ nếu đã cài. Bộ dò vùng mobile kết hợp model nhận chữ server để ưu tiên độ đúng. Ảnh chỉ gửi tới Kim Hán Nôm khi có token và dịch vụ được gọi.
 - **OCR Quốc ngữ:** VietOCR dùng ONNX Runtime CPU cục bộ; không cần API key. Model được tải riêng bằng script setup và không nằm trong Git.
 - **Từ điển:** Unicode Unihan được tải riêng và lưu thành SQLite cục bộ.
 - **Kết quả:** CSV/XLSX cho cặp câu và ZIP nhãn PPOCRLabel (`Label.txt`, `fileState.txt`, ảnh trang). Box Hán Nôm lưu để sửa theo từng chữ; khi xuất được nhóm thành box hàng/cột theo hướng đọc.
 
-PDF đầu vào được quét từ `backend/data/raw_data/`. SQLite, ảnh render, checkpoint OCR, model, bản nháp và kết quả xuất nằm trong `backend/data/` và không được commit. Không xóa thư mục dữ liệu khi muốn giữ tiến độ.
+PDF đầu vào được quét từ `backend/data/raw_data/`. SQLite, ảnh render, checkpoint OCR, model VietOCR, bản nháp và kết quả xuất nằm trong `backend/data/` và không được commit. PP-OCRv5 lưu model trong cache của PaddleX trên máy. Không xóa thư mục dữ liệu khi muốn giữ tiến độ.
 
 ## Môi trường đã chạy và đã kiểm tra
 
@@ -30,7 +30,7 @@ Thông tin dưới đây được đo trên máy phát triển của dự án, k
 
 Các dependency Python trực tiếp được pin bằng `==` trong [backend/requirements.txt](./backend/requirements.txt). Frontend pin dependency trực tiếp trong `package.json`, khóa cả cây dependency bắc cầu bằng [frontend/package-lock.json](./frontend/package-lock.json), và cài bằng `npm ci`. Phiên bản Python/Node đã kiểm tra lần lượt ghi ở [.python-version](./.python-version) và [.nvmrc](./.nvmrc).
 
-Các phiên bản Python trực tiếp: FastAPI 0.135.3, Uvicorn 0.44.0, Pydantic 2.12.5, python-multipart 0.0.26, PyMuPDF 2.1, openpyxl 3.1.5, pytest 9.0.2, httpx 0.28.1, python-dotenv 1.2.2, Pillow 12.2.0, NumPy 2.4.4 và ONNX Runtime 1.31.1.
+Các phiên bản Python trực tiếp: FastAPI 0.135.3, Uvicorn 0.44.0, Pydantic 2.12.5, python-multipart 0.0.26, PyMuPDF 2.1, openpyxl 3.1.5, pytest 9.0.2, httpx 0.28.1, python-dotenv 1.2.2, Pillow 12.2.0, NumPy 2.3.5 và ONNX Runtime 1.31.1. PP-OCRv5 CPU là dependency tùy chọn được pin riêng trong [backend/requirements-han-fallback.txt](./backend/requirements-han-fallback.txt).
 
 Các dependency trực tiếp frontend: React/React DOM 19.2.0, Vite 7.2.2, TypeScript 5.9.3, `@vitejs/plugin-react` 5.1.1, `lucide-react` 0.468.0, `@fontsource/be-vietnam-pro` 5.3.0 và Prettier 3.6.2. Đừng thay `npm ci` bằng `npm install` khi cài lại dự án, để giữ đúng lockfile.
 

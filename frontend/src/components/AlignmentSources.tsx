@@ -30,27 +30,25 @@ export default function AlignmentSources({
   targetRequestId?: string;
   onTargetHandled?: () => void;
 }) {
-  const targets = pages.filter((p) => p.category === 'vi');
+  const targets = pages.filter((p) => p.id !== page?.id && p.ocr_languages.includes('vi'));
   const [targetId, setTargetId] = useState(
+    targets.find((p) => page?.linked_page_ids.includes(p.id))?.id ||
     targets.find((p) => p.number === page?.number)?.id || targets[0]?.id || '',
   );
   const [sourceSelection, setSourceSelection] = useState('');
   const [targetSelection, setTargetSelection] = useState('');
   const sourceText =
     page?.source_text || page?.boxes.map((box) => box.transcription).join('\n') || '';
-  const targetText =
-    page?.target_text ||
-    reference?.text ||
-    targets
-      .find((p) => p.id === targetId)
-      ?.boxes.map((box) => box.transcription)
-      .join('\n') ||
-    '';
+  const selectedTarget = targets.find((p) => p.id === targetId);
+  const targetText = page?.linked_page_ids.length
+    ? selectedTarget?.target_text || selectedTarget?.vi_boxes.map((box) => box.transcription).join('\n') || page.target_text || ''
+    : page?.target_text || reference?.text || selectedTarget?.target_text ||
+      selectedTarget?.vi_boxes.map((box) => box.transcription).join('\n') || '';
   const sourceColors = page
     ? reviewColorsForText(sourceText, page.boxes, 'source')
     : [];
   const targetColors = page
-    ? reviewColorsForText(targetText, page.boxes, 'target')
+    ? reviewColorsForText(targetText, page.linked_page_ids.length ? selectedTarget?.vi_boxes || [] : page.boxes, 'target')
     : [];
   function selectedText(event: MouseEvent<HTMLDivElement>, setter: (value: string) => void) {
     const selection = window.getSelection();
@@ -106,12 +104,14 @@ export default function AlignmentSources({
         </label>
         <label>
           Quốc ngữ ·{' '}
-          {page?.target_text
+          {page?.linked_page_ids.length
+            ? `trang ${selectedTarget?.number || 'liên kết'}`
+            : page?.target_text
             ? `OCR cùng trang ${page.number}`
             : reference
               ? reference.filename
               : 'văn bản trang đã lưu'}
-          {!reference && !page?.target_text && (
+          {(!!page?.linked_page_ids.length || (!reference && !page?.target_text)) && (
             <select
               aria-label="Trang Quốc ngữ đối chiếu"
               value={targetId}
@@ -121,7 +121,7 @@ export default function AlignmentSources({
               }}
             >
               <option value="">Chọn trang Quốc ngữ</option>
-              {targets.map((p) => (
+              {targets.filter((p) => !page?.linked_page_ids.length || page.linked_page_ids.includes(p.id)).map((p) => (
                 <option key={p.id} value={p.id}>
                   Trang {p.number}
                 </option>

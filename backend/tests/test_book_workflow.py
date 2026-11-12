@@ -344,6 +344,34 @@ def test_horizontal_default_and_vertical_page_override(tmp_path):
     app.state.ocr_jobs.close()
 
 
+def test_vi_only_is_horizontal_and_han_page_can_override_book_direction(tmp_path):
+    app,client,book,pages,_,_,_=workspace(tmp_path,count=2)
+    base=f"/api/books/{book['id']}"
+    assert client.put(base+'/layout',json={
+        'source_regions':[],'target_regions':[],'reading_direction':1,
+    }).status_code==200
+    first=client.patch(f"/api/pages/{pages[0]['id']}",json={'reading_direction_override':1})
+    assert first.status_code==200
+    planned=client.put(base+'/plan',json={'pages':[
+        {'page_id':pages[0]['id'],'category':'vi'},
+        {'page_id':pages[1]['id'],'category':'ch'},
+    ]})
+    assert planned.status_code==200,planned.text
+    assert planned.json()[0]['reading_direction']==2
+    assert planned.json()[0]['reading_direction_override'] is None
+    forced=client.patch(f"/api/pages/{pages[0]['id']}",json={'reading_direction_override':1})
+    assert forced.status_code==200
+    assert forced.json()['reading_direction']==2
+    assert forced.json()['reading_direction_override'] is None
+    overridden=client.patch(f"/api/pages/{pages[1]['id']}",json={'reading_direction_override':2})
+    assert overridden.status_code==200
+    assert overridden.json()['reading_direction']==2
+    job=client.post(base+'/workflow',json={}).json();finish(app,job)
+    results=[client.get(f"/api/pages/{page['id']}/ocr").json() for page in pages]
+    assert [result['settings']['reading_direction'] for result in results]==[2,2]
+    app.state.ocr_jobs.close()
+
+
 def test_confirmed_pages_stay_complete_and_are_excluded_from_new_ocr_jobs(tmp_path):
     app,client,book,pages,calls,vi,transport=workspace(tmp_path,count=2)
     base=f"/api/books/{book['id']}"

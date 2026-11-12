@@ -45,6 +45,8 @@ function json(method: string, body: unknown): RequestInit {
 export const api = {
   workspace: () => request<Workspace>('/workspace'),
   pages: (book: string) => request<Page[]>(`/books/${book}/pages`),
+  savePageLinks: (page: string, linked_page_ids: string[]) =>
+    request<Page[]>(`/pages/${page}/links`, json('PUT', { linked_page_ids })),
   patchPage: (
     page: string,
     patch: Partial<

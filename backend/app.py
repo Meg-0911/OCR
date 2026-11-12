@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .store import CATEGORIES, Store, box_text_lines, label_groups
 from .ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
+from .han_ocr import HanFallbackConfig, PPOCRv5, HanOCRWithFallback
 from .sources import source_files
 from .dictionary import Dictionary
 from .alignment_review import export_text, paint, rich_text
@@ -203,6 +204,10 @@ class BookPlan(BaseModel):
     pages: list[PagePlan] = Field(max_length=20000)
 
 
+class PageLinksInput(BaseModel):
+    linked_page_ids: list[str] = Field(default_factory=list,max_length=20000)
+
+
 class SessionInput(BaseModel):
     page_id: str | None = None
     alignment_page: str | None = None
@@ -296,14 +301,26 @@ class AlignmentInput(BaseModel):
     target: str = Field(max_length=100000)
     reviewed: bool = False
     page_linked: bool = False
+    source_page_id: str | None = None
+    source_line_index: int | None = Field(default=None,ge=0)
+    target_page_id: str | None = None
+    target_line_index: int | None = Field(default=None,ge=0)
     marks: list[ReviewMark] = Field(default_factory=list, max_length=1000)
+
+    @model_validator(mode='after')
+    def valid_page_provenance(self):
+        if self.source_line_index is not None and not self.source_page_id:
+            raise ValueError('Dòng Hán Nôm cần ID trang nguồn.')
+        if self.target_line_index is not None and not self.target_page_id:
+            raise ValueError('Dòng Quốc ngữ cần ID trang nguồn.')
+        return self
 
 
 class AlignmentsInput(BaseModel):
     rows: list[AlignmentInput] = Field(max_length=50000)
 
 
-def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None, ocr_transport=None, vi_provider=None):
+def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None, ocr_transport=None, vi_provider=None, han_fallback_provider=None):
     root = (root or Path(os.environ.get('CORPUS_ROOT', Path(__file__).resolve().parents[1]))).resolve()
     store = Store(root)
     @asynccontextmanager
@@ -314,7 +331,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     app = FastAPI(title='Nôm · Local Corpus Workbench', version='0.1.0', lifespan=lifespan)
     app.state.store = store
     config = ocr_config if ocr_config is not None else KHNConfig.from_env(root / 'backend' / '.env')
-    ocr = KimHanNomOCR(config, transport=ocr_transport)
+    fallback = han_fallback_provider if han_fallback_provider is not None else PPOCRv5(HanFallbackConfig.from_env(root / 'backend' / '.env'))
+    ocr = HanOCRWithFallback(KimHanNomOCR(config, transport=ocr_transport), fallback)
     vietnamese=vi_provider or create_vietnamese_ocr(root)
     raw_folder = store.data / 'raw_data'
     source_errors = []
@@ -427,14 +445,15 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
 
     @app.get('/api/health')
     def health():
-        return {'status':'ok', 'ocr':'configured' if config.ready else 'not_configured'}
+        return {'status':'ok', 'ocr':'configured' if ocr.ready else 'not_configured'}
 
     @app.get('/api/workspace')
     def workspace():
         return {
             'books': [book_summary(book) for book in store.books()],
             'pair_stats': store.pair_stats(),
-            'ocr_ready': config.ready,
+            'ocr_ready': ocr.ready,
+            'han_ocr': {'primary_ready': config.ready, 'fallback': fallback.status()},
             'storage': 'backend/data/.workspace/workspace.sqlite3',
             'source_folder': 'backend/data/raw_data/',
             'source_errors': source_errors,
@@ -519,11 +538,11 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 changed=[key for key in ('source_regions','target_regions') if json.dumps(previous[key])!=json.dumps(profile[key])]
                 direction_changed=profile.get('reading_direction',2)!=previous.get('reading_direction',2)
                 if changed or direction_changed:
-                    inherited=' OR '.join(
-                        [*(["reading_direction_override IS NULL"] if direction_changed else []),
-                         *(key+' IS NULL' for key in changed)]
-                    )
-                    db.execute("UPDATE pages SET reading_direction=CASE WHEN reading_direction_override IS NULL THEN ? ELSE reading_direction END,status='pending',version=version+1 WHERE book_id=? AND ocr_skip=0 AND category!='blank' AND ("+inherited+')',
+                    inherited=' OR '.join([
+                        *(["reading_direction_override IS NULL AND category!='vi'"] if direction_changed else []),
+                        *(key+' IS NULL' for key in changed),
+                    ])
+                    db.execute("UPDATE pages SET reading_direction=CASE WHEN category='vi' THEN 2 WHEN reading_direction_override IS NULL THEN ? ELSE reading_direction END,status='pending',version=version+1 WHERE book_id=? AND ocr_skip=0 AND category!='blank' AND ("+inherited+')',
                                (profile.get('reading_direction',2),book_id))
             store.sync_labels(book_id)
         return profile
@@ -606,8 +625,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     active=db.execute("SELECT 1 FROM ocr_job_pages p JOIN ocr_jobs j ON j.id=p.job_id WHERE p.page_id=? AND p.status IN ('pending','running') AND j.status IN ('running','pausing')",(page_id,)).fetchone()
                 if active:
                     raise HTTPException(409,'Chờ OCR trang này hoàn tất trước khi xác nhận.')
+            languages = page['ocr_languages'] if data.category in ('intro','ref','toc') else (['han'] if data.category=='ch' else ['vi'] if data.category=='vi' else ['han','vi'])
             if data.done and not (page['ocr_skip'] if data.ocr_skip is None else data.ocr_skip) and data.category not in ('blank','misc'):
-                languages = page['ocr_languages'] if data.category in ('intro','ref','toc') else (['han'] if data.category=='ch' else ['vi'] if data.category=='vi' else ['han','vi'])
                 vi_boxes = data.vi_boxes if data.vi_boxes is not None else page['vi_boxes']
                 if ('han' in languages and not data.boxes) or ('vi' in languages and not vi_boxes):
                     raise HTTPException(422, 'Trang cần box thật cho từng ngôn ngữ trước khi hoàn thành. Kiểm tra OCR hoặc vẽ box thủ công.')
@@ -616,8 +635,11 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             try:
                 with store.db() as db:
                     updates=['boxes=?','status=?','category=?','reading_direction=?','source_text=?','target_text=?','vi_boxes=?']
-                    values=[json.dumps(boxes,ensure_ascii=False),'done' if data.done else 'pending',data.category,page['reading_direction_override'] or data.reading_direction,
+                    values=[json.dumps(boxes,ensure_ascii=False),'done' if data.done else 'pending',data.category,2 if languages==['vi'] else page['reading_direction_override'] or data.reading_direction,
                             source_text,target_text,json.dumps([b.model_dump(exclude_none=True) for b in data.vi_boxes],ensure_ascii=False) if data.vi_boxes is not None else json.dumps(page['vi_boxes'],ensure_ascii=False)]
+                    if languages==['vi']:
+                        updates.append('reading_direction_override=?')
+                        values.append(None)
                     if export_boxes is not None:
                         updates.append('export_boxes=?')
                         values.append(json.dumps(export_boxes,ensure_ascii=False))
@@ -650,6 +672,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 old = store.book_dir(page['book_id']) / page['category'] / f"{require_book(page['book_id'])['name']}.{page['number']:03d}.jpg"
                 old.unlink(missing_ok=True)
             store.propagate_placeholder_edits(page['book_id'],page['number'],page['source_text'],source_text)
+            store.sync_alignment_page_text(page,page['source_text'],page['target_text'],source_text,target_text)
             store.sync_labels(page['book_id'])
             return updated
 
@@ -668,7 +691,11 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 changes['ocr_languages']=json.dumps(['han'] if changes['category']=='ch' else ['vi'] if changes['category']=='vi' else ['han','vi'])
             elif 'category' in changes:
                 changes['ocr_languages']=json.dumps(page['ocr_languages'])
-            if 'reading_direction_override' in changes:
+            effective_languages=json.loads(changes['ocr_languages']) if 'ocr_languages' in changes else page['ocr_languages']
+            if effective_languages==['vi'] and changes.get('category',page['category']) not in ('blank','misc'):
+                changes['reading_direction_override']=None
+                changes['reading_direction']=2
+            elif 'reading_direction_override' in changes:
                 changes['reading_direction']=changes['reading_direction_override'] or store.book_layout(page['book_id']).get('reading_direction',2)
             effective_direction=changes.get('reading_direction',page['reading_direction'])
             source_boxes=changes.get('boxes',page['boxes'])
@@ -710,6 +737,9 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 raise HTTPException(409,'Trang đã có trong nhóm này.') from None
             if 'source_text' in changes:
                 store.propagate_placeholder_edits(page['book_id'],page['number'],page['source_text'],changes['source_text'])
+            store.sync_alignment_page_text(page,page['source_text'],page['target_text'],
+                                           changes.get('source_text',page['source_text']),
+                                           changes.get('target_text',page['target_text']))
             store.sync_labels(page['book_id'])
             return require_page(page_id)
 
@@ -745,13 +775,30 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                                        (page.category,int(page.ocr_skip),page.page_id,page.category,int(page.ocr_skip)))
                         else:
                             encoded=json.dumps(languages)
-                            db.execute("UPDATE pages SET category=?,ocr_languages=?,ocr_skip=?,status='pending',version=version+1 WHERE id=? AND (category!=? OR ocr_skip!=? OR COALESCE(ocr_languages,'')!=?)",
-                                       (page.category,encoded,int(page.ocr_skip),page.page_id,page.category,int(page.ocr_skip),encoded))
+                            db.execute("UPDATE pages SET category=?,ocr_languages=?,ocr_skip=?,reading_direction_override=CASE WHEN ?='vi' THEN NULL ELSE reading_direction_override END,reading_direction=CASE WHEN ?='vi' THEN 2 ELSE reading_direction END,status='pending',version=version+1 WHERE id=? AND (category!=? OR ocr_skip!=? OR COALESCE(ocr_languages,'')!=? OR (?='vi' AND (reading_direction_override IS NOT NULL OR reading_direction!=2)))",
+                                       (page.category,encoded,int(page.ocr_skip),page.category,page.category,page.page_id,page.category,int(page.ocr_skip),encoded,page.category))
             except sqlite3.IntegrityError:
                 raise HTTPException(409,'Trang bị trùng trong nhóm; giữ bản ngôn ngữ chính trước khi đổi nhãn.') from None
             store.sync_labels(book_id)
             store.sync_results(book_id,'save_page_plan')
         return store.pages(book_id)
+
+    @app.put('/api/pages/{page_id}/links')
+    def save_page_links(page_id: str,data: PageLinksInput):
+        page=require_page(page_id)
+        linked=set(data.linked_page_ids)
+        if page_id in linked or len(linked)!=len(data.linked_page_ids):
+            raise HTTPException(422,'Danh sách trang liên kết bị trùng hoặc chứa chính trang này.')
+        with store.lock,store.db() as db:
+            known={row['id'] for row in db.execute('SELECT id FROM pages WHERE book_id=?',(page['book_id'],))}
+            if not linked<=known:
+                raise HTTPException(422,'Trang liên kết phải thuộc cùng sách.')
+            db.execute('DELETE FROM page_links WHERE book_id=? AND (page_a=? OR page_b=?)',
+                       (page['book_id'],page_id,page_id))
+            db.executemany('INSERT INTO page_links(book_id,page_a,page_b) VALUES (?,?,?)',
+                           [(page['book_id'],*sorted((page_id,other))) for other in linked])
+        store.sync_results(page['book_id'],'save_page_links')
+        return store.pages(page['book_id'])
 
     def recover_ocr(page_id):
         page = require_page(page_id)
@@ -899,7 +946,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             overrides={'source_regions':regions,'target_regions':regions}
         # The page's effective direction is user configuration (book default or
         # page override). Reused OCR settings must never replace it with an old value.
-        overrides['reading_direction'] = page.get('reading_direction_override')
+        overrides['reading_direction'] = 2 if mode=='vi' else page.get('reading_direction_override')
         if overrides['reading_direction'] is None:
             overrides['reading_direction'] = store.book_layout(page['book_id']).get(
                 'reading_direction', 2,
@@ -920,8 +967,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         require_book(book_id)
         selected=[p for p in store.pages(book_id) if p['status']!='done' and not p['ocr_skip'] and p['category']!='blank' and p['number']>=data.start_page and (data.end_page is None or p['number']<=data.end_page)]
         modes=[page_settings(p,{'mode':data.mode})['mode'] for p in selected]
-        if any(mode!='vi' for mode in modes) and not config.ready:
-            raise HTTPException(503, 'Thiếu KHN_token trong backend/.env.')
+        if any(mode!='vi' for mode in modes) and not ocr.ready:
+            raise HTTPException(503, 'Thiếu KHN_token và PP-OCRv5 CPU chưa sẵn sàng. Cài backend/requirements-han-fallback.txt hoặc cấu hình KHN_token.')
         if any(mode!='han' for mode in modes) and not vietnamese.status()['ready']:
             raise HTTPException(503,'Chưa cài OCR Quốc ngữ. Cài backend/requirements.txt, chạy '+vietnamese.status()['setup']+' rồi thử lại.')
         max_page = max(p['number'] for p in store.pages(book_id))
@@ -976,6 +1023,9 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     @app.get('/api/books/{book_id}/alignments')
     def get_alignments(book_id: str):
         require_book(book_id)
+        with store.lock:
+            if store.reconcile_alignment_ocr(book_id):
+                store.sync_results(book_id,'reconcile_alignment_ocr')
         with store.db() as db:
             row = db.execute('SELECT rows FROM alignments WHERE book_id=?',(book_id,)).fetchone()
         return json.loads(row['rows']) if row else []
@@ -986,13 +1036,22 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         ids = [r.sentence_id for r in data.rows]
         if len(ids) != len(set(ids)) or len({r.id for r in data.rows}) != len(data.rows):
             raise HTTPException(422,'ID câu hoặc ID hàng bị trùng.')
-        valid_images = {p['number'] for p in store.pages(book_id)
+        book_pages=store.pages(book_id)
+        valid_images = {p['number'] for p in book_pages
                         if not p['ocr_skip'] and p['category'] not in ('blank','misc') and 'han' in p['ocr_languages']}
+        pages_by_id={p['id']:p for p in book_pages}
         for row in data.rows:
             match = re.fullmatch(re.escape(book['name'])+r'\.(\d{3,})\.([1-9]\d*)',row.sentence_id)
             if not match or int(match[1]) not in valid_images:
                 raise HTTPException(422,'sentence_id phải trỏ tới trang Hán Nôm có thật: <Tên sách>.<trang ít nhất 3 số>.<câu từ 1>.')
-        rows = [r.model_dump() for r in data.rows]
+            if row.source_page_id and (row.source_page_id not in pages_by_id or
+                    pages_by_id[row.source_page_id]['number']!=int(match[1]) or
+                    'han' not in pages_by_id[row.source_page_id]['ocr_languages']):
+                raise HTTPException(422,'Trang nguồn không khớp sentence_id.')
+            if row.target_page_id and (row.target_page_id not in pages_by_id or
+                    'vi' not in pages_by_id[row.target_page_id]['ocr_languages']):
+                raise HTTPException(422,'Trang Quốc ngữ không thuộc sách hoặc chưa có nhãn Quốc ngữ.')
+        rows = [r.model_dump(exclude_none=True) for r in data.rows]
         counters = {}
         for row in rows:
             for mark in row['marks']:

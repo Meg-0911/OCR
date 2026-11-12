@@ -34,6 +34,7 @@ import BookCard, { formatBookTitle } from './components/BookCard';
 import Stat from './components/Stat';
 import PairProgress from './components/PairProgress';
 import AlignmentSources from './components/AlignmentSources';
+import LinkedAlignmentWorkspace from './components/LinkedAlignmentWorkspace';
 import BookWorkbench, { referenceForPage } from './components/BookWorkbench';
 import LibraryBookReader from './components/LibraryBookReader';
 import DictionaryPanel from './components/DictionaryPanel';
@@ -183,12 +184,15 @@ export default function App() {
     }))),
     [rows, pages, drafts],
   );
-  const alignmentPages = useMemo(() => pages.filter((item) =>
-    !item.ocr_skip && item.category !== 'blank' &&
-    (item.ocr_languages.includes('han') || !pages.some((other) =>
-      other.id !== item.id && other.number === item.number &&
-      !other.ocr_skip && other.ocr_languages.includes('han')))
-  ).sort((a, b) => a.number - b.number), [pages]);
+  const alignmentContentPages = useMemo(() => pages.map((item) => {
+    const merged = { ...item, ...(drafts[item.id] ? draftPatch(drafts[item.id]) : {}) };
+    return merged.vi_boxes.length
+      ? { ...merged, target_text: merged.vi_boxes.map((box) => box.transcription).join('\n') }
+      : merged;
+  }), [pages, drafts]);
+  const alignmentPages = useMemo(() => alignmentContentPages.filter((item) =>
+    !item.ocr_skip && item.category !== 'blank' && item.ocr_languages.includes('han')
+  ).sort((a, b) => a.number - b.number), [alignmentContentPages]);
   const activeBook = workspace?.books.find((b) => b.id === bookId);
   const alignmentSourcePage =
     alignmentPages.find((item) => item.id === alignmentPage) ||
@@ -409,7 +413,10 @@ export default function App() {
     });
   }
   function updateDraft(patch: Partial<Draft>) {
-    if (page) updatePageDraft(page, patch, view === 'review' && workflowStep === 4);
+    if (page) {
+      const ocrChange = ['boxes', 'vi_boxes', 'source_text', 'target_text'].some((key) => key in patch);
+      updatePageDraft(page, patch, view === 'review' && workflowStep === 4 && !ocrChange);
+    }
   }
   async function recognizeBoxes(boxes: Box[], language: 'han' | 'vi') {
     if (!draft || !boxes.length || boxOCRRequests.current.has(draft.id)) return;
@@ -422,7 +429,7 @@ export default function App() {
     try {
       for (const box of boxes) {
         try {
-          const result = await api.recognizeBox(snapshot.id, box, language, snapshot.reading_direction);
+          const result = await api.recognizeBox(snapshot.id, box, language, language === 'vi' ? 2 : snapshot.reading_direction);
           const saved = pagesRef.current.find((item) => item.id === snapshot.id) || snapshot;
           const pending = draftsRef.current[snapshot.id];
           const current = { ...saved, ...(pending ? draftPatch(pending) : {}) };
@@ -436,7 +443,7 @@ export default function App() {
             continue;
           }
           const next = replaceBoxText(current[boxesKey], current[textKey], box.id, result.text,
-            current.reading_direction, language === 'han');
+            language === 'vi' ? 2 : current.reading_direction, language === 'han');
           updatePageDraft(saved, { [boxesKey]: next.boxes, [textKey]: next.text }, true);
           completed++;
         } catch (error) {
@@ -537,14 +544,28 @@ export default function App() {
     }
   }
   async function bulkTagPages(pageIds: string[], category: Category) {
+    if (!pageIds.length) return;
     setBusy(true);
     try {
-      for (const id of pageIds) await saveDraftNow(id);
+      const plan: { page_id: string; category: Category; ocr_skip: boolean }[] = [];
       for (const id of pageIds) {
-        const updated = await api.patchPage(id, { category });
-        setPages((previous) => previous.map((item) => (item.id === id ? updated : item)));
+        const saved = await saveDraftNow(id, 'all');
+        const current = saved || pagesRef.current.find((item) => item.id === id);
+        if (current) plan.push({ page_id: id, category, ocr_skip: current.ocr_skip });
       }
-      notify(`Đã đổi nhãn ${pageIds.length} trang.`);
+      if (!plan.length) return;
+      setPages(await api.savePlan(bookId, plan));
+      notify(`Đã đổi nhãn ${plan.length} trang.`);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function savePageLinks(id: string, linkedIds: string[]) {
+    setBusy(true);
+    try {
+      const updated = await api.savePageLinks(id, linkedIds);
+      setPages(updated);
+      notify('Đã lưu liên kết trang. Kết quả OCR hiện tại được giữ nguyên.');
     } finally {
       setBusy(false);
     }
@@ -601,8 +622,8 @@ export default function App() {
       savingDrafts.current.delete(id);
     }
   }
-  async function saveBookDrafts() {
-    for (const p of pages) await saveDraftNow(p.id);
+  async function saveBookDrafts(mode: 'all' | 'automatic' = 'automatic') {
+    for (const p of pages) await saveDraftNow(p.id, mode);
   }
   useEffect(() => {
     if (busy || !pages.length) return;
@@ -703,7 +724,10 @@ export default function App() {
     setAlignmentLoading(true);
     setRows([]);
     setReference(null);
-    Promise.all([api.alignments(bookId), view === 'alignment' ? api.reference(bookId) : Promise.resolve(null)])
+    (async () => {
+      if (view === 'alignment') await saveBookDrafts('all');
+      return Promise.all([api.alignments(bookId), view === 'alignment' ? api.reference(bookId) : Promise.resolve(null)]);
+    })()
       .then(([result, referenceText]) => {
         if (cancelled) return;
         setReference(referenceText);
@@ -949,35 +973,42 @@ export default function App() {
         source,
         target,
         reviewed: false,
-        page_linked: pageLinked,
+        page_linked: pageLinked || !!sourcePage.linked_page_ids.length,
       },
     ]);
   }
   async function autoAlignBook() {
     if (!activeBook) return;
+    const protectedRows = rows.filter((row) => row.page_linked ||
+      pages.some((page) => page.linked_page_ids.length &&
+        row.sentence_id.startsWith(`${activeBook.name}.${String(page.number).padStart(3, '0')}.`)));
+    const protectedNumbers = new Set(protectedRows.map((row) =>
+      Number(row.sentence_id.match(/\.(\d{3,})\.\d+$/u)?.[1])));
     const sourcePages = pages.filter(
       (item) =>
         !item.ocr_skip &&
+        !item.linked_page_ids.length &&
+        !protectedNumbers.has(item.number) &&
         !['blank', 'misc'].includes(item.category) &&
         item.ocr_languages.includes('han'),
     );
     if (!sourcePages.length) {
-      notify('Sách chưa có trang Hán Nôm để căn chỉnh.', true);
+      notify('Không có trang Hán Nôm thông thường để tự căn; các trang liên kết được căn riêng.', true);
       return;
     }
     const referenceHasPages =
       !!reference?.text &&
       (/^\s*\*+\s*Page\s+\d+\s*\*+\s*$/im.test(reference.text) || reference.text.includes('\f'));
-    const existing = rows.length;
+    const existing = rows.length - protectedRows.length;
     if (
       !window.confirm(
-        `Tự căn ${sourcePages.length} trang theo thứ tự dòng và thay toàn bộ ${existing} cặp hiện tại? Các cặp mới sẽ ở trạng thái chưa duyệt để bạn kiểm tra.`,
+        `Tự căn ${sourcePages.length} trang theo thứ tự dòng và thay ${existing} cặp thông thường hiện tại? Các cặp mới sẽ ở trạng thái chưa duyệt để bạn kiểm tra.`,
       )
     )
       return;
     setBusy(true);
     try {
-      const next: Alignment[] = [];
+      const next: Alignment[] = [...protectedRows];
       let skipped = 0;
       const sequences = new Map<number, number>();
       for (const [pageIndex, sourcePage] of sourcePages.entries()) {
@@ -1016,10 +1047,16 @@ export default function App() {
         }
         if (pageIndex % 15 === 14) await new Promise<void>((resolve) => setTimeout(resolve, 0));
       }
-      if (!next.length) {
+      if (next.length === protectedRows.length) {
         notify('Chưa có cặp trang nào có cả văn bản Hán Nôm và Quốc ngữ để tự căn.', true);
         return;
       }
+      next.sort((a, b) => {
+        const aId = a.sentence_id.match(/\.(\d{3,})\.(\d+)$/u);
+        const bId = b.sentence_id.match(/\.(\d{3,})\.(\d+)$/u);
+        return Number(aId?.[1] || 0) - Number(bId?.[1] || 0) ||
+          Number(aId?.[2] || 0) - Number(bId?.[2] || 0);
+      });
       changeRows(next);
       notify(
         `Đã tự căn ${next.length} cặp từ ${sourcePages.length - skipped}/${sourcePages.length} trang. ${skipped} trang thiếu văn bản hai bên; tất cả cặp mới cần đọc lại.`,
@@ -1314,6 +1351,7 @@ export default function App() {
                   onRerunPage={rerunPageOCR}
                   rerunningPage={pageOCRPages.includes(pageId)}
                   onBulkTag={bulkTagPages}
+                  onSaveLinks={savePageLinks}
                   job={bookJob}
                   onJob={setBookJob}
                   onPatch={updateDraft}
@@ -1482,11 +1520,27 @@ export default function App() {
                       </button>
                     </div>
                   </div>
+                  {!alignmentLoading && alignmentSourcePage?.linked_page_ids.length && activeBook && (
+                    <LinkedAlignmentWorkspace
+                      key={`${bookId}-${alignmentSourcePage.id}`}
+                      page={alignmentSourcePage}
+                      pages={alignmentContentPages}
+                      bookName={activeBook.name}
+                      rows={rows}
+                      onRows={(next, immediate) => {
+                        changeRows(next);
+                        if (immediate) {
+                          clearTimeout(alignmentTimers.current.get(bookId));
+                          void persistRows(bookId, next).catch(fail);
+                        }
+                      }}
+                    />
+                  )}
                   {!alignmentLoading && (
                     <AlignmentSources
                       key={`${bookId}-${alignmentSourcePage?.id || ''}`}
                       page={alignmentSource}
-                      pages={pages}
+                      pages={alignmentContentPages}
                       reference={reference}
                       busy={busy}
                       onCreate={newRow}
@@ -1607,7 +1661,10 @@ export default function App() {
                                                     source: row.source + nextEntry.row.source,
                                                     target: row.target + ' ' + nextEntry.row.target,
                                                     reviewed: false,
-                                                    page_linked: false,
+                                                    page_linked: !!row.page_linked || !!nextEntry.row.page_linked,
+                                                    source_line_index: null,
+                                                    target_page_id: null,
+                                                    target_line_index: null,
                                                     marks: [],
                                                   },
                                                 ]
@@ -1637,7 +1694,7 @@ export default function App() {
                                                     source: source[0],
                                                     target: target[0],
                                                     reviewed: false,
-                                                    page_linked: false,
+                                                    page_linked: !!item.page_linked,
                                                     marks: [],
                                                   },
                                                   {
@@ -1647,7 +1704,7 @@ export default function App() {
                                                     source: source[1],
                                                     target: target[1],
                                                     reviewed: false,
-                                                    page_linked: false,
+                                                    page_linked: !!item.page_linked,
                                                     marks: [],
                                                   },
                                                 ]
@@ -2041,7 +2098,9 @@ export default function App() {
                     Nhận dạng OCR
                   </span>
                   <span className="pending-pill">
-                    {workspace?.ocr_ready ? 'Đã cấu hình Kim Hán Nôm' : 'Thiếu KHN_token'}
+                    {workspace?.han_ocr?.primary_ready
+                      ? workspace.han_ocr.fallback.ready ? 'Kim Hán Nôm + PP-OCRv5 CPU' : 'Đã cấu hình Kim Hán Nôm'
+                      : workspace?.han_ocr?.fallback.ready ? 'PP-OCRv5 CPU dự phòng' : 'Chưa cấu hình OCR Hán Nôm'}
                   </span>
                 </div>
                 <div>

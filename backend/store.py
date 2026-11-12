@@ -227,6 +227,12 @@ class Store:
               book_id TEXT NOT NULL REFERENCES books(id), language TEXT NOT NULL,
               filename TEXT NOT NULL, text TEXT NOT NULL,
               PRIMARY KEY(book_id,language));
+            CREATE TABLE IF NOT EXISTS page_links (
+              book_id TEXT NOT NULL REFERENCES books(id),
+              page_a TEXT NOT NULL REFERENCES pages(id),
+              page_b TEXT NOT NULL REFERENCES pages(id),
+              PRIMARY KEY(book_id,page_a,page_b), CHECK(page_a < page_b));
+            CREATE INDEX IF NOT EXISTS page_links_b ON page_links(book_id,page_b);
             """)
             if 'reading_direction' not in {row['name'] for row in db.execute('PRAGMA table_info(pages)')}:
                 db.execute('ALTER TABLE pages ADD COLUMN reading_direction INTEGER NOT NULL DEFAULT 2')
@@ -247,12 +253,14 @@ class Store:
                     db.execute(f'ALTER TABLE pages ADD COLUMN {column} TEXT DEFAULT NULL')
             if 'ocr_languages' not in columns:
                 db.execute("ALTER TABLE pages ADD COLUMN ocr_languages TEXT DEFAULT NULL")
+            db.execute("UPDATE pages SET reading_direction_override=NULL,reading_direction=2 WHERE category='vi' AND (reading_direction_override IS NOT NULL OR reading_direction!=2)")
             if 'source_regions' not in columns:
                 db.execute("UPDATE pages SET category='both' WHERE category='misc' AND NOT EXISTS (SELECT 1 FROM pages other WHERE other.book_id=pages.book_id AND other.number=pages.number AND other.category='both')")
             # Remove only the legacy seeded records; real books and edits stay intact.
             db.execute('DELETE FROM alignments WHERE book_id IN (SELECT id FROM books WHERE demo=1)')
             db.execute('DELETE FROM pages WHERE book_id IN (SELECT id FROM books WHERE demo=1)')
             db.execute('DELETE FROM books WHERE demo=1')
+        self.repair_box_texts()
         # Repair interrupted text-file writes from the committed SQLite checkpoint.
         for book in self.books():
             for page in self.pages(book['id']):
@@ -316,14 +324,21 @@ class Store:
         }
 
     @staticmethod
-    def page_dict(row, inherited_reading_direction=None):
+    def page_dict(row, inherited_reading_direction=None, linked_page_ids=None):
         page = dict(row)
-        if page.get('reading_direction_override') in (1, 2):
+        page['ocr_languages']=(['han'] if page['category']=='ch' else ['vi'] if page['category']=='vi' else ['han','vi']) if page['category'] in ('ch','vi','both') else (json.loads(page['ocr_languages']) if page['ocr_languages'] is not None else ['han','vi'])
+        if page['ocr_languages'] == ['vi'] and page['category'] not in ('blank','misc'):
+            page['reading_direction'] = 2
+            page['reading_direction_override'] = None
+        elif page.get('reading_direction_override') in (1, 2):
             page['reading_direction'] = page['reading_direction_override']
         elif inherited_reading_direction in (1, 2):
             page['reading_direction'] = inherited_reading_direction
         page["boxes"] = ordered_boxes(json.loads(page["boxes"]), page['category'], page['reading_direction'],(page['width'],page['height']))
         page['vi_boxes']=ordered_boxes(json.loads(page['vi_boxes']),'vi',2,(page['width'],page['height']))
+        if page['vi_boxes']:
+            page['target_text']='\n'.join(box_text_lines(
+                page['vi_boxes'],2,'vi',(page['width'],page['height'])))
         export_boxes=json.loads(page['export_boxes'])
         if export_boxes is None:
             export_boxes=[]
@@ -350,15 +365,24 @@ class Store:
         page['edited_fields']=json.loads(page['edited_fields'])
         for key in ('source_regions','target_regions'):
             page[key]=json.loads(page[key]) if page[key] is not None else None
-        page['ocr_languages']=(['han'] if page['category']=='ch' else ['vi'] if page['category']=='vi' else ['han','vi']) if page['category'] in ('ch','vi','both') else (json.loads(page['ocr_languages']) if page['ocr_languages'] is not None else ['han','vi'])
+        page['linked_page_ids']=linked_page_ids or []
         page["image_url"] = f"/api/pages/{page['id']}/image"
         return page
+
+    @staticmethod
+    def links_for_book(db, book_id):
+        links={}
+        for row in db.execute('SELECT page_a,page_b FROM page_links WHERE book_id=?',(book_id,)):
+            links.setdefault(row['page_a'],[]).append(row['page_b'])
+            links.setdefault(row['page_b'],[]).append(row['page_a'])
+        return links
 
     def pages(self, book_id):
         with self.db() as db:
             layout=db.execute('SELECT profile FROM book_layouts WHERE book_id=?',(book_id,)).fetchone()
             direction=json.loads(layout['profile']).get('reading_direction',2) if layout else 2
-            return [self.page_dict(row,direction) for row in db.execute("SELECT * FROM pages WHERE book_id=? ORDER BY number,category", (book_id,))]
+            links=self.links_for_book(db,book_id)
+            return [self.page_dict(row,direction,links.get(row['id'])) for row in db.execute("SELECT * FROM pages WHERE book_id=? ORDER BY number,category", (book_id,))]
 
     def source_box_colors(self, book_id, rows):
         """Map per-box review colors onto both sides of saved alignment text."""
@@ -416,7 +440,8 @@ class Store:
                 return None
             layout=db.execute('SELECT profile FROM book_layouts WHERE book_id=?',(row['book_id'],)).fetchone()
             direction=json.loads(layout['profile']).get('reading_direction',2) if layout else 2
-            return self.page_dict(row,direction)
+            links=self.links_for_book(db,row['book_id'])
+            return self.page_dict(row,direction,links.get(page_id))
 
     def book_dir(self, book_id):
         return self.local / "books" / book_id
@@ -498,7 +523,30 @@ class Store:
                 with self.db() as db:
                     db.execute('UPDATE pages SET '+','.join(key+'=?' for key in changes)+",status='pending',version=version+1 WHERE id=?",
                                (*changes.values(),page['id']))
+                self.sync_alignment_page_text(page,page['source_text'],page['target_text'],
+                                              changes.get('source_text',page['source_text']),
+                                              changes.get('target_text',page['target_text']))
                 self.sync_labels(page['book_id'])
+
+    def repair_box_texts(self):
+        """Migrate saved Vietnamese box corrections whose page text stayed at raw OCR."""
+        repairs = []
+        with self.lock, self.db() as db:
+            for row in list(db.execute('SELECT id,book_id,number,width,height,source_text,target_text,vi_boxes FROM pages')):
+                boxes = json.loads(row['vi_boxes'])
+                if not boxes:
+                    continue
+                corrected = '\n'.join(box_text_lines(
+                    boxes,2,'vi',(row['width'],row['height'])))
+                if corrected == row['target_text']:
+                    continue
+                db.execute('UPDATE pages SET target_text=?,version=version+1 WHERE id=?',
+                           (corrected,row['id']))
+                repairs.append((dict(row),corrected))
+        for page, corrected in repairs:
+            self.sync_alignment_page_text(page,page['source_text'],page['target_text'],
+                                          page['source_text'],corrected)
+        return len(repairs)
 
     def propagate_placeholder_edits(self, book_id, page_number, old_text, new_text):
         """Keep saved alignment rows in sync when corrected Nôm boxes replace □."""
@@ -546,6 +594,89 @@ class Store:
             if changed:
                 db.execute('UPDATE alignments SET rows=? WHERE book_id=?',(json.dumps(rows,ensure_ascii=False),book_id))
 
+    def sync_alignment_page_text(self, page, old_source, old_target, new_source, new_target):
+        """Refresh pairs that still contain the OCR line they were created from."""
+        if old_source == new_source and old_target == new_target:
+            return False
+        book = self.book(page['book_id'])
+        prefix = f"{book['name']}.{page['number']:03d}."
+        def lines(text):
+            return [line.strip() for line in text.splitlines() if line.strip()]
+        changes = (
+            ('source', 'source_page_id', 'source_line_index', lines(old_source), lines(new_source), old_source != new_source),
+            ('target', 'target_page_id', 'target_line_index', lines(old_target), lines(new_target), old_target != new_target),
+        )
+        with self.db() as db:
+            saved = db.execute('SELECT rows FROM alignments WHERE book_id=?', (page['book_id'],)).fetchone()
+            if not saved:
+                return False
+            rows = json.loads(saved['rows'])
+            changed = False
+            for row in rows:
+                for field, page_key, index_key, old_lines, new_lines, text_changed in changes:
+                    if not text_changed:
+                        continue
+                    explicit_page = row.get(page_key)
+                    if explicit_page and explicit_page != page['id']:
+                        continue
+                    if not explicit_page and not row['sentence_id'].startswith(prefix):
+                        continue
+                    index = row.get(index_key)
+                    if index is None:
+                        matching = [i for i, line in enumerate(old_lines) if line == row[field].strip()]
+                        if len(matching) != 1:
+                            continue
+                        index = matching[0]
+                    if index >= len(old_lines) or row[field].strip() != old_lines[index]:
+                        continue
+                    replacement = new_lines[index] if index < len(new_lines) else ''
+                    if row[field] == replacement:
+                        continue
+                    row[field] = replacement
+                    row['reviewed'] = False
+                    row['marks'] = []
+                    changed = True
+            if changed:
+                db.execute('UPDATE alignments SET rows=? WHERE book_id=?',
+                           (json.dumps(rows, ensure_ascii=False), page['book_id']))
+            return changed
+
+    def reconcile_alignment_ocr(self, book_id):
+        """Repair older pairs left at the original OCR after a saved box correction."""
+        book = self.book(book_id)
+        with self.db() as db:
+            saved = db.execute('SELECT rows FROM alignments WHERE book_id=?', (book_id,)).fetchone()
+            if not saved:
+                return False
+            rows = json.loads(saved['rows'])
+            prefix = f"{book['name']}."
+            numbers = {int(match.group(1)) for row in rows
+                       if (match := re.fullmatch(re.escape(prefix) + r'(\d{3,})\.[1-9]\d*', row['sentence_id']))}
+            ids = {page_id for row in rows for page_id in
+                   (row.get('source_page_id'), row.get('target_page_id')) if page_id}
+            pages = [dict(row) for row in db.execute(
+                '''SELECT p.id,p.book_id,p.number,p.source_text,p.target_text,p.edited_fields,
+                   (SELECT r.result FROM ocr_results r WHERE r.page_id=p.id
+                    ORDER BY r.created_at DESC,r.rowid DESC LIMIT 1) AS ocr_result
+                   FROM pages p WHERE p.book_id=?''',
+                (book_id,))]
+        changed = False
+        for page in pages:
+            if page['number'] not in numbers and page['id'] not in ids:
+                continue
+            edited = json.loads(page['edited_fields'])
+            if not set(edited) & {'boxes', 'vi_boxes', 'source_text', 'target_text'}:
+                continue
+            if not page['ocr_result']:
+                continue
+            result = json.loads(page['ocr_result'])
+            original_source = '\n'.join(result.get('text_lines', []))
+            original_target = '\n'.join(result.get('vi_text_lines', []))
+            changed |= self.sync_alignment_page_text(
+                page, original_source or page['source_text'], original_target or page['target_text'],
+                page['source_text'], page['target_text'])
+        return changed
+
     def sync_results(self,book_id,event=None):
         """Recoverable result snapshots and a small operational audit, separate from OCR history."""
         with self.lock:
@@ -583,7 +714,7 @@ class Store:
                 tmp.write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf-8')
                 replace_file(tmp,path)
             write_json(folder/'summary.json',summary)
-            write_json(folder/'pages.json',[{key:p[key] for key in ('id','number','category','ocr_skip','status','source_text','target_text','target_origin','version')} |
+            write_json(folder/'pages.json',[{key:p[key] for key in ('id','number','category','ocr_skip','status','source_text','target_text','target_origin','version','linked_page_ids')} |
                                            {'completed_languages':languages.get(p['id'],[])} for p in pages])
             write_json(folder/'alignments.json',rows)
             csv_path=folder/'pairs.csv'; tmp=csv_path.with_suffix('.csv.tmp')

@@ -119,6 +119,8 @@ def recognize(page,settings,force,*,cached,image_bytes,han_provider,vi_provider,
                     # Preserve raw output even if the response format cannot be normalized.
                     save(None,responses,result['result_id'])
                     normalized=normalize_result(raw,atlas.width,atlas.height)
+                    if raw.get('provider') == 'ppocrv5_cpu':
+                        han_warnings.append('Kim Hán Nôm không có kết quả; đã dùng PP-OCRv5 CPU. Hãy rà lại chữ Nôm và box.')
                     if packed:
                         normalized=map_characters(normalized,placements,settings['reading_direction'])
                     for box in normalized['boxes']:

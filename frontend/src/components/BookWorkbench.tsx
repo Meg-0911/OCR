@@ -67,6 +67,7 @@ type Props = {
   onRerunPage: (page: Page, settings: OCRSettings) => Promise<void>;
   rerunningPage: boolean;
   onBulkTag: (pageIds: string[], category: Category) => Promise<void>;
+  onSaveLinks: (pageId: string, linkedIds: string[]) => Promise<void>;
   onConfirm: () => Promise<boolean>;
   beforeStart: () => Promise<void>;
   saveState: string;
@@ -218,7 +219,16 @@ export default function BookWorkbench(props: Props) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(props.initialStep);
   const [pageFilter, setPageFilter] = useState<'pending' | 'done' | 'all'>('all');
   const [selectedPageIds, setSelectedPageIds] = useState<string[]>([]);
-  const [bulkCategory, setBulkCategory] = useState<Category>('both');
+  const [bulkCategory, setBulkCategory] = useState<Category>('intro');
+  async function tagSelectedPages(category: Category) {
+    if (!selectedPageIds.length || props.busy || acting) return;
+    try {
+      await props.onBulkTag([...selectedPageIds], category);
+      setSelectedPageIds([]);
+    } catch (error) {
+      props.onError(error);
+    }
+  }
   const eligiblePages = pages.filter((p) => !p.ocr_skip && p.category !== 'blank');
   const ocrFinished = (p: Page) =>
     p.status === 'done' ||
@@ -259,6 +269,7 @@ export default function BookWorkbench(props: Props) {
   const [showBoxes, setShowBoxes] = useState(true);
   const [zoom, setZoom] = useState(100);
   const [search, setSearch] = useState('');
+  const [linkSearch, setLinkSearch] = useState('');
   const filteredPages = stagePages.filter((p) => !search || String(p.number).includes(search));
   const [full, setFull] = useState(false);
   const imagePane = useRef<HTMLDivElement>(null);
@@ -266,15 +277,17 @@ export default function BookWorkbench(props: Props) {
   const boxesKey = language === 'han' ? 'boxes' : 'vi_boxes';
   const textKey = language === 'han' ? 'source_text' : 'target_text';
   const boxes = page?.[boxesKey] || [];
-  const readingDirection = page
+  const readingDirection = page && language === 'han' && page.ocr_languages.includes('han')
     ? page.reading_direction_override ?? layout.reading_direction ?? page.reading_direction
     : 2;
   const selectedOCRBoxes = boxes.filter((box) => selectedBoxIds.includes(box.id));
   const ocrBoxes = selectedOCRBoxes.length
     ? selectedOCRBoxes
     : boxes.filter((box) => box.id === selected);
-  const text = page?.[textKey] || '';
-  const targetWords = targetWordsIn(page?.target_text || '');
+  const text = language === 'vi' && boxes.length
+    ? boxes.map((box) => box.transcription).join('\n')
+    : page?.[textKey] || '';
+  const targetWords = targetWordsIn(language === 'vi' ? text : page?.target_text || '');
   const orderedSourceBoxes = boxesInReviewOrder(page?.boxes || []);
   const characterEditing =
     language === 'han' &&
@@ -494,20 +507,6 @@ export default function BookWorkbench(props: Props) {
     setSelected(null);
     setEditingRegions(false);
   }
-  function toggleLanguage(next: 'han' | 'vi') {
-    if (!page) return;
-    const han = page.ocr_languages.includes('han'),
-      vi = page.ocr_languages.includes('vi');
-    const nextHan = next === 'han' ? !han : han,
-      nextVi = next === 'vi' ? !vi : vi;
-    if (nextHan || nextVi)
-      props.onPatch({
-        ocr_languages: [...(nextHan ? ['han' as const] : []), ...(nextVi ? ['vi' as const] : [])],
-        ...(['ch', 'vi', 'both'].includes(page.category)
-          ? { category: nextHan && nextVi ? 'both' : nextHan ? 'ch' : 'vi' }
-          : {}),
-      });
-  }
   async function upload(file: File, uploadLanguage: 'han' | 'vi' = language) {
     setUploading(true);
     try {
@@ -656,7 +655,7 @@ export default function BookWorkbench(props: Props) {
           )
         ) {
           event.preventDefault();
-          setSelectedPageIds(filteredPages.map((item) => item.id));
+          setSelectedPageIds(pages.map((item) => item.id));
           return;
         }
         if (
@@ -849,8 +848,10 @@ export default function BookWorkbench(props: Props) {
                               ? current.filter((id) => id !== p.id)
                               : [...current, p.id],
                           );
-                        } else setSelectedPageIds([]);
-                        props.onNavigate(p.id);
+                        } else {
+                          setSelectedPageIds([]);
+                          props.onNavigate(p.id);
+                        }
                       }}
                     >
                       <img
@@ -1146,25 +1147,69 @@ export default function BookWorkbench(props: Props) {
                       </div>
                     )}
                   {step === 2 && (
-                    <>
+                    <div className="workbench-setup-options">
+                      <label className="workbench-region-language">
+                        Chiều đọc Hán/Nôm mặc định cho cả sách
+                        <select
+                          aria-label="Chiều đọc Hán/Nôm mặc định cho cả sách"
+                          value={layout.reading_direction || 2}
+                          disabled={props.busy || acting || !layoutReady}
+                          onChange={(event) =>
+                            persistLayout({
+                              ...layout,
+                              reading_direction: Number(event.target.value) as 1 | 2,
+                            })
+                          }
+                        >
+                          <option value={1}>Dọc · trên xuống dưới, cột phải sang trái</option>
+                          <option value={2}>Ngang · trái sang phải</option>
+                        </select>
+                        <small>Trang chỉ có Quốc ngữ luôn đọc ngang, trái sang phải.</small>
+                      </label>
                       <div className="workbench-bulk-tag">
                         <small>
-                          Ctrl+A chọn tất cả · Ctrl + nhấp để chọn nhiều ảnh
+                          Giữ Ctrl và nhấp để chọn nhiều trang · Ctrl+A chọn toàn bộ trang
                         </small>
+                        <div className="workbench-bulk-selection">
+                          <button
+                            type="button"
+                            disabled={props.busy || acting || selectedPageIds.length === pages.length}
+                            onClick={() => setSelectedPageIds(pages.map((item) => item.id))}
+                          >
+                            Chọn tất cả ({pages.length})
+                          </button>
+                          {selectedPageIds.length > 0 && (
+                            <button
+                              type="button"
+                              disabled={props.busy || acting}
+                              onClick={() => setSelectedPageIds([])}
+                            >
+                              Bỏ chọn
+                            </button>
+                          )}
+                        </div>
                         {selectedPageIds.length > 0 && (
-                          <div>
-                            <span>{selectedPageIds.length} ảnh đã chọn</span>
+                          <div className="workbench-bulk-actions">
+                            <span>{selectedPageIds.length} trang đã chọn</span>
+                            <div className="workbench-bulk-shortcuts">
+                              <button type="button" disabled={props.busy || acting} onClick={() => void tagSelectedPages('ch')}>
+                                Hán/Nôm
+                              </button>
+                              <button type="button" disabled={props.busy || acting} onClick={() => void tagSelectedPages('vi')}>
+                                Quốc ngữ
+                              </button>
+                              <button type="button" disabled={props.busy || acting} onClick={() => void tagSelectedPages('both')}>
+                                Cả hai
+                              </button>
+                            </div>
                             <select
-                              aria-label="Nhãn áp dụng cho ảnh đã chọn"
+                              aria-label="Nhãn khác áp dụng cho trang đã chọn"
                               value={bulkCategory}
                               disabled={props.busy}
                               onChange={(event) =>
                                 setBulkCategory(event.target.value as Category)
                               }
                             >
-                              <option value="ch">Hán/Nôm</option>
-                              <option value="vi">Quốc ngữ</option>
-                              <option value="both">Cả hai</option>
                               <option value="intro">Giới thiệu</option>
                               <option value="ref">Chú thích</option>
                               <option value="toc">Mục lục</option>
@@ -1175,32 +1220,34 @@ export default function BookWorkbench(props: Props) {
                               type="button"
                               className="secondary-button"
                               disabled={props.busy || acting}
-                              onClick={() => {
-                                void props
-                                  .onBulkTag(selectedPageIds, bulkCategory)
-                                  .then(() => setSelectedPageIds([]))
-                                  .catch(props.onError);
-                              }}
+                              onClick={() => void tagSelectedPages(bulkCategory)}
                             >
-                              Đổi nhãn
+                              Gắn nhãn đã chọn
                             </button>
                           </div>
                         )}
                       </div>
-                      <div className="workbench-tags">
+                      <div className="workbench-tags" role="group" aria-label={`Một nhãn nội dung cho trang ${page.number}`}>
                         <button
-                          aria-pressed={page.ocr_languages.includes('han')}
+                          aria-pressed={page.category === 'ch'}
                           disabled={props.busy || acting}
-                          onClick={() => toggleLanguage('han')}
+                          onClick={() => props.onPatch({ category: 'ch' })}
                         >
                           文 Hán/Nôm
                         </button>
                         <button
-                          aria-pressed={page.ocr_languages.includes('vi')}
+                          aria-pressed={page.category === 'vi'}
                           disabled={props.busy || acting}
-                          onClick={() => toggleLanguage('vi')}
+                          onClick={() => props.onPatch({ category: 'vi' })}
                         >
                           Aa Quốc ngữ
+                        </button>
+                        <button
+                          aria-pressed={page.category === 'both'}
+                          disabled={props.busy || acting}
+                          onClick={() => props.onPatch({ category: 'both' })}
+                        >
+                          Cả hai
                         </button>
                         <label>
                           <input
@@ -1219,25 +1266,16 @@ export default function BookWorkbench(props: Props) {
                           Bỏ qua OCR
                         </label>
                         <select
-                          aria-label="Tag khác"
+                          aria-label="Nhãn nội dung khác cho trang"
                           disabled={props.busy || acting}
                           value={
                             ['intro', 'ref', 'toc', 'blank', 'misc'].includes(page.category)
                               ? page.category
                               : ''
                           }
-                          onChange={(event) =>
-                            props.onPatch({
-                              category: (event.target.value ||
-                                (page.ocr_languages.length === 2
-                                  ? 'both'
-                                  : page.ocr_languages[0] === 'han'
-                                    ? 'ch'
-                                    : 'vi')) as Category,
-                            })
-                          }
+                          onChange={(event) => props.onPatch({ category: event.target.value as Category })}
                         >
-                          <option value="">Nội dung</option>
+                          <option value="" disabled>Nhãn khác</option>
                           <option value="intro">Giới thiệu</option>
                           <option value="ref">Chú thích</option>
                           <option value="toc">Mục lục</option>
@@ -1245,42 +1283,64 @@ export default function BookWorkbench(props: Props) {
                           <option value="misc">Khác</option>
                         </select>
                       </div>
-                      <label className="workbench-region-language">
-                        Chiều đọc của sách
-                        <select
-                          aria-label="Chiều đọc của sách"
-                          value={layout.reading_direction || 2}
-                          disabled={props.busy || acting || !layoutReady}
-                          onChange={(event) =>
-                            persistLayout({
-                              ...layout,
-                              reading_direction: Number(event.target.value) as 1 | 2,
-                            })
-                          }
-                        >
-                          <option value={1}>Trên xuống dưới · cột phải sang trái</option>
-                          <option value={2}>Trái sang phải · dòng trên xuống dưới</option>
-                        </select>
-                      </label>
-                      <label className="workbench-region-language">
-                        Chiều đọc riêng của trang {page.number}
-                        <select
-                          aria-label={`Chiều đọc riêng của trang ${page.number}`}
-                          value={page.reading_direction_override ?? ''}
-                          disabled={props.busy || acting}
-                          onChange={(event) => props.onPatch({
-                            reading_direction_override: event.target.value
-                              ? Number(event.target.value) as 1 | 2
-                              : null,
-                          })}
-                        >
-                          <option value="">Theo sách · {layout.reading_direction === 1 ? 'dọc' : 'ngang trái sang phải'}</option>
-                          <option value={2}>Ngang · trái sang phải</option>
-                          <option value={1}>Dọc · trên xuống dưới, cột phải sang trái</option>
-                        </select>
-                        <small>Thiết lập OCR của trang, không phải nhãn xuất chuẩn.</small>
-                      </label>
-                    </>
+                      {page.category !== 'blank' && page.category !== 'misc' &&
+                        (page.ocr_languages.includes('han') ? (
+                          <label className="workbench-region-language">
+                            Chiều đọc riêng của trang {page.number}
+                            <select
+                              aria-label={`Chiều đọc riêng của trang ${page.number}`}
+                              value={page.reading_direction_override ?? ''}
+                              disabled={props.busy || acting}
+                              onChange={(event) => props.onPatch({
+                                reading_direction_override: event.target.value
+                                  ? Number(event.target.value) as 1 | 2
+                                  : null,
+                              })}
+                            >
+                              <option value="">Theo sách · {layout.reading_direction === 1 ? 'dọc' : 'ngang trái sang phải'}</option>
+                              <option value={2}>Ngang · trái sang phải</option>
+                              <option value={1}>Dọc · trên xuống dưới, cột phải sang trái</option>
+                            </select>
+                          </label>
+                        ) : (
+                          <div className="workbench-region-language">
+                            Chiều đọc trang {page.number}
+                            <strong>Ngang · trái sang phải</strong>
+                          </div>
+                        ))}
+                      <div className="workbench-page-links" aria-label="Liên kết trang để căn chỉnh song ngữ">
+                        <strong>Trang liên kết · căn chỉnh song ngữ</strong>
+                        <small>Chọn các trang có câu Hán Nôm và Quốc ngữ nằm lệch trang. Liên kết được lưu ngay; OCR và box hiện tại vẫn giữ nguyên.</small>
+                        <input
+                          type="search"
+                          aria-label="Tìm trang để liên kết"
+                          placeholder="Tìm số trang…"
+                          value={linkSearch}
+                          onChange={(event) => setLinkSearch(event.target.value)}
+                        />
+                        <div className="workbench-link-options">
+                          {pages.filter((candidate) => candidate.id !== page.id &&
+                            (!linkSearch || String(candidate.number).includes(linkSearch)) &&
+                            (!candidate.ocr_skip || page.linked_page_ids.includes(candidate.id)))
+                            .map((candidate) => (
+                              <label key={candidate.id}>
+                                <input
+                                  type="checkbox"
+                                  checked={page.linked_page_ids.includes(candidate.id)}
+                                  disabled={props.busy || acting}
+                                  onChange={(event) => void props.onSaveLinks(page.id,
+                                    event.target.checked
+                                      ? [...page.linked_page_ids, candidate.id]
+                                      : page.linked_page_ids.filter((id) => id !== candidate.id),
+                                  ).catch(props.onError)}
+                                />
+                                Trang {String(candidate.number).padStart(3, '0')} · {candidate.ocr_languages.length === 2 ? 'cả hai' : candidate.ocr_languages[0] === 'han' ? 'Hán Nôm' : 'Quốc ngữ'}
+                              </label>
+                            ))}
+                        </div>
+                        {!!page.linked_page_ids.length && <small>Đã liên kết {page.linked_page_ids.length} trang: {page.linked_page_ids.map((id) => pages.find((item) => item.id === id)?.number).filter(Boolean).join(', ')}</small>}
+                      </div>
+                    </div>
                   )}
                   {step === 3 && (
                     <div className="workbench-ocr-summary">

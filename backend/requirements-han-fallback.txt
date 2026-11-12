@@ -1,0 +1,3 @@
+# Optional PP-OCRv5 mobile fallback. paddlepaddle is the CPU-only wheel.
+paddlepaddle==3.2.0
+paddleocr==3.7.0

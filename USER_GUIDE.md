@@ -75,9 +75,19 @@ Tạo file cấu hình từ mẫu nếu chưa có:
 Copy-Item backend/.env.example backend/.env
 ```
 
-Mở `backend/.env`, điền token cookie `token` của tài khoản Kim Hán Nôm vào `KHN_token`. Không gửi file `.env` lên Git, email công khai hoặc ảnh chụp màn hình. `KHN_BASE_URL` mặc định dùng HTTPS chính thức. Token cần có quyền truy cập dịch vụ OCR.
+Nếu dùng Kim Hán Nôm, mở `backend/.env` và điền token cookie `token` của tài khoản vào `KHN_token`. Không gửi file `.env` lên Git, email công khai hoặc ảnh chụp màn hình. `KHN_BASE_URL` mặc định dùng HTTPS chính thức. Token cần có quyền truy cập dịch vụ OCR. Nếu chỉ dùng PP-OCRv5 CPU, có thể để trống token.
 
 OCR Hán Nôm gửi ảnh lên dịch vụ Kim Hán Nôm. Chỉ chạy OCR với dữ liệu mà nhóm được phép đưa tới dịch vụ đó. OCR Quốc ngữ VietOCR xử lý local.
+
+### 3.3.1 Cài PP-OCRv5 CPU dự phòng
+
+Trong virtualenv của backend, cài thêm hai gói tùy chọn (cần Internet lúc cài và lúc tải model lần đầu):
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements-han-fallback.txt
+```
+
+Giữ `HAN_OCR_FALLBACK=ppocrv5` trong `backend/.env` (mặc định nếu không khai báo). `HAN_OCR_THREADS=4` giới hạn luồng CPU. Khởi động lại backend; model dò vùng mobile và model nhận chữ server sẽ được tải vào cache PaddleX của tài khoản hệ điều hành trong lần OCR dự phòng đầu tiên. Khi Kim Hán Nôm trả lỗi, dữ liệu không hợp lệ hoặc không tìm được chữ, ứng dụng tự chạy PP-OCRv5 trên CPU cho cùng ảnh/vùng. Nếu không có token, có thể chỉ dùng PP-OCRv5. Kết quả vẫn vào cùng trang OCR, box và checkpoint; khi fallback được dùng sẽ có cảnh báo để rà chữ Nôm. OCR dự phòng là model chữ Hán tổng quát, cần kiểm tra độ đúng trên sách thực tế. Đặt `HAN_OCR_FALLBACK=off` nếu muốn tắt.
 
 ### 3.4 Khởi động
 
@@ -141,10 +151,13 @@ Mở <http://127.0.0.1:8000>. Với Tesseract dự phòng, dùng gói `tesseract
 ## 5. Làm việc trên một bộ sách
 
 1. **Kiểm tra nguồn:** trong ứng dụng, chọn sách đã dò từ `raw_data/` hoặc tải PDF. Tải TXT UTF-8 Hán Nôm/Quốc ngữ làm bản tham chiếu nếu có. TXT không tự tạo bounding box; chỉ dấu trang rõ ràng mới được dùng để phân trang tham chiếu.
-2. **Lập kế hoạch trang:** gắn nhãn `ch` (Hán Nôm), `vi` (Quốc ngữ), `both` (cả hai), `intro`, `ref`, `toc`, `blank` hoặc `misc`; chọn vùng nội dung. OCR mặc định đọc ngang từ trái sang phải. Nếu một trang đọc dọc, chọn **Chiều đọc riêng của trang** trong bước thiết lập; có thể đặt chiều đọc chung cho cả sách. Đây là thiết lập OCR, không phải nhãn xuất chuẩn. Trang trắng/không cần xử lý có thể bỏ qua OCR. Ảnh hai trang cần kiểm tra thứ tự trang trái trước, trang phải sau.
-3. **Chạy OCR:** chọn OCR từng trang hoặc theo phạm vi. OCR Hán Nôm cần token Kim Hán Nôm; OCR Quốc ngữ dùng model VietOCR đã tải. Có thể tạm dừng/tiếp tục tác vụ; checkpoint nằm trong `backend/data/.workspace/ocr/`.
+2. **Lập kế hoạch trang:** mỗi trang có một nhãn `ch` (Hán Nôm), `vi` (Quốc ngữ), `both` (cả hai), `intro`, `ref`, `toc`, `blank` hoặc `misc`; chọn vùng nội dung. Chọn **Chiều đọc Hán/Nôm mặc định cho cả sách** là dọc hoặc ngang, rồi dùng **Chiều đọc riêng của trang** khi trang Hán/Nôm cần khác mặc định. Trang chỉ có Quốc ngữ luôn đọc ngang từ trái sang phải. Đây là thiết lập OCR, không phải nhãn xuất chuẩn. Trang trắng/không cần xử lý có thể bỏ qua OCR. Ảnh hai trang cần kiểm tra thứ tự trang trái trước, trang phải sau.
+   - **Gắn nhãn nhiều trang:** giữ Ctrl và nhấp các ảnh trang muốn chọn, hoặc bấm **Chọn tất cả** (Ctrl+A) để chọn toàn bộ sách. Bấm **Hán/Nôm**, **Quốc ngữ** hoặc **Cả hai** để gắn nhãn ngay cho nhóm đã chọn; các nhãn khác nằm trong danh sách bên cạnh. Bấm **Bỏ chọn** để hủy vùng chọn.
+3. **Chạy OCR:** chọn OCR từng trang hoặc theo phạm vi. OCR Hán Nôm dùng Kim Hán Nôm hoặc PP-OCRv5 CPU dự phòng đã cài; OCR Quốc ngữ dùng model VietOCR đã tải. Có thể tạm dừng/tiếp tục tác vụ; checkpoint nằm trong `backend/data/.workspace/ocr/`.
 4. **Gán nhãn OCR:** so box và chữ với ảnh, sửa ký tự chưa chắc (`□`), kéo/đổi kích thước box, vẽ hoặc xóa box. Box Hán Nôm được giữ từng chữ để rà soát. Lưu nháp/trang sau khi sửa.
 5. **Căn chỉnh song ngữ:** chọn trang để xem box nhãn xuất trên ảnh. Nếu trang chưa có cặp câu, bấm **Tạo box từ OCR** để tự gom các box chữ OCR theo dòng/cột đọc của trang; thao tác này thay thế các box nhãn xuất hiện có sau khi xác nhận. Khi đã tạo các cặp Hán Nôm–Quốc ngữ, nút này tạo khung cho tất cả cặp còn thiếu: ứng dụng đếm số ký tự Hán Nôm trong từng cặp, lấy bấy nhiêu box OCR nhỏ theo thứ tự đã đánh số và tạo một khung bao; không cần chữ trong từng box OCR. Nếu nhóm box chạy qua nhiều dòng/cột hoặc không đủ box, kiểm tra thứ tự rồi kéo thủ công khi cần. Có thể chọn câu trong thanh công cụ trên ảnh, phóng to, chỉnh vị trí/kích thước. Nhấp box đã vẽ để chọn, rồi nhấn Delete hoặc nút thùng rác để xóa. Box nhãn xuất được lưu riêng và không sửa box chữ OCR. Danh sách dưới ảnh cho phép sửa số thứ tự hoặc dùng mũi tên để đổi thứ tự xuất; thứ tự phải liên tục từ 1 và không trùng. Khi tách cặp, đặt một con trỏ tại ranh giới ở một trong hai vế rồi bấm Tách; vế Quốc ngữ được chia theo ranh giới từ gần nhất và Hán Nôm được chia theo tỷ lệ tương ứng. Kiểm tra ranh giới và lưu căn chỉnh trước khi xuất.
+   - **Câu nằm lệch trang:** ở bước **Gắn nhãn trang**, chọn trang rồi đánh dấu các trang liên kết trong ô **Trang liên kết**. Có thể tìm theo số trang và sửa liên kết sau khi OCR; trạng thái duyệt, box và checkpoint OCR được giữ nguyên. Ở **Căn chỉnh song ngữ**, chọn trang Hán Nôm: ứng dụng lưu cặp mặc định theo thứ tự dòng. Kéo một dòng Quốc ngữ sang dòng Hán Nôm cần ghép, hoặc chọn dòng rồi bấm **Gắn vào dòng**; các dòng Quốc ngữ phía sau được đẩy xuống. Dùng ô tìm và các dấu chọn trang để thu gọn danh sách khi liên kết nhiều trang. **Tự căn toàn sách** bỏ qua các trang liên kết và giữ các cặp đã căn của chúng.
+   - **ID và tệp kết quả:** `sentence_id` và `img_id` luôn dùng số trang Hán Nôm, ví dụ `Tên sách.007.1` và `Tên sách.007.jpg`. `alignments.json` lưu thêm ID trang và số dòng của hai vế để truy vết. `pairs.csv`, CSV và XLSX vẫn dùng bốn cột `img_id`, `sentence_id`, `SinoNom_Char`, `ChuQN_txt`; `pages.json` lưu danh sách `linked_page_ids`.
 6. **Xuất:** trong Xuất dữ liệu, tải CSV, XLSX và ZIP PPOCRLabel. CSV/XLSX là ngữ liệu cặp câu; ZIP gồm `Label.txt`, `fileState.txt` và ảnh. Nhãn Hán Nôm trong ZIP dùng riêng box nhãn xuất ở bước căn chỉnh; box Quốc ngữ giữ theo hàng/đoạn.
 
 ## 6. Dữ liệu, đầu ra và sao lưu

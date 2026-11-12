@@ -36,6 +36,7 @@ export type Page = {
   source_regions: Region[] | null;
   target_regions: Region[] | null;
   ocr_languages: ('han' | 'vi')[];
+  linked_page_ids: string[];
 };
 export type Book = {
   id: string;
@@ -55,6 +56,10 @@ export type Alignment = {
   target: string;
   reviewed: boolean;
   page_linked?: boolean;
+  source_page_id?: string | null;
+  source_line_index?: number | null;
+  target_page_id?: string | null;
+  target_line_index?: number | null;
   marks?: ReviewMark[];
 };
 export type ReviewMark = {
@@ -76,6 +81,7 @@ export type Workspace = {
   books: Book[];
   pair_stats: PairStats;
   ocr_ready: boolean;
+  han_ocr?: { primary_ready: boolean; fallback: { provider: string; ready: boolean; device: string; setup: string } };
   storage: string;
   source_folder: string;
   source_errors: { filename: string; message: string }[];
