@@ -35,9 +35,15 @@ from . import bilingual
 from .han_layout import PIPELINE_VERSION
 from .han_layout import jpeg_bytes
 from .region_ocr import crop_selection
-from .auto_alignment import page_rows as automatic_page_rows, boxes_for_rows
+from .auto_alignment import index_pages, page_rows as automatic_page_rows, boxes_for_rows
 
 Category = Literal['ch', 'vi', 'both', 'intro', 'ref', 'toc', 'blank', 'misc']
+
+
+class BoxReviewRange(BaseModel):
+    start: int = Field(ge=0)
+    end: int = Field(ge=1)
+    kind: Literal['match', 'mismatch', 'unknown']
 
 def page_ocr_mode(category: str, default_mode: str = 'bilingual') -> str:
     if category == 'ch':
@@ -58,6 +64,7 @@ class BoxInput(BaseModel):
     transcription: str = Field(max_length=30000)
     points: list[tuple[float, float]] = Field(min_length=4, max_length=4)
     review_kind: Literal['match','mismatch','unknown'] | None = None
+    review_marks: list[BoxReviewRange] = Field(default_factory=list, max_length=30000)
     review_order: int | None = Field(default=None, ge=1)
     export_group: str | None = Field(default=None, min_length=1, max_length=100)
     export_order: int | None = Field(default=None, ge=1)
@@ -78,6 +85,12 @@ class BoxInput(BaseModel):
         if not (all(t > 0 for t in turns) or all(t < 0 for t in turns)):
             raise ValueError('Box phải là tứ giác lồi có diện tích lớn hơn 0.')
         return points
+
+    @model_validator(mode='after')
+    def valid_review_marks(self):
+        if any(mark.end > len(self.transcription) or mark.end <= mark.start for mark in self.review_marks):
+            raise ValueError('Pháº§n tÃ´ mÃ u pháº£i náº±m trong box OCR.')
+        return self
 
 
 def validate_export_order(boxes):
@@ -927,7 +940,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 raise HTTPException(error.status_code,str(error)) from None
         text=('' if data.language=='han' else ' ').join(line.strip() for line in lines if line.strip())
         if not text:
-            raise HTTPException(422,'Không nhận dạng được chữ trong box này. Chỉnh box hoặc nhập chữ thủ công.')
+            return {'box_id':data.box.id,'language':data.language,'text':''}
         # No page/result/checkpoint writes: the caller keeps this in its unsaved draft.
         return {'box_id':data.box.id,'language':data.language,'text':text}
 
@@ -1045,9 +1058,19 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         book = require_book(book_id)
         with store.lock:
             pages = store.pages(book_id)
+            page_indexes = index_pages(pages)
             with store.db() as db:
                 saved = db.execute('SELECT rows FROM alignments WHERE book_id=?', (book_id,)).fetchone()
             rows = json.loads(saved['rows']) if saved else []
+            rows_by_page = {}
+            book_prefix = f"{book['name']}."
+            for row in rows:
+                sentence_id = row['sentence_id']
+                if not sentence_id.startswith(book_prefix):
+                    continue
+                page_number, separator, _ = sentence_id[len(book_prefix):].partition('.')
+                if separator and len(page_number) >= 3 and page_number.isdigit():
+                    rows_by_page.setdefault(int(page_number), []).append(row)
             source_pages = [page for page in pages if not page['ocr_skip']
                             and page['category'] not in ('blank', 'misc')
                             and 'han' in page['ocr_languages'] and page['status'] == 'done'
@@ -1061,10 +1084,9 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             boxes_removed = 0
             boxes_renumbered = 0
             for page in source_pages:
-                prefix = f"{book['name']}.{page['number']:03d}."
-                page_pairs = [row for row in rows if row['sentence_id'].startswith(prefix)]
+                page_pairs = rows_by_page.get(page['number'], [])
                 if page_pairs and page['ocr_granularity'] == 'phrase' and len(page_pairs) < len(page['boxes']):
-                    fresh = automatic_page_rows(page, pages, book['name'], reference)
+                    fresh = automatic_page_rows(page, pages, book['name'], reference, page_indexes)
                     old_boxes = {box.get('alignment_id'): box for box in page['export_boxes'] if box.get('alignment_id')}
                     expected_boxes = boxes_for_rows(page, page_pairs)
                     untouched = (
@@ -1087,6 +1109,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                         page['export_boxes'] = [box for box in page['export_boxes']
                                                 if box.get('alignment_id') not in obsolete]
                         rows = [row for row in rows if row['id'] not in obsolete] + fresh
+                        rows_by_page[page['number']] = fresh
                         created += len(fresh) - len(page_pairs)
                         page_pairs = fresh
                         with store.db() as db:
@@ -1094,8 +1117,9 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                                        (json.dumps(page['export_boxes'], ensure_ascii=False),
                                         '\n'.join(box['transcription'] for box in page['boxes']), page['id']))
                 if not page_pairs:
-                    page_pairs = automatic_page_rows(page, pages, book['name'], reference)
+                    page_pairs = automatic_page_rows(page, pages, book['name'], reference, page_indexes)
                     rows.extend(page_pairs)
+                    rows_by_page[page['number']] = page_pairs
                     created += len(page_pairs)
                 if not page_pairs or not page['boxes']:
                     continue

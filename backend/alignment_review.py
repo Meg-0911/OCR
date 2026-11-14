@@ -101,9 +101,13 @@ def score_boxes(pages: list[dict]):
     total = red = 0
     for page in pages:
         for box in page['boxes']:
-            for char in box['transcription']:
+            for character_index, char in enumerate(box['transcription']):
                 if source_glyph(char):
                     total += 1
-                    red += box.get('review_kind') in ('mismatch', 'unknown')
+                    kind = box.get('review_kind')
+                    for mark in box.get('review_marks', []):
+                        if mark['start'] <= character_index < mark['end']:
+                            kind = mark['kind']
+                    red += kind in ('mismatch', 'unknown')
     return {'total': total, 'red': red, 'unmarked': 0,
             'percent': round(100 * (1 - red / total), 2) if total else None}

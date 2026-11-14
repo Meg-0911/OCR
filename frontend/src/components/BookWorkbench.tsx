@@ -20,6 +20,7 @@ import {
   Save,
 } from 'lucide-react';
 import { api } from '../api';
+import { boxReviewKindAt } from '../reviewColors';
 import type {
   BookLayout,
   Box,
@@ -275,6 +276,8 @@ export default function BookWorkbench(props: Props) {
   const [full, setFull] = useState(false);
   const imagePane = useRef<HTMLDivElement>(null);
   const editor = useRef<HTMLDivElement>(null);
+  const phraseInputs = useRef(new Map<string, HTMLTextAreaElement>());
+  const phraseSelections = useRef(new Map<string, { start: number; end: number }>());
   const boxesKey = language === 'han' ? 'boxes' : 'vi_boxes';
   const textKey = language === 'han' ? 'source_text' : 'target_text';
   const boxes = page?.[boxesKey] || [];
@@ -440,7 +443,7 @@ export default function BookWorkbench(props: Props) {
         ...(language === 'vi' && page
           ? {
               boxes: page.boxes.map((box, index) =>
-                index >= targetWordStart(boxIndex) ? { ...box, review_kind: undefined } : box,
+                index >= targetWordStart(boxIndex) ? { ...box, review_kind: undefined, review_marks: undefined } : box,
               ),
             }
           : {}),
@@ -562,13 +565,37 @@ export default function BookWorkbench(props: Props) {
       ...(synchronizedText !== undefined ? { [textKey]: synchronizedText } : {}),
     });
   }
-  function markBox(boxId: string, review_kind: ReviewKind) {
+  function markBox(boxId: string, review_kind: ReviewKind, selectedRange?: { start: number; end: number }) {
     if (!page) return;
     const index = page.boxes.findIndex((box) => box.id === boxId);
     if (index < 0) return;
+    const current = page.boxes[index];
+    if (selectedRange && ocrGranularity === 'phrase' && language === 'han') {
+      const characters = Array.from(current.transcription);
+      const kinds = characters.map((_, characterIndex) => boxReviewKindAt(current, characterIndex));
+      for (let characterIndex = selectedRange.start; characterIndex < Math.min(selectedRange.end, kinds.length); characterIndex++)
+        kinds[characterIndex] = review_kind;
+      const review_marks: NonNullable<Box['review_marks']> = [];
+      for (let characterIndex = 0; characterIndex < kinds.length;) {
+        const kind = kinds[characterIndex];
+        let end = characterIndex + 1;
+        while (end < kinds.length && kinds[end] === kind) end++;
+        if (kind !== 'match') review_marks.push({ start: characterIndex, end, kind });
+        characterIndex = end;
+      }
+      const uniform = kinds.every((kind) => kind === kinds[0]);
+      props.onPatch({
+        boxes: page.boxes.map((box, boxIndex) => boxIndex === index
+          ? { ...box, review_kind: uniform ? kinds[0] : undefined, review_marks: uniform ? undefined : review_marks }
+          : box),
+      });
+      return;
+    }
     props.onPatch({
       boxes: page.boxes.map((box, boxIndex) =>
-        boxIndex === index || selectedBoxIds.includes(box.id) ? { ...box, review_kind } : box,
+        boxIndex === index || selectedBoxIds.includes(box.id)
+          ? { ...box, review_kind, review_marks: undefined }
+          : box,
       ),
     });
   }
@@ -576,7 +603,7 @@ export default function BookWorkbench(props: Props) {
     if (!page) return;
     props.onPatch({
       boxes: page.boxes.map((box, index) =>
-        index < page.boxes.length ? { ...box, review_kind } : box,
+        index < page.boxes.length ? { ...box, review_kind, review_marks: undefined } : box,
       ),
     });
   }
@@ -598,7 +625,7 @@ export default function BookWorkbench(props: Props) {
     props.onPatch({
       [boxesKey]: next.boxes.map((item) =>
         item.id === box.id && item.transcription !== value
-          ? { ...item, review_kind: undefined }
+          ? { ...item, review_kind: undefined, review_marks: undefined }
           : item,
       ),
       ...(language === 'vi' && box.transcription !== value
@@ -606,7 +633,7 @@ export default function BookWorkbench(props: Props) {
         ? {
             boxes: page.boxes.map((item, index) =>
               index >= targetWordStart(boxIndex)
-                ? { ...item, review_kind: undefined }
+                ? { ...item, review_kind: undefined, review_marks: undefined }
               : item,
             ),
           }
@@ -625,6 +652,15 @@ export default function BookWorkbench(props: Props) {
     setSelectedTargetWord(wordIndex);
     setShowBoxes(true);
     setEditingRegions(false);
+  }
+  function lookupPhraseSelection(box: Box) {
+    const input = phraseInputs.current.get(box.id);
+    if (!input) return;
+    const liveSelection = { start: input.selectionStart, end: input.selectionEnd };
+    const remembered = phraseSelections.current.get(box.id);
+    const { start, end } = liveSelection.end > liveSelection.start ? liveSelection : remembered || liveSelection;
+    const selectedText = start !== end ? input.value.slice(start, end) : box.transcription;
+    if (selectedText.trim()) props.onLookup(box, selectedText, start !== end ? start : 0);
   }
   async function fullscreen() {
     try {
@@ -648,10 +684,21 @@ export default function BookWorkbench(props: Props) {
           !event.metaKey &&
           reviewKind &&
           selected &&
-          !target.closest('textarea, select, [contenteditable="true"]')
+          !target.closest('select, [contenteditable="true"]')
         ) {
           event.preventDefault();
-          markBox(selected, reviewKind);
+          const phraseInput = ocrGranularity === 'phrase' && language === 'han'
+            ? phraseInputs.current.get(selected)
+            : undefined;
+          const selectionStart = phraseInput?.selectionStart ?? 0;
+          const selectionEnd = phraseInput?.selectionEnd ?? 0;
+          const selectedRange = selectionEnd > selectionStart && phraseInput
+            ? {
+                start: Array.from(phraseInput.value.slice(0, selectionStart)).length,
+                end: Array.from(phraseInput.value.slice(0, selectionEnd)).length,
+              }
+            : undefined;
+          markBox(selected, reviewKind, selectedRange);
           return;
         }
         if (
@@ -1474,6 +1521,7 @@ export default function BookWorkbench(props: Props) {
                                               boxes: page.boxes.map((box) => ({
                                                 ...box,
                                                 review_kind: undefined,
+                                                review_marks: undefined,
                                               })),
                                             }
                                           : {}),
@@ -1557,8 +1605,10 @@ export default function BookWorkbench(props: Props) {
                         {!characterEditing && boxes.length > 0 && (
                           <div className="workbench-box-lines">
                             <small>{boxes.length} vùng chữ</small>
+                            {language === 'han' && step === 4 && <small> · Alt + 1: đen; 2: đỏ; 3: thiếu từ điển</small>}
                             {boxes.map((box, index) => {
                               let offset = 0;
+                              let reviewOffset = 0;
                               const rowWordStart = targetWordStart(index);
                               const reviewKind = language === 'han' ? box.review_kind || 'match' : undefined;
                               return (
@@ -1579,10 +1629,15 @@ export default function BookWorkbench(props: Props) {
                                   <div>
                                     {language === 'han' ? (
                                       <>
+                                        <div className="workbench-phrase-input">
                                         <textarea
                                           className="han-text"
                                           aria-label={`Vùng chữ ${index + 1}`}
                                           rows={2}
+                                          ref={(element) => {
+                                            if (element) phraseInputs.current.set(box.id, element);
+                                            else phraseInputs.current.delete(box.id);
+                                          }}
                                           style={{
                                             color:
                                               reviewKind === 'mismatch' || reviewKind === 'unknown'
@@ -1592,6 +1647,11 @@ export default function BookWorkbench(props: Props) {
                                           disabled={props.busy || acting}
                                           readOnly={step !== 4}
                                           value={box.transcription}
+                                            onSelect={(event) => {
+                                              const { selectionStart, selectionEnd } = event.currentTarget;
+                                              if (selectionEnd > selectionStart)
+                                                phraseSelections.current.set(box.id, { start: selectionStart, end: selectionEnd });
+                                            }}
                                           onFocus={() => {
                                             setEditingRegions(false);
                                             setSelected(box.id);
@@ -1599,15 +1659,29 @@ export default function BookWorkbench(props: Props) {
                                           }}
                                           onChange={(event) => updateBox(box, event.target.value)}
                                         />
+                                        {step === 4 && <button
+                                          type="button"
+                                          className="character-dictionary-button phrase-dictionary-button"
+                                          aria-label={`Tra từ đang chọn trong vùng ${index + 1}`}
+                                          title="Bôi đen chữ hoặc từ rồi tra cứu"
+                                          disabled={props.busy || acting}
+                                          onMouseDown={(event) => event.preventDefault()}
+                                          onClick={() => lookupPhraseSelection(box)}
+                                        >
+                                          <Search size={12} />
+                                        </button>}
+                                        </div>
                                         <div className="workbench-characters han-text">
                                           {Array.from(box.transcription).map((character) => {
                                             const charIndex = offset;
+                                            const characterIndex = reviewOffset++;
                                             offset += character.length;
+                                            const characterReviewKind = boxReviewKindAt(box, characterIndex);
                                             return (
                                               <button
                                                 key={charIndex}
-                                                className={`review-${reviewKind || 'match'}`}
-                                                style={{ color: reviewKind === 'mismatch' || reviewKind === 'unknown' ? '#c00' : '#000' }}
+                                                className={`review-${characterReviewKind}`}
+                                                style={{ color: characterReviewKind === 'mismatch' || characterReviewKind === 'unknown' ? '#c00' : '#000' }}
                                                 title={`Tra chữ ${character}`}
                                                 onMouseEnter={() => {
                                                   setEditingRegions(false);

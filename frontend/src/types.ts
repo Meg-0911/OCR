@@ -1,10 +1,12 @@
 export type Category = 'both' | 'ch' | 'vi' | 'intro' | 'ref' | 'toc' | 'blank' | 'misc';
 export type ReviewKind = 'match' | 'mismatch' | 'unknown';
+export type ReviewRange = { start: number; end: number; kind: ReviewKind };
 export type Box = {
   id: string;
   transcription: string;
   points: [number, number][];
   review_kind?: ReviewKind;
+  review_marks?: ReviewRange[];
   review_order?: number | null;
   export_group?: string;
   export_order?: number | null;

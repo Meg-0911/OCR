@@ -85,7 +85,9 @@ export default function DictionaryPanel({
     }
   }
   useEffect(() => {
-    if (character && character !== '□' && initialMode === 'character') void lookup(character);
+    if (!character || character === '□' || initialMode !== 'character') return;
+    if (Array.from(character).length === 1) void lookup(character);
+    else void search(character);
   }, [character, initialMode]);
   useEffect(() => {
     setMode(initialMode);
@@ -103,9 +105,10 @@ export default function DictionaryPanel({
     },
     [],
   );
-  async function search() {
-    if (Array.from(query.trim()).length === 1 && /\p{Script=Han}/u.test(query)) {
-      await lookup(query.trim());
+  async function search(searchText = query) {
+    const normalizedQuery = searchText.trim();
+    if (Array.from(normalizedQuery).length === 1 && /\p{Script=Han}/u.test(normalizedQuery)) {
+      await lookup(normalizedQuery);
       return;
     }
     const id = ++requestId.current;
@@ -114,8 +117,9 @@ export default function DictionaryPanel({
     setResult(null);
     setMatches([]);
     setReverseMatches([]);
+    setQuery(normalizedQuery);
     try {
-      const entries = await api.searchDictionary(query);
+      const entries = await api.searchDictionary(normalizedQuery);
       if (id === requestId.current) setMatches(entries);
     } catch (e) {
       if (id === requestId.current) setError(e instanceof Error ? e.message : 'Không tìm được từ.');
@@ -242,7 +246,7 @@ export default function DictionaryPanel({
           </p>
           {canReplace && entry.character !== character && (
             <button className="secondary-button" onClick={() => onReplace(entry.character)}>
-              Thay chữ đang chọn bằng {entry.character}
+              Thay {Array.from(character).length > 1 ? 'từ' : 'chữ'} đang chọn bằng {entry.character}
             </button>
           )}
           <h3>Các dạng chữ khác</h3>
@@ -262,7 +266,7 @@ export default function DictionaryPanel({
                   <p>{variant.definitions.join('; ') || 'Chưa có nghĩa trong nguồn dự phòng'}</p>
                   {canReplace && (
                     <button className="text-button" onClick={() => onReplace(variant.character)}>
-                      Thay chữ đang chọn bằng {variant.character}
+                      Thay {Array.from(character).length > 1 ? 'từ' : 'chữ'} đang chọn bằng {variant.character}
                     </button>
                   )}
                 </div>

@@ -19,7 +19,7 @@ export default function PairProgress({
       aria-label="Mục tiêu ngữ liệu song ngữ"
     >
       <div className="pair-progress-count">
-        <span className="pair-progress-label">CẶP NÔM – QUỐC NGỮ ĐÃ LƯU</span>
+        <span className="pair-progress-label">CẶP ĐÃ XÁC NHẬN</span>
         <div>
           <strong>{number(stats.pairs)}</strong>
           <span>/ {number(stats.target)} cặp</span>
@@ -59,7 +59,7 @@ export default function PairProgress({
         Bổ sung tài liệu
       </button>
       <div className="pair-progress-rule">
-        Chỉ tính các cặp đã lưu, đủ hai vế; không tính cặp trùng văn bản.
+        Chỉ tính các cặp đã xác nhận, đủ hai vế; không tính cặp trùng văn bản.
         {(stats.incomplete_pairs > 0 || stats.duplicate_pairs > 0) &&
           ` Đang bỏ qua ${number(stats.incomplete_pairs)} cặp thiếu nội dung và ${number(stats.duplicate_pairs)} cặp trùng.`}
       </div>

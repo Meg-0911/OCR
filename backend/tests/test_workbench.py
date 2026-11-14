@@ -317,6 +317,23 @@ def test_xlsx_uses_per_character_review_from_page_boxes(annotated):
     assert summary['similarity_review']=={'total':2,'red':1,'unmarked':0,'percent':50.0}
 
 
+def test_phrase_box_review_ranges_color_only_the_selected_characters(annotated):
+    client,_,_,book,page=annotated
+    phrase={'id':'phrase','transcription':'天地方','points':[[10,10],[80,10],[80,50],[10,50]],
+            'review_marks':[{'start':1,'end':2,'kind':'mismatch'}]}
+    saved=client.patch(f"/api/pages/{page['id']}",json={
+        'category':'ch','source_text':'天地方','boxes':[phrase],
+    })
+    assert saved.status_code==200, saved.text
+    row={'id':'phrase-colors','sentence_id':f"{book['name']}.001.1",'source':'天地方',
+         'target':'Thiên địa','reviewed':False}
+    assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[row]}).status_code==200
+    workbook=load_workbook(io.BytesIO(client.get(f"/api/books/{book['id']}/export?format=xlsx").content),rich_text=True)
+    assert [block.font.color.rgb for block in workbook.active['C2'].value]==['FF000000','FFCC0000','FF000000']
+    summary=client.get(f"/api/books/{book['id']}/results/summary.json").json()
+    assert summary['similarity_review']=={'total':3,'red':1,'unmarked':0,'percent':66.67}
+
+
 def test_xlsx_applies_page_colors_to_the_single_quoc_ngu_column_on_each_page(annotated):
     client,_,_,book,page=annotated
     pages=client.get(f"/api/books/{book['id']}/pages").json()
@@ -442,6 +459,8 @@ def test_correcting_vietnamese_boxes_updates_ocr_text_and_existing_pairs(workspa
     assert [row['target'] for row in saved]==['Thiên địa đã sửa','Huyền hoàng đã sửa','Bản dịch viết tay']
     assert [row['reviewed'] for row in saved]==[False,False,True]
     assert [row['id'] for row in saved]==['same-page','linked-page','manual']
+    downloaded=client.get(f"/api/books/{book['id']}/results/pairs.csv").content.decode('utf-8-sig')
+    assert all(row['target'].lower() in downloaded for row in saved)
 
 
 def test_loading_pairs_repairs_older_ocr_text_after_saved_correction(workspace):
@@ -587,7 +606,7 @@ def test_pair_counter_excludes_incomplete_and_duplicates_and_resumes(workspace):
     ])
     stats = client.get('/api/workspace').json()['pair_stats']
     assert stats == {
-        'target':2000, 'pairs':2, 'reviewed_pairs':1, 'remaining':1998,
+        'target':2000, 'pairs':1, 'reviewed_pairs':1, 'remaining':1999,
         'duplicate_pairs':2, 'incomplete_pairs':2,
     }
     assert Store(root).pair_stats() == stats
@@ -601,7 +620,7 @@ def test_pair_counter_excludes_incomplete_and_duplicates_and_resumes(workspace):
 def test_pair_counter_target_boundaries(workspace, count, remaining):
     client, _, _ = workspace
     save_counted_pairs(client, 'Target.pdf', [
-        (f'句{i}', f'Câu {i}', False) for i in range(count)
+        (f'句{i}', f'Câu {i}', True) for i in range(count)
     ])
     stats = client.get('/api/workspace').json()['pair_stats']
     assert stats['pairs'] == count

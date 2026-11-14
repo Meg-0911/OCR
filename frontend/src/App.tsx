@@ -40,7 +40,7 @@ import LibraryBookReader from './components/LibraryBookReader';
 import DictionaryPanel from './components/DictionaryPanel';
 import { draftPatch, patchDraft, afterAutomaticSave, type Draft } from './drafts';
 import { replaceBoxText } from './components/boxText';
-import { reviewColorsForAlignmentRows, reviewColorsForText } from './reviewColors';
+import { boxReviewKindAt, reviewColorsForAlignmentRows, reviewColorsForText } from './reviewColors';
 import type {
   Alignment,
   Book,
@@ -95,15 +95,35 @@ function reviewSummary(pages: Page[]) {
   let red = 0;
   for (const page of pages) {
     for (const box of page.boxes) {
+      let characterIndex = 0;
       for (const char of box.transcription) {
         if (/\p{Script=Han}|\p{Co}|□/u.test(char)) {
           total++;
-          red += Number(box.review_kind === 'mismatch' || box.review_kind === 'unknown');
+          const reviewKind = boxReviewKindAt(box, characterIndex);
+          red += Number(reviewKind === 'mismatch' || reviewKind === 'unknown');
         }
+        characterIndex++;
       }
     }
   }
   return { total, red, percent: total ? 100 * (1 - red / total) : null };
+}
+
+function validOCRRegionBox(box: Box, page: Page) {
+  const points = box.points;
+  if (!box.id || box.id.length > 100 || box.transcription.length > 30000 ||
+      !Array.isArray(points) || points.length !== 4 || points.some((point) =>
+        !Array.isArray(point) || point.length !== 2 ||
+        !Number.isFinite(point[0]) || !Number.isFinite(point[1]) ||
+        point[0] < 0 || point[1] < 0 || point[0] > page.width || point[1] > page.height,
+      )) return false;
+  const turns = points.map((point, index) => {
+    const next = points[(index + 1) % 4];
+    const after = points[(index + 2) % 4];
+    return (next[0] - point[0]) * (after[1] - next[1]) -
+      (next[1] - point[1]) * (after[0] - next[0]);
+  });
+  return turns.every((turn) => turn > 0) || turns.every((turn) => turn < 0);
 }
 
 function alignmentReviewColors(rows: Alignment[], pages: Page[]) {
@@ -112,7 +132,9 @@ function alignmentReviewColors(rows: Alignment[], pages: Page[]) {
   for (const row of rows) {
     const pageNumber = Number(row.sentence_id.match(/\.(\d{3,})\.\d+$/)?.[1]);
     if (!pageNumber) continue;
-    rowsByPage.set(pageNumber, [...(rowsByPage.get(pageNumber) || []), row]);
+    const pageRows = rowsByPage.get(pageNumber);
+    if (pageRows) pageRows.push(row);
+    else rowsByPage.set(pageNumber, [row]);
   }
   for (const page of pages) {
     const pageRows = rowsByPage.get(page.number);
@@ -191,7 +213,7 @@ export default function App() {
       : merged;
   }), [pages, drafts]);
   const alignmentPages = useMemo(() => alignmentContentPages.filter((item) =>
-    !item.ocr_skip && item.category !== 'blank' && item.ocr_languages.includes('han')
+    !item.ocr_skip && item.category !== 'blank' && item.category !== 'misc' && item.ocr_languages.includes('han')
   ).sort((a, b) => a.number - b.number), [alignmentContentPages]);
   const activeBook = workspace?.books.find((b) => b.id === bookId);
   const alignmentSourcePage =
@@ -224,13 +246,13 @@ export default function App() {
       const pageNumber = row.sentence_id.slice(prefix.length).split('.', 1)[0];
       if (!/^\d{3,}$/u.test(pageNumber)) return;
       const number = Number(pageNumber);
-      rowsByPage.set(number, [...(rowsByPage.get(number) || []), { row, globalIndex }]);
+      const pageRows = rowsByPage.get(number);
+      if (pageRows) pageRows.push({ row, globalIndex });
+      else rowsByPage.set(number, [{ row, globalIndex }]);
     });
     return alignmentPages
       .map((page) => ({ page, rows: rowsByPage.get(page.number) || [] }));
   }, [activeBook, alignmentPages, rows]);
-  const visibleAlignmentPageGroups = alignmentPageGroups.filter(({ page }) =>
-    page.id === alignmentSourcePage?.id && !page.linked_page_ids.length);
   const [rowsDirty, setRowsDirty] = useState(false);
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
@@ -242,6 +264,7 @@ export default function App() {
   const [libraryBookId, setLibraryBookId] = useState('');
   const [dictionaryCharacter, setDictionaryCharacter] = useState<string | null>(null);
   const [dictionaryMode, setDictionaryMode] = useState<'character' | 'reading'>('character');
+  const [dictionaryRequest, setDictionaryRequest] = useState(0);
   const [bookJob, setBookJob] = useState<OCRJob | null>(null);
   const [workflowStep, setWorkflowStep] = useState<1 | 2 | 3 | 4>(1);
   const [boxOCRPages, setBoxOCRPages] = useState<string[]>([]);
@@ -258,6 +281,7 @@ export default function App() {
   const sessionSaves = useRef<Promise<unknown>>(Promise.resolve());
   const currentBookRef = useRef(bookId);
   currentBookRef.current = bookId;
+  const pagesBookId = useRef('');
   const refreshingBookPages = useRef(false);
   const [dictionarySelection, setDictionarySelection] = useState<{
     pageId: string;
@@ -423,15 +447,29 @@ export default function App() {
   async function recognizeBoxes(boxes: Box[], language: 'han' | 'vi') {
     if (!draft || !boxes.length || boxOCRRequests.current.has(draft.id)) return;
     const snapshot = draft;
+    if (snapshot.ocr_skip || snapshot.category === 'blank') {
+      notify('Trang này đang bỏ qua OCR.', true);
+      return;
+    }
     boxOCRRequests.current.add(snapshot.id);
     setBoxOCRPages((previous) => [...previous, snapshot.id]);
     let completed = 0;
     let stale = 0;
     const errors: string[] = [];
+    const validBoxes = boxes.filter((box) => validOCRRegionBox(box, snapshot));
+    if (validBoxes.length !== boxes.length) {
+      errors.push(`${boxes.length - validBoxes.length} box có khung không hợp lệ đã được bỏ qua.`);
+    }
+    let failed = boxes.length - validBoxes.length;
     try {
-      for (const box of boxes) {
+      for (const box of validBoxes) {
         try {
           const result = await api.recognizeBox(snapshot.id, box, language, language === 'vi' ? 2 : snapshot.reading_direction);
+          if (!result.text.trim()) {
+            errors.push('OCR không nhận ra chữ trong box; nội dung hiện tại được giữ nguyên.');
+            failed++;
+            continue;
+          }
           const saved = pagesRef.current.find((item) => item.id === snapshot.id) || snapshot;
           const pending = draftsRef.current[snapshot.id];
           const current = { ...saved, ...(pending ? draftPatch(pending) : {}) };
@@ -450,13 +488,14 @@ export default function App() {
           completed++;
         } catch (error) {
           errors.push(error instanceof Error ? error.message : 'Lỗi OCR không xác định');
+          failed++;
         }
       }
-      if (boxes.length === 1 && completed === 1) {
+      if (boxes.length === 1 && completed === 1 && !errors.length) {
         notify('Đã OCR lại box. Kiểm tra chữ rồi bấm Lưu & hoàn thành.');
       } else {
         const details = [stale ? `${stale} box đã thay đổi nên bỏ qua.` : '',
-          errors.length ? `${errors.length} box lỗi: ${errors[0]}` : '']
+          failed ? `${failed} box lỗi: ${errors[0]}` : '']
           .filter(Boolean).join(' ');
         notify(`Đã OCR ${completed}/${boxes.length} box. ${details || 'Kiểm tra chữ rồi bấm Lưu & hoàn thành.'}`,
           stale > 0 || errors.length > 0);
@@ -575,11 +614,12 @@ export default function App() {
   async function saveDraftNow(
     id: string,
     mode: 'all' | 'automatic' = 'automatic',
+    refreshWorkspace = true,
   ): Promise<Page | undefined> {
     const inflight = savingDrafts.current.get(id);
     if (inflight) {
       await inflight;
-      return saveDraftNow(id, mode);
+      return saveDraftNow(id, mode, refreshWorkspace);
     }
     const snapshot = draftsRef.current[id];
     if (!snapshot) return;
@@ -615,7 +655,7 @@ export default function App() {
         return next;
       });
       setAutosaveState('Đã lưu chỉnh sửa vào máy.');
-      void loadWorkspace();
+      if (refreshWorkspace) void loadWorkspace();
       return updated;
     } catch (error) {
       setAutosaveState('Chưa lưu được vào máy; bản nháp còn trên trình duyệt.');
@@ -673,6 +713,7 @@ export default function App() {
     Promise.all([api.pages(bookId), api.bookSession(bookId)])
       .then(([result, savedSession]) => {
         if (cancelled) return;
+        pagesBookId.current = bookId;
         const localSession = readSession(bookId);
         const session = result.some((p) => p.id === localSession.page_id)
           ? localSession
@@ -726,18 +767,31 @@ export default function App() {
     setAlignmentLoading(true);
     setRows([]);
     setReference(null);
+    if (loadingPages || pagesBookId.current !== bookId) {
+      if (!loadingPages) setAlignmentLoading(false);
+      return () => { cancelled = true; };
+    }
     (async () => {
       let cached: Alignment[] | null = null;
       try { cached = JSON.parse(localStorage.getItem(`nom-alignment-${bookId}`) || 'null'); } catch { /* server copy */ }
       if (view === 'alignment') {
-        const bookPages = await api.pages(bookId);
-        for (const bookPage of bookPages) await saveDraftNow(bookPage.id, 'all');
+        const dirtyPageIds = pagesRef.current
+          .filter((bookPage) => bookPage.book_id === bookId && draftsRef.current[bookPage.id] &&
+            Object.keys(draftPatch(draftsRef.current[bookPage.id], 'all')).length)
+          .map((bookPage) => bookPage.id);
+        const savedDrafts = await Promise.all(
+          dirtyPageIds.map((id) => saveDraftNow(id, 'all', false)),
+        );
+        if (savedDrafts.some(Boolean)) void loadWorkspace();
         if (cached) {
           await api.saveAlignments(bookId, cached);
           try { localStorage.removeItem(`nom-alignment-${bookId}`); } catch { /* server copy */ }
         }
-        const prepared = await api.prepareAlignments(bookId);
-        const [freshPages, referenceText] = await Promise.all([api.pages(bookId), api.reference(bookId)]);
+        const [prepared, referenceText] = await Promise.all([
+          api.prepareAlignments(bookId),
+          api.reference(bookId),
+        ]);
+        const freshPages = await api.pages(bookId);
         return { result: prepared.rows, referenceText, freshPages, cached: null };
       }
       return { result: cached || await api.alignments(bookId), referenceText: null, freshPages: null, cached };
@@ -757,7 +811,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [bookId, view]);
+  }, [bookId, view, loadingPages]);
   function persistRows(id: string, snapshot: Alignment[]) {
     const previous = alignmentSaves.current.get(id) || Promise.resolve([]);
     const task = previous.catch(() => []).then(() => api.saveAlignments(id, snapshot));
@@ -895,6 +949,16 @@ export default function App() {
       }
     }
     setBookId(book.id);
+    setView(nextView);
+  }
+  function navigateToView(nextView: View) {
+    if (nextView === 'alignment' && pageId) {
+      const currentPage = pages.find((item) => item.id === pageId);
+      const sourcePage = alignmentPages.find((item) => item.id === pageId) ||
+        alignmentPages.find((item) => item.linked_page_ids.includes(pageId)) ||
+        (currentPage && alignmentPages.find((item) => item.number === currentPage.number));
+      if (sourcePage) setAlignmentPage(sourcePage.id);
+    }
     setView(nextView);
   }
   function changeRows(next: Alignment[]) {
@@ -1047,7 +1111,7 @@ export default function App() {
               className={`nav-item ${view === item.id ? 'active' : ''}`}
               aria-label={item.label}
               title={item.label}
-              onClick={() => setView(item.id)}
+              onClick={() => navigateToView(item.id)}
             >
               <item.icon size={19} strokeWidth={1.7} />
               <span>{item.label}</span>
@@ -1275,6 +1339,7 @@ export default function App() {
                     setDictionarySelection({ pageId: pageId, boxId: box.id, index, character });
                     setDictionaryMode(!character || character === '□' ? 'reading' : 'character');
                     setDictionaryCharacter(character);
+                    setDictionaryRequest((current) => current + 1);
                   }}
                 />
               )}
@@ -1391,7 +1456,7 @@ export default function App() {
                     <div>
                       <h2>
                         <Link2 size={19} />
-                        Cặp ngữ liệu song song <span className="count-badge">{rows.length}</span>
+                        Cặp đã xác nhận <span className="count-badge">{rows.filter((row) => row.reviewed).length}</span>
                       </h2>
                       <p>Cặp và box từ OCR đã được tự tạo, lưu sẵn. Kiểm tra rồi xác nhận từng trang.</p>
                     </div>
@@ -1472,14 +1537,16 @@ export default function App() {
                     <div className="empty-section">
                       <LoaderCircle className="spin" size={24} />
                     </div>
-                  ) : visibleAlignmentPageGroups.length ? (
+                  ) : alignmentPageGroups.length ? (
                     <div className="alignment-page-groups">
-                      {visibleAlignmentPageGroups.map(({ page: groupPage, rows: pageRows }) => (
-                        <details
-                          className="alignment-page-group"
-                          key={groupPage.id}
-                          open={groupPage.id === alignmentSourcePage?.id}
-                        >
+                      {alignmentPageGroups.map(({ page: groupPage, rows: pageRows }) => {
+                        const isSelectedPage = groupPage.id === alignmentSourcePage?.id;
+                        return (
+                          <details
+                            className="alignment-page-group"
+                            key={groupPage.id}
+                            open={isSelectedPage}
+                          >
                           <summary onClick={() => setAlignmentPage(groupPage.id)}>
                             <strong>Trang {String(groupPage.number).padStart(3, '0')}</strong>
                             <span className={`alignment-page-status ${pageRows.length ? 'has-pairs' : ''}`}>
@@ -1497,8 +1564,13 @@ export default function App() {
                               </small>
                             )}
                           </summary>
-                          {pageRows.length ? (
-                            <>
+                          {isSelectedPage ? (
+                            groupPage.linked_page_ids.length && pageRows.length ? (
+                              <div className="alignment-page-empty">
+                                <span>Các cặp của trang liên kết được chỉnh ở khối ghép phía trên.</span>
+                              </div>
+                            ) : pageRows.length ? (
+                              <>
                               <div className="alignment-page-actions">
                                 <span>
                                   {pageRows.filter(({ row }) => row.reviewed).length}/{pageRows.length} cặp đã xác nhận
@@ -1624,22 +1696,24 @@ export default function App() {
                                   );
                                 })}
                               </div>
-                            </>
-                          ) : (
-                            <div className="alignment-page-empty">
-                              <span>Trang này chưa có cặp căn chỉnh.</span>
-                              <button
-                                className="secondary-button"
-                                disabled={busy}
-                                onClick={() => newRow('', '', groupPage.id)}
-                              >
-                                <Plus size={14} />
-                                Tạo cặp cho trang này
-                              </button>
-                            </div>
-                          )}
-                        </details>
-                      ))}
+                              </>
+                            ) : (
+                              <div className="alignment-page-empty">
+                                <span>Trang này chưa có cặp căn chỉnh.</span>
+                                <button
+                                  className="secondary-button"
+                                  disabled={busy}
+                                  onClick={() => newRow('', '', groupPage.id)}
+                                >
+                                  <Plus size={14} />
+                                  Tạo cặp cho trang này
+                                </button>
+                              </div>
+                            )
+                          ) : null}
+                          </details>
+                        );
+                      })}
                     </div>
                   ) : alignmentSourcePage?.linked_page_ids.length ? null : (
                     <div className="empty-section">
@@ -1739,6 +1813,7 @@ export default function App() {
       )}
       {dictionaryCharacter !== null && (
         <DictionaryPanel
+          key={dictionaryRequest}
           character={dictionaryCharacter}
           initialMode={dictionaryMode}
           canReplace={!busy && !!dictionarySelection && dictionarySelection.pageId === page?.id}

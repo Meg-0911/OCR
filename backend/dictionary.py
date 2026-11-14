@@ -99,6 +99,13 @@ class Dictionary:
         if is_han(query):
             result = self.lookup(query)
             return [result['entry']] if result['entry'] else []
+        han_characters = list(dict.fromkeys(character for character in query if is_han(character)))
+        if han_characters and all(
+            is_han(character) or character.isspace() or unicodedata.category(character).startswith('P')
+            for character in query
+        ):
+            return [entry for character in han_characters
+                    if (entry := self.lookup(character)['entry']) is not None]
         found = [entry['character'] for entry in self._local()
                  if any(query.casefold() in str(r).casefold() for r in entry.get('readings',[]))]
         if self.path.is_file():

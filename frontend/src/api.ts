@@ -39,6 +39,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return response.json();
 }
+function supportsDictionaryCharacter(character: string) {
+  const characters = Array.from(character);
+  if (characters.length !== 1) return false;
+  const codePoint = characters[0].codePointAt(0);
+  if (codePoint == null) return false;
+  return (codePoint >= 0x3400 && codePoint <= 0x4dbf) ||
+    (codePoint >= 0x4e00 && codePoint <= 0x9fff) ||
+    (codePoint >= 0xf900 && codePoint <= 0xfaff) ||
+    (codePoint >= 0x20000 && codePoint <= 0x3347f);
+}
 function json(method: string, body: unknown): RequestInit {
   return { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
 }
@@ -122,8 +132,12 @@ export const api = {
     ),
   controlOCRJob: (job: string, action: 'pause' | 'resume') =>
     request<OCRJob>(`/ocr-jobs/${job}/${action}`, { method: 'POST' }),
-  lookupCharacter: (character: string) =>
-    request<DictionaryLookup>(`/dictionary/lookup?character=${encodeURIComponent(character)}`),
+  lookupCharacter: (character: string) => {
+    if (!supportsDictionaryCharacter(character)) {
+      return Promise.reject(new Error('Chỉ hỗ trợ tra cứu từng chữ Hán/Nôm trong từ điển.'));
+    }
+    return request<DictionaryLookup>(`/dictionary/lookup?character=${encodeURIComponent(character)}`);
+  },
   searchDictionary: (query: string) =>
     request<DictionaryEntry[]>(`/dictionary/search?q=${encodeURIComponent(query)}`),
   reverseSearchDictionary: (query: string) =>

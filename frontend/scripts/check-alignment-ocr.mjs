@@ -101,4 +101,12 @@ assert.deepEqual(
   ['match', 'match', 'match', 'match', 'mismatch', 'mismatch', 'mismatch', 'match', 'match', 'match'],
 );
 
+assert.deepEqual(
+  reviewColorsForText('天地方', [{
+    id: 'phrase-box', transcription: '天地方', review_kind: 'mismatch',
+    review_marks: [{ start: 1, end: 2, kind: 'match' }], points: [],
+  }], 'source'),
+  ['mismatch', 'match', 'mismatch'],
+);
+
 console.log('OCR alignment boxes: OK');

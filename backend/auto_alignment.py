@@ -21,15 +21,28 @@ def source_groups(page):
     return character_box_groups(boxes, page['reading_direction'])
 
 
-def target_pages(source, pages):
-    linked = [page for page in pages if (page['id'] in source['linked_page_ids'] or page['id'] == source['id'])
-              and not page['ocr_skip'] and 'vi' in page['ocr_languages']]
+def index_pages(pages):
+    by_id = {}
+    by_number = {}
+    order = {}
+    for index, page in enumerate(pages):
+        by_id[page['id']] = page
+        by_number.setdefault(page['number'], []).append(page)
+        order[page['id']] = index
+    return by_id, by_number, order
+
+
+def target_pages(source, pages, indexes=None):
+    by_id, by_number, order = indexes or index_pages(pages)
+    linked_ids = [source['id'], *source['linked_page_ids']]
+    linked = [by_id[page_id] for page_id in linked_ids if page_id in by_id
+              and not by_id[page_id]['ocr_skip'] and 'vi' in by_id[page_id]['ocr_languages']]
     if source['linked_page_ids'] and linked:
-        return sorted(linked, key=lambda page: page['number'])
+        return sorted(linked, key=lambda page: (page['number'], order[page['id']]))
     if 'vi' in source['ocr_languages']:
         return [source]
-    return [page for page in pages if page['number'] == source['number']
-            and page['id'] != source['id'] and not page['ocr_skip']
+    return [page for page in by_number.get(source['number'], [])
+            if page['id'] != source['id'] and not page['ocr_skip']
             and 'vi' in page['ocr_languages']]
 
 
@@ -46,12 +59,12 @@ def reference_for_page(text, number):
     return text
 
 
-def page_rows(source, pages, book_name, reference=''):
+def page_rows(source, pages, book_name, reference='', indexes=None):
     source_lines = ([box['transcription'].strip() for group in source_groups(source)
                      for box in group if box['transcription'].strip()]
                     if source.get('ocr_granularity') == 'phrase' else lines(source['source_text'])) or [
         ''.join(box['transcription'] for box in group) for group in source_groups(source)]
-    targets = [(line, page['id'], index) for page in target_pages(source, pages)
+    targets = [(line, page['id'], index) for page in target_pages(source, pages, indexes)
                for index, line in enumerate(lines(page['target_text']))]
     if not targets and source['target_text']:
         targets = [(line, None, index) for index, line in enumerate(lines(source['target_text']))]

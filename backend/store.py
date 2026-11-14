@@ -23,6 +23,12 @@ def completed_ocr_languages(result):
     return [language for language in ('han','vi') if language in completed and (requested is None or language in requested)]
 
 
+def alignment_word_count(text, field):
+    if field == 'source':
+        return sum(source_glyph(char) for char in text)
+    return sum(bool(re.search(r'\w', word, re.UNICODE)) for word in text.split())
+
+
 def replace_file(temporary,target):
     # Windows readers/antivirus can briefly hold a newly written snapshot open.
     for attempt in range(6):
@@ -327,11 +333,11 @@ class Store:
                 if key in pairs:
                     duplicates += 1
                 pairs[key] = pairs.get(key, False) or bool(row.get('reviewed', False))
-        count = len(pairs)
+        count = sum(pairs.values())
         return {
             'target': PAIR_TARGET,
             'pairs': count,
-            'reviewed_pairs': sum(pairs.values()),
+            'reviewed_pairs': count,
             'remaining': max(0, PAIR_TARGET - count),
             'duplicate_pairs': duplicates,
             'incomplete_pairs': incomplete,
@@ -413,12 +419,16 @@ class Store:
                 continue
             stream = ''.join(row['source'] for row in page_rows)
             stream_colors = [None] * len(stream)
-            box_glyph_colors = [
-                box.get('review_kind') or 'match'
-                for box in page['boxes']
-                for char in box['transcription']
-                if source_glyph(char)
-            ]
+            box_glyph_colors = []
+            for box in page['boxes']:
+                for character_index, char in enumerate(box['transcription']):
+                    if not source_glyph(char):
+                        continue
+                    kind = box.get('review_kind') or 'match'
+                    for mark in box.get('review_marks', []):
+                        if mark['start'] <= character_index < mark['end']:
+                            kind = mark['kind']
+                    box_glyph_colors.append(kind)
             glyph_index = 0
             for index, char in enumerate(stream):
                 if not source_glyph(char):
@@ -605,7 +615,6 @@ class Store:
                         source.append(char)
                 if ''.join(source)!=row['source']:
                     row['source']=''.join(source)
-                    row['reviewed']=False
                     row['marks']=[]
             if changed:
                 db.execute('UPDATE alignments SET rows=? WHERE book_id=?',(json.dumps(rows,ensure_ascii=False),book_id))
@@ -648,9 +657,11 @@ class Store:
                     replacement = new_lines[index] if index < len(new_lines) else ''
                     if row[field] == replacement:
                         continue
+                    word_count_changed = alignment_word_count(replacement, field) != alignment_word_count(row[field], field)
                     row[field] = replacement
-                    row['reviewed'] = False
                     row['marks'] = []
+                    if word_count_changed:
+                        row['reviewed'] = False
                     changed = True
             if changed:
                 db.execute('UPDATE alignments SET rows=? WHERE book_id=?',

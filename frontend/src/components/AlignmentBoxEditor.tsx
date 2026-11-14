@@ -35,6 +35,16 @@ function pageBoxesFromOne(boxes: Box[]): Box[] {
   });
 }
 
+function boundsForOcrSpan(boxes: Box[]): Box['points'] | null {
+  if (!boxes.length) return null;
+  const x0 = Math.min(...boxes.flatMap((box) => box.points.map((point) => point[0])));
+  const y0 = Math.min(...boxes.flatMap((box) => box.points.map((point) => point[1])));
+  const x1 = Math.max(...boxes.flatMap((box) => box.points.map((point) => point[0])));
+  const y1 = Math.max(...boxes.flatMap((box) => box.points.map((point) => point[1])));
+  if (x0 === x1 || y0 === y1) return null;
+  return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+}
+
 function isLegacyPlaceholder(box: Box) {
   return !box.box_axis;
 }
@@ -244,6 +254,7 @@ export default function AlignmentBoxEditor({
       !isOcrDerivedPhraseBox(box));
     let created = 0;
     let updated = 0;
+    let spanning = 0;
     for (const row of alignments) {
       const existing = page.export_boxes.find((box) => box.alignment_id === row.id);
       const matched = ocrMatches.get(row.id);
@@ -253,12 +264,15 @@ export default function AlignmentBoxEditor({
       }
       const preferred = page.reading_direction === 1 ? 'vertical' : 'horizontal';
       const alternate = preferred === 'vertical' ? 'horizontal' : 'vertical';
-      const axis = boundsFromOcrBoxes(matched, preferred) ? preferred : alternate;
-      const points = boundsFromOcrBoxes(matched, axis);
+      const preferredBounds = boundsFromOcrBoxes(matched, preferred);
+      const alternateBounds = preferredBounds ? null : boundsFromOcrBoxes(matched, alternate);
+      const axis = preferredBounds ? preferred : alternateBounds ? alternate : preferred;
+      const points = preferredBounds || alternateBounds || boundsForOcrSpan(matched);
       if (!points) {
         if (existing?.box_axis) next.push(existing);
         continue;
       }
+      if (!preferredBounds && !alternateBounds) spanning++;
       const id = existing?.id || crypto.randomUUID();
       next.push({
         ...existing, id, export_group: existing?.export_group || id,

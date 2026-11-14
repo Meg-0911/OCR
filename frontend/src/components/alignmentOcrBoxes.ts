@@ -25,14 +25,45 @@ export function allocateAlignmentOcrBoxes(ocrBoxes: Box[], alignments: Alignment
     }
     return matches;
   }
-  let cursor = 0;
-
+  const stream: { character: string; boxIndex: number }[] = [];
+  ordered.forEach((box, boxIndex) => {
+    for (const character of box.transcription.normalize('NFC').replace(/[\p{P}\s]/gu, ''))
+      stream.push({ character, boxIndex });
+  });
+  let streamCursor = 0;
+  let boxCursor = 0;
   for (const row of alignments) {
+    const expected = Array.from(row.source.normalize('NFC').replace(/[\p{P}\s]/gu, ''));
+    if (!expected.length) continue;
+    const exactAtCursor = expected.every((character, offset) =>
+      stream[streamCursor + offset]?.character === character);
+    if (exactAtCursor) {
+      const matched = stream.slice(streamCursor, streamCursor + expected.length);
+      const firstBox = matched[0].boxIndex;
+      const lastBox = matched.at(-1)!.boxIndex;
+      matches.set(row.id, ordered.slice(firstBox, lastBox + 1));
+      streamCursor += expected.length;
+      boxCursor = lastBox + 1;
+      continue;
+    }
+
+    // Ignore punctuation-only boxes when OCR text is available. If OCR text is
+    // blank or no longer matches the corrected source, fall back to box counts.
+    if (streamCursor + expected.length <= stream.length) {
+      const matched = stream.slice(streamCursor, streamCursor + expected.length);
+      const firstBox = matched[0].boxIndex;
+      const lastBox = matched.at(-1)!.boxIndex;
+      matches.set(row.id, ordered.slice(firstBox, lastBox + 1));
+      streamCursor += expected.length;
+      boxCursor = lastBox + 1;
+      continue;
+    }
+
     const count = characterCount(row.source);
-    if (!count) continue;
-    if (cursor + count > ordered.length) break;
-    matches.set(row.id, ordered.slice(cursor, cursor + count));
-    cursor += count;
+    if (!count || boxCursor + count > ordered.length) continue;
+    matches.set(row.id, ordered.slice(boxCursor, boxCursor + count));
+    boxCursor += count;
+    while (streamCursor < stream.length && stream[streamCursor].boxIndex < boxCursor) streamCursor++;
   }
   return matches;
 }
