@@ -1288,47 +1288,49 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
 
     @app.get('/api/results/archive')
     def all_results_archive():
-        """One download containing every book's current snapshots and available exports."""
-        books = [book for book in store.books() if not store.book(book['id'])['demo']]
-        if not books:
-            raise HTTPException(404, 'Chưa có sách để tải kết quả.')
+        """Download successful demo alignments and their OCR label files."""
+        candidates = [book for book in store.books() if not store.book(book['id'])['demo']]
+        if not candidates:
+            raise HTTPException(404, 'Ch\u01b0a c\u00f3 s\u00e1ch \u0111\u1ec3 t\u1ea3i k\u1ebft qu\u1ea3.')
         output = store.data / 'output_alignment'
         path = output / 'tat-ca-ket-qua.zip'
         temporary = output / 'tat-ca-ket-qua.zip.tmp'
         with store.lock:
-            omitted = []
-            omitted_by_book = {}
-            for book in books:
+            books = []
+            for book in candidates:
                 book_id = book['id']
                 prepare_alignments(book_id)
                 store.sync_results(book_id)
-                export(book_id, 'labels')
                 for format in ('csv', 'xlsx'):
                     try:
                         export(book_id, format)
                     except HTTPException as error:
                         if error.status_code != 400:
                             raise
-                        omitted_by_book.setdefault(book_id, set()).add(format)
-                        omitted.append({'book': book['name'], 'book_id': book_id,
-                                        'format': format, 'reason': error.detail})
+                        break
+                else:
+                    export(book_id, 'labels')
+                    books.append(book)
+            if not books:
+                raise HTTPException(404, 'Ch\u01b0a c\u00f3 cu\u1ed1n n\u00e0o c\u00f3 k\u1ebft qu\u1ea3 d\u00f3ng h\u00e0ng \u0111\u1ea7y \u0111\u1ee7 \u0111\u1ec3 t\u1ea3i demo.')
             with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
-                summary = output / 'summary.json'
-                if summary.is_file():
-                    archive.write(summary, 'summary.json')
                 for book in books:
                     folder = output / book['id']
-                    prefix = f"books/{book['name']}__{book['id']}/"
-                    for result in sorted(folder.iterdir()):
-                        if any(result.name == f"{book['name']}.{format}"
-                               for format in omitted_by_book.get(book['id'], ())):
-                            continue
-                        if result.is_file() and not result.name.endswith('.tmp'):
-                            archive.write(result, prefix + result.name)
-                archive.writestr('manifest.json', json.dumps({
-                    'books': [{'id': book['id'], 'name': book['name']} for book in books],
-                    'omitted_exports': omitted,
-                }, ensure_ascii=False, indent=2))
+                    labels_path = folder / f"{book['name']}_labels.zip"
+                    with zipfile.ZipFile(labels_path) as labels:
+                        for label_info in labels.infolist():
+                            parts = label_info.filename.split('/', 1)
+                            if len(parts) < 2 or not parts[1]:
+                                continue
+                            destination = f"{book['name']}/{parts[1]}"
+                            if label_info.is_dir():
+                                archive.writestr(destination, b'')
+                                continue
+                            with labels.open(label_info) as source, archive.open(destination, 'w') as target:
+                                shutil.copyfileobj(source, target)
+                    for format in ('csv', 'xlsx'):
+                        result = folder / f"{book['name']}.{format}"
+                        archive.write(result, f"{book['name']}/{result.name}")
             os.replace(temporary, path)
         return FileResponse(path, filename=path.name, media_type='application/zip')
 

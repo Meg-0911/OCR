@@ -1751,22 +1751,20 @@ export default function App() {
                       <Download size={26} />
                     </span>
                     <div>
-                      <h2>Gói kết quả của tất cả sách</h2>
+                      <h2>{'G\u00f3i demo c\u00e1c k\u1ebft qu\u1ea3 \u0111\u00e3 c\u0103n ch\u1ec9nh th\u00e0nh c\u00f4ng'}</h2>
                       <p>
-                        Tải một file ZIP gồm kết quả hiện có của mọi cuốn. Có thể tải sớm để kiểm tra
-                        hoặc tải lại sau khi hoàn thành tất cả.
+                        {'ZIP ch\u1ec9 g\u1ed3m c\u00e1c cu\u1ed1n xu\u1ea5t \u0111\u01b0\u1ee3c c\u1ea3 CSV v\u00e0 XLSX. Nh\u00e3n OCR \u0111\u01b0\u1ee3c x\u1ebfp v\u00e0o th\u01b0 m\u1ee5c t\u1eebng cu\u1ed1n; cu\u1ed1n ch\u01b0a c\u00f3 c\u1eb7p ho\u1eb7c c\u00f2n c\u1eb7p thi\u1ebfu v\u1ebf s\u1ebd kh\u00f4ng \u0111\u01b0\u1ee3c th\u00eam v\u00e0o ZIP.'}
                       </p>
                       <button className="primary-button" disabled={busy || !workspace?.books.length}
                         onClick={() => void downloadAllResults()}>
-                        <Download size={16} /> Tải tất cả kết quả (.ZIP)
+                        <Download size={16} /> {'T\u1ea3i k\u1ebft qu\u1ea3 demo (.ZIP)'}
                       </button>
                     </div>
                   </div>
                   <div className="book-ocr-panel">
                     <h3>Kết quả và nhật ký được cập nhật tự động</h3>
                     <p>
-                      Mỗi cuốn có bản tóm tắt, dữ liệu trang, cặp song ngữ, CSV tiến trình,
-                      nhãn OCR và các bản xuất CSV/Excel khi cặp đã đủ hai vế.
+                      {'M\u1ed7i cu\u1ed1n trong ZIP g\u1ed3m nh\u00e3n OCR, CSV v\u00e0 XLSX.'}
                     </p>
                   </div>
                   <div className="export-schema">
