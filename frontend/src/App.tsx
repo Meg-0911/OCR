@@ -28,7 +28,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { api } from './api';
+import { api, ApiError } from './api';
 import AlignmentRow from './components/AlignmentRow';
 import BookCard, { formatBookTitle } from './components/BookCard';
 import Stat from './components/Stat';
@@ -38,9 +38,10 @@ import LinkedAlignmentWorkspace from './components/LinkedAlignmentWorkspace';
 import BookWorkbench from './components/BookWorkbench';
 import LibraryBookReader from './components/LibraryBookReader';
 import DictionaryPanel from './components/DictionaryPanel';
-import { draftPatch, patchDraft, afterAutomaticSave, type Draft } from './drafts';
+import { draftPatch, patchDraft, afterAutomaticSave, reconcileInputRevisions, type Draft } from './drafts';
 import { replaceBoxText } from './components/boxText';
 import { boxReviewKindAt, reviewColorsForAlignmentRows, reviewColorsForText } from './reviewColors';
+import { pageStatusLabel } from './pageStatus';
 import type {
   Alignment,
   Book,
@@ -72,6 +73,10 @@ function readDrafts(): Record<string, Draft> {
     return {};
   }
 }
+type Recovery = { book_id: string; kind: string; data: unknown; created_at: string };
+function readRecoveries(): Recovery[] {
+  try { return JSON.parse(localStorage.getItem('nom-recovery-drafts') || '[]'); } catch { return []; }
+}
 function readableSize(bytes: number) {
   return `${(bytes / 1048576).toFixed(1)} MB`;
 }
@@ -94,6 +99,7 @@ function reviewSummary(pages: Page[]) {
   let total = 0;
   let red = 0;
   for (const page of pages) {
+    if (page.ocr_skip || page.category === 'blank' || page.category === 'misc') continue;
     for (const box of page.boxes) {
       let characterIndex = 0;
       for (const char of box.transcription) {
@@ -137,10 +143,11 @@ function alignmentReviewColors(rows: Alignment[], pages: Page[]) {
     else rowsByPage.set(pageNumber, [row]);
   }
   for (const page of pages) {
-    const pageRows = rowsByPage.get(page.number);
+    if (!page.ocr_languages.includes('han')) continue;
+    const pageRows = rowsByPage.get(page.number)?.filter((row) => !row.source_page_id || row.source_page_id === page.id);
     if (!pageRows?.length || !page.boxes.length) continue;
-    const sourceColors = reviewColorsForAlignmentRows(pageRows, page.boxes, 'source');
-    const targetColors = reviewColorsForAlignmentRows(pageRows, page.boxes, 'target');
+    const sourceColors = reviewColorsForAlignmentRows(pageRows, page.boxes, 'source', page.reading_direction);
+    const targetColors = reviewColorsForAlignmentRows(pageRows, page.boxes, 'target', page.reading_direction);
     for (const row of pageRows) {
       result.set(row.id, {
         source: sourceColors.get(row.id) || [],
@@ -173,6 +180,8 @@ export default function App() {
   const [view, setView] = useState<View>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const workspaceRef = useRef<Workspace | null>(null);
+  const recoveriesRef = useRef<Recovery[] | null>(null);
   const [bookId, setBookId] = useState('');
   const [pages, setPages] = useState<Page[]>([]);
   const [pageId, setPageId] = useState('');
@@ -193,29 +202,32 @@ export default function App() {
     requestId: string;
   } | null>(null);
   const similarity = useMemo(
-    () => reviewSummary(pages.map((item) => ({
+    () => reviewSummary(view === 'export' ? pages.map((item) => ({
       ...item,
       ...(drafts[item.id] ? draftPatch(drafts[item.id]) : {}),
-    }))),
-    [pages, drafts],
+    })) : []),
+    [pages, drafts, view],
   );
   const alignmentColors = useMemo(
-    () => alignmentReviewColors(rows, pages.map((item) => ({
+    () => alignmentReviewColors(view === 'alignment' ? rows : [], view === 'alignment' ? pages.map((item) => ({
       ...item,
       ...(drafts[item.id] ? draftPatch(drafts[item.id]) : {}),
-    }))),
-    [rows, pages, drafts],
+    })) : []),
+    [rows, pages, drafts, view],
   );
   const alignmentContentPages = useMemo(() => pages.map((item) => {
     const merged = { ...item, ...(drafts[item.id] ? draftPatch(drafts[item.id]) : {}) };
-    return merged.vi_boxes.length
-      ? { ...merged, target_text: merged.vi_boxes.map((box) => box.transcription).join('\n') }
-      : merged;
+    return merged;
   }), [pages, drafts]);
   const alignmentPages = useMemo(() => alignmentContentPages.filter((item) =>
     !item.ocr_skip && item.category !== 'blank' && item.category !== 'misc' && item.ocr_languages.includes('han')
   ).sort((a, b) => a.number - b.number), [alignmentContentPages]);
   const activeBook = workspace?.books.find((b) => b.id === bookId);
+  const inputRevision = activeBook?.input_revision || '';
+  const inputRevisions = useRef(new Map<string, string>());
+  const alignmentVersions = useRef(new Map<string, number>());
+  const alignmentCommits = useRef(new Map<string, { base: number | undefined; version: number }>());
+  const alignmentEpochs = useRef(new Map<string, number>());
   const alignmentSourcePage =
     alignmentPages.find((item) => item.id === alignmentPage) ||
     (activeBook && alignmentPages.find((item) => rows.some((row) =>
@@ -254,6 +266,8 @@ export default function App() {
       .map((page) => ({ page, rows: rowsByPage.get(page.number) || [] }));
   }, [activeBook, alignmentPages, rows]);
   const [rowsDirty, setRowsDirty] = useState(false);
+  const rowsDirtyRef = useRef(rowsDirty);
+  rowsDirtyRef.current = rowsDirty;
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
   const alignmentTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -283,6 +297,10 @@ export default function App() {
   currentBookRef.current = bookId;
   const pagesBookId = useRef('');
   const refreshingBookPages = useRef(false);
+  const workspaceRequest = useRef(0);
+  const workspaceLoading = useRef<Promise<void> | null>(null);
+  const workspaceReload = useRef(false);
+  const syncingWorkspace = useRef(false);
   const [dictionarySelection, setDictionarySelection] = useState<{
     pageId: string;
     boxId: string;
@@ -343,12 +361,13 @@ export default function App() {
   }
 
   async function refreshBookPages() {
-    if (refreshingBookPages.current) return;
+    if (!bookId || refreshingBookPages.current) return;
     refreshingBookPages.current = true;
     try {
       const id = bookId;
-      const next = await api.pages(id);
-      if (currentBookRef.current !== id) return;
+      const revision = inputRevisions.current.get(id);
+      const next = await api.pages(id, view === 'alignment');
+      if (currentBookRef.current !== id || inputRevisions.current.get(id) !== revision) return;
       const current = pagesRef.current;
       const changed =
         next.length !== current.length ||
@@ -359,7 +378,7 @@ export default function App() {
       setPages((previous) =>
         next.map((p) => {
           const old = previous.find((q) => q.id === p.id);
-          return old && old.version >= p.version ? old : p;
+          return old && old.version > p.version ? old : p;
         }),
       );
       if (changed) void loadWorkspace();
@@ -411,6 +430,11 @@ export default function App() {
   function fail(error: unknown) {
     notify(error instanceof Error ? error.message : 'Đã có lỗi xảy ra.', true);
   }
+  function rememberConflict(book_id: string, kind: string, data: unknown) {
+    const next = [...(recoveriesRef.current ?? readRecoveries()), { book_id, kind, data, created_at: new Date().toISOString() }];
+    recoveriesRef.current = next;
+    try { localStorage.setItem('nom-recovery-drafts', JSON.stringify(next)); } catch { /* Keep the recovery in memory. */ }
+  }
   function toggleSidebar() {
     const next = !sidebarCollapsed;
     setSidebarCollapsed(next);
@@ -426,18 +450,22 @@ export default function App() {
         ...previous,
         [base.id]: patchDraft(previous[base.id], base, patch, manual),
       };
-      try {
-        localStorage.setItem('nom-drafts-v1', JSON.stringify(updated));
-      } catch {
-        notify(
-          'Không giữ được bản nháp trên trình duyệt. Hãy bấm Lưu & hoàn thành trước khi đóng trang.',
-          true,
-        );
-      }
       draftsRef.current = updated;
       return updated;
     });
   }
+  useEffect(() => {
+    const persist = () => {
+      try { localStorage.setItem('nom-drafts-v1', JSON.stringify(draftsRef.current)); }
+      catch { notify('Không giữ được bản nháp trên trình duyệt. Hãy lưu trước khi đóng trang.', true); }
+    };
+    const timer = setTimeout(persist, 250);
+    window.addEventListener('pagehide', persist);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('pagehide', persist);
+    };
+  }, [drafts]);
   function updateDraft(patch: Partial<Draft>) {
     if (page) {
       const ocrChange = ['boxes', 'vi_boxes', 'source_text', 'target_text'].some((key) => key in patch);
@@ -595,7 +623,7 @@ export default function App() {
         if (current) plan.push({ page_id: id, category, ocr_skip: current.ocr_skip });
       }
       if (!plan.length) return;
-      setPages(await api.savePlan(bookId, plan));
+      setPages(await api.savePlan(bookId, plan, inputRevision));
       notify(`Đã đổi nhãn ${plan.length} trang.`);
     } finally {
       setBusy(false);
@@ -604,7 +632,7 @@ export default function App() {
   async function savePageLinks(id: string, linkedIds: string[]) {
     setBusy(true);
     try {
-      const updated = await api.savePageLinks(id, linkedIds);
+      const updated = await api.savePageLinks(id, linkedIds, pagesRef.current.find((page) => page.id === id)?.input_revision);
       setPages(updated);
       notify('Đã lưu liên kết trang. Kết quả OCR hiện tại được giữ nguyên.');
     } finally {
@@ -626,14 +654,20 @@ export default function App() {
     const patch = draftPatch(snapshot, mode);
     if (!Object.keys(patch).length) return;
     setAutosaveState('Đang lưu chỉnh sửa…');
-    const task = api.patchPage(id, patch);
+    const task = api.patchPage(id, patch, snapshot.input_revision, snapshot.version);
     savingDrafts.current.set(id, task);
     try {
       const updated = await task;
+      const live = draftsRef.current[id];
+      if (live && live !== snapshot && live.version === snapshot.version && live.input_revision === snapshot.input_revision) {
+        const advanced = { ...live, version: updated.version };
+        draftsRef.current = { ...draftsRef.current, [id]: advanced };
+        setDrafts((previous) => previous[id] === live ? { ...previous, [id]: advanced } : previous);
+      }
       if (draftsRef.current[id] === snapshot) {
         const next = { ...draftsRef.current };
         const remaining = afterAutomaticSave(snapshot, Object.keys(patch));
-        if (remaining) next[id] = remaining;
+        if (remaining) next[id] = { ...remaining, version: updated.version };
         else delete next[id];
         draftsRef.current = next;
       }
@@ -644,7 +678,7 @@ export default function App() {
         if (previous[id] !== snapshot) return previous;
         const next = { ...previous };
         const remaining = afterAutomaticSave(snapshot, Object.keys(patch));
-        if (remaining) next[id] = remaining;
+        if (remaining) next[id] = { ...remaining, version: updated.version };
         else delete next[id];
         draftsRef.current = next;
         try {
@@ -655,9 +689,37 @@ export default function App() {
         return next;
       });
       setAutosaveState('Đã lưu chỉnh sửa vào máy.');
-      if (refreshWorkspace) void loadWorkspace();
+      const alignmentTextChanged = ['source_text', 'target_text', 'boxes', 'vi_boxes']
+        .some((key) => key in patch);
+      const workspaceChanged = ['source_text', 'target_text', 'boxes', 'vi_boxes', 'category', 'ocr_skip', 'ocr_languages']
+        .some((key) => key in patch);
+      if (alignmentTextChanged && view === 'alignment' && !rowsDirtyRef.current) {
+        const freshRows = await api.alignments(updated.book_id);
+        if (currentBookRef.current === updated.book_id && !rowsDirtyRef.current &&
+          inputRevisions.current.get(updated.book_id) === (updated.input_revision || '')) {
+          if (freshRows[0]?.alignment_version != null) alignmentVersions.current.set(updated.book_id, freshRows[0].alignment_version);
+          setRows(freshRows);
+          rowsRef.current = freshRows;
+        }
+      }
+      if (refreshWorkspace && workspaceChanged) void loadWorkspace();
       return updated;
     } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        const owner = snapshot.book_id || pagesRef.current.find((page) => page.id === id)?.book_id || currentBookRef.current;
+        if (owner) rememberConflict(owner, 'page', draftsRef.current[id] || snapshot);
+        const kept = { ...draftsRef.current };
+        delete kept[id];
+        draftsRef.current = kept;
+        setDrafts(kept);
+        try { localStorage.setItem('nom-drafts-v1', JSON.stringify(kept)); } catch { /* Server copy remains current. */ }
+        if (owner) {
+          const fresh = await api.pages(owner, view === 'alignment');
+          if (currentBookRef.current === owner) setPages(fresh);
+        }
+        setAutosaveState('Đã tải bản đã lưu. Bản nháp trước đó được giữ trên trình duyệt.');
+        throw error;
+      }
       setAutosaveState('Chưa lưu được vào máy; bản nháp còn trên trình duyệt.');
       throw error;
     } finally {
@@ -673,15 +735,67 @@ export default function App() {
     if (!ids.length) return;
     const timer = setTimeout(() => {
       void (async () => {
-        for (const id of ids) await saveDraftNow(id);
+        for (const id of ids) await saveDraftNow(id, 'automatic', false);
       })().catch(fail);
     }, 800);
     return () => clearTimeout(timer);
   }, [drafts, busy, bookId, loadingPages]);
+  function acceptWorkspace(result: Workspace) {
+    const previousBook = workspaceRef.current?.books.find((book) => book.id === currentBookRef.current);
+    workspaceRef.current = result;
+    const reconciled = reconcileInputRevisions(result.books, draftsRef.current, localStorage, inputRevisions.current);
+    for (const id of reconciled.replaced) {
+      clearTimeout(alignmentTimers.current.get(id));
+      alignmentTimers.current.delete(id);
+      alignmentCommits.current.delete(id);
+      alignmentEpochs.current.set(id, (alignmentEpochs.current.get(id) || 0) + 1);
+    }
+    draftsRef.current = reconciled.drafts;
+    setDrafts(reconciled.drafts);
+    inputRevisions.current = new Map(result.books.map((book) => [book.id, book.input_revision || '']));
+    for (const book of result.books) alignmentVersions.current.set(book.id, Math.max(alignmentVersions.current.get(book.id) || 0, book.alignment_version || 0));
+    if (reconciled.replaced.has(currentBookRef.current)) {
+      setRows([]);
+      rowsRef.current = [];
+      setRowsDirty(false);
+      setReference(null);
+      setDictionarySelection(null);
+      setAlignmentBoxTarget(null);
+      setWorkflowStep(4);
+    }
+    setWorkspace(result);
+    const nextBook = result.books.find((book) => book.id === currentBookRef.current);
+    if (previousBook && nextBook && previousBook.input_revision === nextBook.input_revision &&
+      (previousBook.content_version !== nextBook.content_version || previousBook.alignment_version !== nextBook.alignment_version)) {
+      void refreshBookPages();
+      if (view === 'alignment' && !rowsDirtyRef.current) void api.alignments(nextBook.id).then((fresh) => {
+        if (currentBookRef.current === nextBook.id && !rowsDirtyRef.current &&
+          inputRevisions.current.get(nextBook.id) === (nextBook.input_revision || '')) { setRows(fresh); rowsRef.current = fresh; }
+      }).catch(fail);
+    }
+  }
   async function loadWorkspace() {
+    if (syncingWorkspace.current) return;
+    if (workspaceLoading.current) {
+      workspaceReload.current = true;
+      return workspaceLoading.current;
+    }
+    const task = (async () => {
+      do {
+        workspaceReload.current = false;
+        await fetchWorkspace();
+      } while (workspaceReload.current && !syncingWorkspace.current);
+    })();
+    workspaceLoading.current = task;
+    try { await task; } finally { workspaceLoading.current = null; }
+  }
+  async function fetchWorkspace() {
+    if (syncingWorkspace.current) return;
+    const request = ++workspaceRequest.current;
     try {
       const result = await api.workspace();
-      setWorkspace(result);
+      if (request !== workspaceRequest.current) return;
+      acceptWorkspace(result);
       if (!sessionRestored.current) {
         sessionRestored.current = true;
         setView('overview');
@@ -701,6 +815,9 @@ export default function App() {
   }
   useEffect(() => {
     void loadWorkspace();
+    const onFocus = () => void loadWorkspace();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, []);
   useEffect(() => {
     if (!bookId) return;
@@ -710,7 +827,7 @@ export default function App() {
     setPageId('');
     setAlignmentPage('');
     setBookJob(null);
-    Promise.all([api.pages(bookId), api.bookSession(bookId)])
+    Promise.all([api.pages(bookId, false), api.bookSession(bookId)])
       .then(([result, savedSession]) => {
         if (cancelled) return;
         pagesBookId.current = bookId;
@@ -718,8 +835,25 @@ export default function App() {
         const session = result.some((p) => p.id === localSession.page_id)
           ? localSession
           : savedSession;
+        const nextDrafts = { ...draftsRef.current };
+        let draftsChanged = false;
+        for (const saved of result) {
+          const local = nextDrafts[saved.id];
+          if (!local || (local.version ?? -1) >= saved.version) continue;
+          const localPatch = draftPatch(local);
+          const alreadySaved = Object.entries(localPatch).every(([key, value]) =>
+            JSON.stringify(saved[key as keyof Page]) === JSON.stringify(value));
+          if (!alreadySaved) rememberConflict(saved.book_id, 'page', local);
+          delete nextDrafts[saved.id];
+          draftsChanged = true;
+        }
+        if (draftsChanged) {
+          draftsRef.current = nextDrafts;
+          setDrafts(nextDrafts);
+          try { localStorage.setItem('nom-drafts-v1', JSON.stringify(nextDrafts)); } catch { /* Recovery is kept in memory. */ }
+        }
         setPages(result);
-        setWorkflowStep(session.workflow_step || 1);
+        setWorkflowStep(inputRevision ? 4 : session.workflow_step || 1);
         const unfinished = result.filter(
           (p) => p.status !== 'done' && !p.ocr_skip && p.category !== 'blank',
         );
@@ -737,10 +871,11 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [bookId]);
+  }, [bookId, inputRevision]);
   useEffect(() => {
     if (!bookId || loadingPages || !pageId || !pages.some((p) => p.id === pageId)) return;
     const state = {
+      input_revision: inputRevision,
       book_id: bookId,
       page_id: pageId,
       view,
@@ -760,9 +895,9 @@ export default function App() {
         .catch(() => {});
     }, 350);
     return () => clearTimeout(timer);
-  }, [bookId, pageId, view, alignmentPage, loadingPages, workflowStep]);
+  }, [bookId, pageId, view, alignmentPage, loadingPages, workflowStep, inputRevision]);
   useEffect(() => {
-    if (!bookId || (view !== 'alignment' && view !== 'review')) return;
+    if (!bookId || view !== 'alignment') return;
     let cancelled = false;
     setAlignmentLoading(true);
     setRows([]);
@@ -774,6 +909,11 @@ export default function App() {
     (async () => {
       let cached: Alignment[] | null = null;
       try { cached = JSON.parse(localStorage.getItem(`nom-alignment-${bookId}`) || 'null'); } catch { /* server copy */ }
+      if (cached && cached.some((row) => row.alignment_version !== alignmentVersions.current.get(bookId))) {
+        rememberConflict(bookId, 'alignments', cached);
+        try { localStorage.removeItem(`nom-alignment-${bookId}`); } catch { /* Never replay a stale cache. */ }
+        cached = null;
+      }
       if (view === 'alignment') {
         const dirtyPageIds = pagesRef.current
           .filter((bookPage) => bookPage.book_id === bookId && draftsRef.current[bookPage.id] &&
@@ -784,14 +924,14 @@ export default function App() {
         );
         if (savedDrafts.some(Boolean)) void loadWorkspace();
         if (cached) {
-          await api.saveAlignments(bookId, cached);
+          await api.saveAlignments(bookId, cached, inputRevision);
           try { localStorage.removeItem(`nom-alignment-${bookId}`); } catch { /* server copy */ }
         }
         const [prepared, referenceText] = await Promise.all([
           api.prepareAlignments(bookId),
           api.reference(bookId),
         ]);
-        const freshPages = await api.pages(bookId);
+        const freshPages = await api.pages(bookId, true);
         return { result: prepared.rows, referenceText, freshPages, cached: null };
       }
       return { result: cached || await api.alignments(bookId), referenceText: null, freshPages: null, cached };
@@ -801,6 +941,7 @@ export default function App() {
         setReference(referenceText);
         if (freshPages) setPages(freshPages);
         setRows(result);
+        if (result[0]?.alignment_version != null) alignmentVersions.current.set(bookId, result[0].alignment_version);
         setRowsDirty(!!cached);
         if (cached) queueRows(bookId, cached);
       })
@@ -811,28 +952,59 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [bookId, view, loadingPages]);
-  function persistRows(id: string, snapshot: Alignment[]) {
+  }, [bookId, view, loadingPages, inputRevision]);
+  function persistRows(id: string, snapshot: Alignment[], revision = inputRevisions.current.get(id), version = snapshot[0]?.alignment_version ?? alignmentVersions.current.get(id)) {
+    const epoch = alignmentEpochs.current.get(id) || 0;
     const previous = alignmentSaves.current.get(id) || Promise.resolve([]);
-    const task = previous.catch(() => []).then(() => api.saveAlignments(id, snapshot));
+    const task = previous.catch(() => []).then(async () => {
+      if ((alignmentEpochs.current.get(id) || 0) !== epoch) return api.alignments(id);
+      const commit = alignmentCommits.current.get(id);
+      const expected = commit && commit.base === version ? commit.version : version;
+      let saved: Alignment[];
+      try { saved = await api.saveAlignments(id, snapshot, revision, expected); }
+      catch (error) {
+        if (error instanceof ApiError && error.status === 409) {
+          alignmentEpochs.current.set(id, epoch + 1);
+          clearTimeout(alignmentTimers.current.get(id));
+          rememberConflict(id, 'alignments', currentBookRef.current === id ? rowsRef.current : snapshot);
+          try { localStorage.removeItem(`nom-alignment-${id}`); } catch { /* Keep current server data. */ }
+          const [fresh, freshPages] = await Promise.all([api.alignments(id), api.pages(id, true)]);
+          if (currentBookRef.current === id) {
+            setRows(fresh); rowsRef.current = fresh; setRowsDirty(false); rowsDirtyRef.current = false; setPages(freshPages);
+          }
+        }
+        throw error;
+      }
+      const actual = saved[0]?.alignment_version ?? (expected || 0) + 1;
+      alignmentCommits.current.set(id, { base: version, version: actual });
+      alignmentVersions.current.set(id, actual);
+      return saved;
+    });
     alignmentSaves.current.set(id, task);
     return task.then((saved) => {
       if (currentBookRef.current !== id || rowsRef.current !== snapshot) return;
       setRows(saved);
+      rowsRef.current = saved;
       setRowsDirty(false);
+      rowsDirtyRef.current = false;
       try {
         localStorage.removeItem(`nom-alignment-${id}`);
       } catch {
         /* saved on server */
       }
       void loadWorkspace();
+      void api.pages(id, true).then((fresh) => {
+        if (currentBookRef.current === id && inputRevisions.current.get(id) === revision) setPages(fresh);
+      }).catch(fail);
     });
   }
   function queueRows(id: string, snapshot: Alignment[]) {
+    const revision = inputRevisions.current.get(id);
+    const version = snapshot[0]?.alignment_version ?? alignmentVersions.current.get(id);
     clearTimeout(alignmentTimers.current.get(id));
     alignmentTimers.current.set(
       id,
-      setTimeout(() => void persistRows(id, snapshot).catch(fail), 1200),
+      setTimeout(() => void persistRows(id, snapshot, revision, version).catch(fail), 1200),
     );
   }
 
@@ -844,9 +1016,13 @@ export default function App() {
     }
     setBusy(true);
     try {
-      await saveDraftNow(page.id, 'all');
-      const fresh = await api.pages(bookId);
-      const saved = fresh.find((p) => p.id === page.id)!;
+      if (done) {
+        const inflight = savingDrafts.current.get(page.id);
+        if (inflight) await inflight;
+      } else {
+        await saveDraftNow(page.id, 'all');
+      }
+      const saved = await api.page(page.id);
       const snapshot = draftsRef.current[page.id];
       const current = done && snapshot ? { ...saved, ...draftPatch(snapshot) } : saved;
       const updated = done
@@ -909,19 +1085,22 @@ export default function App() {
   }
   async function syncFolder() {
     setBusy(true);
+    syncingWorkspace.current = true;
+    ++workspaceRequest.current;
     try {
       const result = await api.syncSources();
-      setWorkspace(result);
+      acceptWorkspace(result);
       setBookId((current) =>
         result.books.some((book) => book.id === current) ? current : result.books[0]?.id || '',
       );
       if (modal === 'import') setSources(await api.sources());
       notify(
-        `Đã quét thư mục: ${result.books.length} sách PDF${result.source_errors.length ? `, ${result.source_errors.length} file cần kiểm tra` : ''}.`,
+        `Đã quét thư mục: ${result.books.length} sách${result.source_errors.length ? `, ${result.source_errors.length} nguồn cần kiểm tra` : ''}.`,
       );
     } catch (error) {
       fail(error);
     } finally {
+      syncingWorkspace.current = false;
       setBusy(false);
     }
   }
@@ -1236,7 +1415,7 @@ export default function App() {
                   <FolderOpen size={22} />
                   <div>
                     <strong>Chưa có sách trong thư mục nguồn</strong>
-                    <p>Đặt PDF vào backend/data/raw_data/ rồi quét lại.</p>
+                    <p>Đặt các PDF bắt buộc vào backend/data/raw_data/. Dữ liệu trong new/ chỉ dùng khi khớp sách trong thư mục này.</p>
                   </div>
                   <button
                     className="secondary-button"
@@ -1283,7 +1462,7 @@ export default function App() {
                         >
                           {workspace.books.map((book) => (
                             <option key={book.id} value={book.id}>
-                              {formatBookTitle(book.name)}
+                              {formatBookTitle(book.name)}{book.has_new_data ? ' · Dữ liệu mới' : ''}
                             </option>
                           ))}
                         </select>
@@ -1312,8 +1491,9 @@ export default function App() {
               )}
               {view === 'review' && activeBook && !loadingPages && pages.length > 0 && (
                 <BookWorkbench
-                  key={bookId}
+                  key={`${bookId}-${inputRevision}`}
                   bookId={bookId}
+                  inputRevision={inputRevision}
                   initialStep={workflowStep}
                   onStepChange={setWorkflowStep}
                   pages={pages}
@@ -1350,25 +1530,19 @@ export default function App() {
                       icon={<Library size={21} />}
                       value={workspace.books.length}
                       label="Tài liệu đã nhập"
-                      detail="PDF trong thư mục nguồn"
+                      detail="PDF bắt buộc trong thư mục raw_data"
                     />
                     <Stat
                       icon={<FileText size={21} />}
                       value={workspace.books.reduce((n, b) => n + b.pages, 0)}
                       label="Trang trong không gian"
-                      detail="Các trang PDF đã nhập"
+                      detail="Trang của các PDF bắt buộc"
                     />
                     <Stat
                       icon={<FileCheck2 size={21} />}
                       value={workspace.books.reduce((n, b) => n + b.done, 0)}
                       label="Trang đã hoàn thành"
-                      detail="Được người Gán nhãn xác nhận"
-                    />
-                    <Stat
-                      icon={<Link2 size={21} />}
-                      value="—"
-                      label="Độ tương đồng"
-                      detail="Chưa có phép đánh giá tự động"
+                      detail="Đã nạp dữ liệu mới hoặc xác nhận"
                     />
                   </div>
                   <div className="section-heading">
@@ -1395,7 +1569,7 @@ export default function App() {
               {view === 'library' &&
                 (libraryBook ? (
                   <LibraryBookReader
-                    key={libraryBook.id}
+                    key={`${libraryBook.id}-${libraryBook.input_revision || ''}`}
                     book={libraryBook}
                     onClose={() => setLibraryBookId('')}
                     onError={fail}
@@ -1456,9 +1630,9 @@ export default function App() {
                     <div>
                       <h2>
                         <Link2 size={19} />
-                        Cặp đã xác nhận <span className="count-badge">{rows.filter((row) => row.reviewed).length}</span>
+                        Cụm đã lưu được tính <span className="count-badge">{activeBook?.pair_stats?.pairs ?? rows.filter((row) => row.countable).length}</span>
                       </h2>
-                      <p>Cặp và box từ OCR đã được tự tạo, lưu sẵn. Kiểm tra rồi xác nhận từng trang.</p>
+                      <p>Cụm không lỗi được tự tính. Cụm có lỗi cần xác nhận; hoàn thành trang là trạng thái riêng.</p>
                     </div>
                     <div className="button-group">
                       <select
@@ -1550,16 +1724,12 @@ export default function App() {
                           <summary onClick={() => setAlignmentPage(groupPage.id)}>
                             <strong>Trang {String(groupPage.number).padStart(3, '0')}</strong>
                             <span className={`alignment-page-status ${pageRows.length ? 'has-pairs' : ''}`}>
-                              {pageRows.length
-                                ? pageRows.every(({ row }) => row.reviewed)
-                                  ? 'Đã xác nhận xong'
-                                  : `Đã có ${pageRows.length} cặp`
-                                : 'Chưa căn'}
+                              {pageStatusLabel(groupPage)}
                             </span>
                             {pageRows.length > 0 && (
                               <small>
                                 {pageRows.every(({ row }) => row.reviewed)
-                                  ? `${pageRows.length} cặp đã hoàn tất`
+                                  ? `${pageRows.length} cụm đã xác nhận`
                                   : `${pageRows.filter(({ row }) => !row.reviewed).length} cặp chờ đọc lại`}
                               </small>
                             )}
@@ -1587,8 +1757,8 @@ export default function App() {
                                 >
                                   <CheckCheck size={15} />
                                   {pageRows.every(({ row }) => row.reviewed)
-                                    ? 'Mở lại trang để đọc lại'
-                                    : 'Xác nhận xong trang'}
+                                    ? 'Bỏ xác nhận các cụm'
+                                    : 'Xác nhận các cụm'}
                                 </button>
                               </div>
                               <div className="alignment-head">
@@ -1680,6 +1850,7 @@ export default function App() {
                                                   {
                                                     ...item,
                                                     id: crypto.randomUUID(),
+                                                    source_line_index: null,
                                                     sentence_id: prefix + sequence,
                                                     source: source[1],
                                                     target: target[1],
@@ -1883,11 +2054,12 @@ export default function App() {
                   <small>Tối đa 150 MB · Tệp được xử lý và lưu tại máy</small>
                 </button>
                 <div className="source-heading">
-                  <strong>Thư mục backend/data/raw_data/</strong>
+                  <strong>Nguồn PDF và dữ liệu mới</strong>
                   <button className="text-button" disabled={busy} onClick={() => void syncFolder()}>
-                    Quét lại · {sources.length} PDF
+                    Quét thư mục
                   </button>
                 </div>
+                <p className="muted">Thêm XLSX, ảnh và nhãn vào backend/data/new/ theo README, rồi quét thư mục để nạp từng đợt.</p>
                 <label className="search-input">
                   <Search size={16} />
                   <input
@@ -2037,7 +2209,7 @@ export default function App() {
                   <span className="pending-pill">{nomFontStatus}</span>
                 </div>
                 <p className="muted">
-                  Dữ liệu chỉ tính file PDF (txt dùng để đối chiếu chữ nếu có).
+                  Nhận PDF và dữ liệu mới gồm XLSX, ảnh, nhãn trong backend/data/new/.
                 </p>
                 <button
                   className="secondary-button"

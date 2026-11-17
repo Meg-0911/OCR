@@ -48,7 +48,7 @@ export default function BookLayoutPanel({
   async function save() {
     setBusy(true);
     try {
-      setLayout(await api.saveBookLayout(bookId, layout));
+      setLayout(await api.saveBookLayout(bookId, layout, page?.input_revision));
       setMessage(
         'Đã lưu vùng mẫu cho quyển. Các lượt OCR mới dùng mẫu này; bản Gán nhãn và tác vụ đang chạy được giữ nguyên.',
       );

@@ -1,6 +1,7 @@
 """Human semantic judgments for four-column alignment exports."""
 
 import unicodedata
+import re
 
 from openpyxl.cell.rich_text import CellRichText, TextBlock
 from openpyxl.cell.text import InlineFont
@@ -37,7 +38,10 @@ def export_text(value: str, side: str, colors: list | None = None):
         for lowered in (char.lower() if side == 'target' else char):
             output.append(lowered)
             painted.append(color)
-    return ''.join(output), painted
+    text = ''.join(output)
+    if side == 'target':
+        text = '\n'.join(re.sub(r'^[\s\d]+|[\s\d]+$', '', line) for line in text.split('\n'))
+    return text, painted
 
 
 def paint(text: str, marks: list[dict], side: str):
@@ -100,6 +104,8 @@ def score(rows: list[dict]):
 def score_boxes(pages: list[dict]):
     total = red = 0
     for page in pages:
+        if page.get('ocr_skip') or page.get('category') in ('blank', 'misc'):
+            continue
         for box in page['boxes']:
             for character_index, char in enumerate(box['transcription']):
                 if source_glyph(char):

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Check,
   ArrowLeft,
@@ -36,7 +36,9 @@ import ManuscriptViewer from './ManuscriptViewer';
 import BookOCRPanel, { useBookOCR } from './BookOCRPanel';
 import CharacterBoxEditor, { groupCharacterBoxes } from './CharacterBoxEditor';
 import { removeBoxAndText, replaceBoxText, syncTextLinesToBoxes } from './boxText';
-import { boxesInReviewOrder } from '../reviewColors';
+import { targetGlyphReviews } from '../reviewColors';
+import ReviewText from './ReviewText';
+import { pageStatusLabel } from '../pageStatus';
 
 type Editable = Pick<
   Page,
@@ -54,6 +56,7 @@ type Editable = Pick<
 >;
 type Props = {
   bookId: string;
+  inputRevision?: string;
   initialStep: 1 | 2 | 3 | 4;
   onStepChange: (step: 1 | 2 | 3 | 4) => void;
   pages: Page[];
@@ -290,13 +293,23 @@ export default function BookWorkbench(props: Props) {
   const ocrBoxes = selectedOCRBoxes.length
     ? selectedOCRBoxes
     : boxes.filter((box) => box.id === selected);
-  const text = language === 'vi' && boxes.length
-    ? boxes.map((box) => box.transcription).join('\n')
-    : language === 'han' && ocrGranularity === 'phrase' && boxes.length
-      ? boxes.map((box) => box.transcription).join('\n')
-    : page?.[textKey] || '';
-  const targetWords = targetWordsIn(language === 'vi' ? text : page?.target_text || '');
-  const orderedSourceBoxes = boxesInReviewOrder(page?.boxes || []);
+  const text = page?.[textKey] || '';
+  const targetWords = useMemo(
+    () => targetWordsIn(language === 'vi' ? text : page?.target_text || ''),
+    [language, text, page?.target_text],
+  );
+  const sourceGlyphs = useMemo(
+    () => targetGlyphReviews(page?.target_text || '', page?.boxes || [], page?.reading_direction || 2, page?.review_rows),
+    [page?.target_text, page?.boxes, page?.reading_direction, page?.review_rows],
+  );
+  const boxWordStarts = useMemo(() => {
+    let total = 0;
+    return boxes.map((box) => {
+      const start = total;
+      total += targetWordsIn(box.transcription).length;
+      return start;
+    });
+  }, [boxes]);
   const characterEditing =
     language === 'han' &&
     ocrGranularity === 'character' &&
@@ -315,6 +328,7 @@ export default function BookWorkbench(props: Props) {
   };
   const { acting, act } = useBookOCR({
     bookId: props.bookId,
+    inputRevision: props.inputRevision,
     job: props.job,
     onJob: props.onJob,
     onRefresh: props.onRefresh,
@@ -362,7 +376,7 @@ export default function BookWorkbench(props: Props) {
   }, [page?.id]);
   useEffect(() => {
     if (!page) return;
-    const languages = page.category === 'ch' ? ['han'] : page.category === 'vi' ? ['vi']
+    const languages = page.target_origin === 'new_data' ? ['han', 'vi'] : page.category === 'ch' ? ['han'] : page.category === 'vi' ? ['vi']
       : page.category === 'blank' || page.category === 'misc' ? [] : page.ocr_languages;
     if (!languages.includes(language) && languages.length) setLanguage(languages[0] as 'han' | 'vi');
   }, [page?.id, page?.category, page?.ocr_languages.join(','), language]);
@@ -376,7 +390,12 @@ export default function BookWorkbench(props: Props) {
     const row = Array.from(editor.current?.querySelectorAll<HTMLElement>('[data-row]') || []).find(
       (element) => element.dataset.row === selected,
     );
-    row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const panel = editor.current;
+    if (!row || !panel) return;
+    const rowRect = row.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    if (rowRect.top < panelRect.top) panel.scrollTop += rowRect.top - panelRect.top;
+    else if (rowRect.bottom > panelRect.bottom) panel.scrollTop += rowRect.bottom - panelRect.bottom;
   }, [step, selected, page?.id, boxes.length]);
   useEffect(() => {
     if (!page) return;
@@ -473,7 +492,7 @@ export default function BookWorkbench(props: Props) {
     setRegionDirty(true);
     const task = layoutSaves.current
       .catch(() => {})
-      .then(() => api.saveBookLayout(props.bookId, nextLayout));
+      .then(() => api.saveBookLayout(props.bookId, nextLayout, props.inputRevision));
     layoutSaves.current = task;
     void task
       .then(() => {
@@ -526,7 +545,7 @@ export default function BookWorkbench(props: Props) {
         await api.saveTextSource(props.bookId, uploadLanguage, {
           filename: file.name,
           text: contents,
-        }),
+        }, props.inputRevision),
       );
       setSource('txt');
     } catch (error) {
@@ -570,7 +589,7 @@ export default function BookWorkbench(props: Props) {
     const index = page.boxes.findIndex((box) => box.id === boxId);
     if (index < 0) return;
     const current = page.boxes[index];
-    if (selectedRange && ocrGranularity === 'phrase' && language === 'han') {
+    if (selectedRange && ocrGranularity === 'phrase') {
       const characters = Array.from(current.transcription);
       const kinds = characters.map((_, characterIndex) => boxReviewKindAt(current, characterIndex));
       for (let characterIndex = selectedRange.start; characterIndex < Math.min(selectedRange.end, kinds.length); characterIndex++)
@@ -606,6 +625,10 @@ export default function BookWorkbench(props: Props) {
         index < page.boxes.length ? { ...box, review_kind, review_marks: undefined } : box,
       ),
     });
+  }
+  function markTargetWord(kind: ReviewKind) {
+    const glyph = selectedTargetWord === null ? undefined : sourceGlyphs[selectedTargetWord];
+    if (glyph) markBox(glyph.box.id, kind, { start: glyph.index, end: glyph.index + 1 });
   }
   function updateBox(box: Box, value: string) {
     if (!page) return;
@@ -645,7 +668,7 @@ export default function BookWorkbench(props: Props) {
     return targetWordsIn(value).length;
   }
   function targetWordStart(boxIndex: number) {
-    return boxes.slice(0, boxIndex).reduce((count, box) => count + targetWordCount(box.transcription), 0);
+    return boxWordStarts[boxIndex] || 0;
   }
   function selectTargetWord(wordIndex: number, boxId: string) {
     setSelected(boxId);
@@ -841,8 +864,8 @@ export default function BookWorkbench(props: Props) {
             <span>
               {step === 4 ? (
                 <>
-                  <strong>{pages.filter((p) => p.status === 'done').length}</strong> /{' '}
-                  {pages.length} trang đã xác nhận
+                  <strong>{eligiblePages.filter((p) => p.status === 'done').length}</strong> /{' '}
+                  {eligiblePages.length} trang đã hoàn thành · {pages.length - eligiblePages.length} bỏ qua
                 </>
               ) : (
                 <>
@@ -871,9 +894,9 @@ export default function BookWorkbench(props: Props) {
                   value={pageFilter}
                   onChange={(event) => setPageFilter(event.target.value as typeof pageFilter)}
                 >
-                  <option value="pending">Chưa xong ({unfinishedPages.length})</option>
+                  <option value="pending">Chưa có đủ OCR ({unfinishedPages.length})</option>
                   <option value="done">
-                    Đã xong ({eligiblePages.length - unfinishedPages.length})
+                    Đã có OCR ({eligiblePages.length - unfinishedPages.length})
                   </option>
                   <option value="all">Tất cả ({eligiblePages.length})</option>
                 </select>
@@ -895,7 +918,7 @@ export default function BookWorkbench(props: Props) {
                       className={`workbench-thumbnail ${p.id === page?.id ? 'selected' : ''} ${selectedPageIds.includes(p.id) ? 'multi-selected' : ''}`}
                       aria-pressed={selectedPageIds.includes(p.id)}
                       disabled={props.busy}
-                      title={`Trang ${p.number} · OCR ${ocrFinished(p) ? 'đã xong' : 'chưa xong'} · Gán nhãn ${p.status === 'done' ? 'đã xong' : 'chưa xong'}`}
+                      title={`Trang ${p.number} · OCR ${ocrFinished(p) ? 'đã có' : 'chưa đủ'} · ${pageStatusLabel(p)}`}
                       onClick={(event) => {
                         if (step === 2 && (event.ctrlKey || event.metaKey)) {
                           setSelectedPageIds((current) =>
@@ -911,12 +934,12 @@ export default function BookWorkbench(props: Props) {
                     >
                       <img
                         loading="lazy"
-                        src={`${p.image_url}?thumbnail=true`}
+                        src={`${p.image_url}${p.image_url.includes('?') ? '&' : '?'}thumbnail=true`}
                         alt={`Trang ${p.number}`}
                       />
                       <span>
                         {String(p.number).padStart(3, '0')}{' '}
-                        {(step === 3 ? ocrFinished(p) : p.status === 'done') ? (
+                        {(step === 3 ? ocrFinished(p) : pageStatusLabel(p) === 'Đã hoàn thành') ? (
                           <Check size={12} />
                         ) : (
                           <span className="pending-mark">•</span>
@@ -1151,7 +1174,7 @@ export default function BookWorkbench(props: Props) {
                       >
                         Hán Nôm
                       </button>}
-                      {(page.category === 'vi' || (page.category !== 'ch' && page.category !== 'blank' && page.category !== 'misc' && page.ocr_languages.includes('vi'))) && <button
+                      {(page.target_origin === 'new_data' || page.category === 'vi' || (page.category !== 'ch' && page.category !== 'blank' && page.category !== 'misc' && page.ocr_languages.includes('vi'))) && <button
                         role="tab"
                         aria-selected={language === 'vi'}
                         onClick={() => selectLanguage('vi')}
@@ -1167,27 +1190,27 @@ export default function BookWorkbench(props: Props) {
                       <div className="character-review-toolbar" aria-label="Đánh dấu từ Quốc ngữ">
                         <span>
                           {selectedTargetWord !== null
-                            ? `${orderedSourceBoxes[selectedTargetWord]?.transcription || '—'} ↔ ${targetWords[selectedTargetWord] || '—'}`
+                            ? `${sourceGlyphs[selectedTargetWord] ? Array.from(sourceGlyphs[selectedTargetWord].box.transcription)[sourceGlyphs[selectedTargetWord].index] : '—'} ↔ ${targetWords[selectedTargetWord] || '—'}`
                             : 'Chọn một từ Quốc ngữ để đánh dấu cùng chữ Hán/Nôm thứ tự đó'}
                         </span>
                         <button
                           type="button"
-                          disabled={selectedTargetWord === null || !orderedSourceBoxes[selectedTargetWord] || props.busy || acting}
-                          onClick={() => selectedTargetWord !== null && orderedSourceBoxes[selectedTargetWord] && markBox(orderedSourceBoxes[selectedTargetWord].id, 'match')}
+                          disabled={selectedTargetWord === null || !sourceGlyphs[selectedTargetWord] || props.busy || acting}
+                          onClick={() => markTargetWord('match')}
                         >
                           Đen
                         </button>
                         <button
                           type="button"
-                          disabled={selectedTargetWord === null || !orderedSourceBoxes[selectedTargetWord] || props.busy || acting}
-                          onClick={() => selectedTargetWord !== null && orderedSourceBoxes[selectedTargetWord] && markBox(orderedSourceBoxes[selectedTargetWord].id, 'mismatch')}
+                          disabled={selectedTargetWord === null || !sourceGlyphs[selectedTargetWord] || props.busy || acting}
+                          onClick={() => markTargetWord('mismatch')}
                         >
                           Đỏ
                         </button>
                         <button
                           type="button"
-                          disabled={selectedTargetWord === null || !orderedSourceBoxes[selectedTargetWord] || props.busy || acting}
-                          onClick={() => selectedTargetWord !== null && orderedSourceBoxes[selectedTargetWord] && markBox(orderedSourceBoxes[selectedTargetWord].id, 'unknown')}
+                          disabled={selectedTargetWord === null || !sourceGlyphs[selectedTargetWord] || props.busy || acting}
+                          onClick={() => markTargetWord('unknown')}
                         >
                           Thiếu từ điển
                         </button>
@@ -1502,6 +1525,9 @@ export default function BookWorkbench(props: Props) {
                         {!characterEditing && (
                           <label className="workbench-page-text">
                             {effectiveSource === 'txt' ? 'Bản Gán nhãn' : 'Văn bản OCR'}
+                            <div className={language === 'han' ? 'review-text-preview han-text' : 'review-text-preview'}>
+                              <ReviewText text={text} boxes={page.boxes} side={language === 'han' ? 'source' : 'target'} direction={page.reading_direction} rows={page.review_rows} />
+                            </div>
                             <textarea
                               className={language === 'han' ? 'han-text' : ''}
                               aria-label={`Văn bản ${language === 'han' ? 'Nôm' : 'Quốc ngữ'}`}
@@ -1708,7 +1734,7 @@ export default function BookWorkbench(props: Props) {
                                         box={box}
                                         index={index}
                                         rowWordStart={rowWordStart}
-                                        reviewKinds={page.boxes.map((item) => item.review_kind)}
+                                        reviewKinds={sourceGlyphs.map((glyph) => glyph?.kind)}
                                         disabled={step !== 4 || props.busy || acting}
                                         onChange={updateBox}
                                         onSelectWord={(wordIndex, boxId) => {
@@ -1775,7 +1801,7 @@ export default function BookWorkbench(props: Props) {
                     ) : (
                       <>
                         <span role="status">
-                          {props.dirty ? 'Chưa lưu' : page.status === 'done' ? 'Đã lưu & hoàn thành' : 'Chưa hoàn thành'}
+                          {props.dirty ? 'Chưa lưu' : pageStatusLabel(page)}
                         </span>
                         <div className="workbench-confirm-actions">
                         <button
@@ -1801,7 +1827,7 @@ export default function BookWorkbench(props: Props) {
                         </button>
                         {!skipped && <label className="workbench-phrase-toggle">
                           <input type="checkbox" checked={ocrGranularity === 'phrase'}
-                            disabled={props.busy || acting}
+                            disabled={props.busy || acting || page.target_origin === 'new_data'}
                             onChange={(event) => props.onPatch({ ocr_granularity: event.target.checked ? 'phrase' : 'character' })} />
                           Chia theo cụm
                         </label>}

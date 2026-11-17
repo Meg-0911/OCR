@@ -26,18 +26,24 @@ export default function BookCard({ book, onOpen, onInspect, actionLabel }: Props
           {book.first_page_id && (
             <img
               loading="lazy"
-              src={`/api/pages/${book.first_page_id}/image?thumbnail=true`}
+              src={`/api/pages/${book.first_page_id}/image?thumbnail=true&v=${book.input_revision || ''}`}
               alt={`Trang đầu ${cleanTitle}`}
             />
           )}
         </div>
         <span className="local-badge">
-          PDF cục bộ{book.reference_file ? ' · Có Quốc ngữ TXT' : ''}
+          {book.has_pdf === false ? 'Ảnh cục bộ' : 'PDF cục bộ'}{book.reference_file ? ' · Có Quốc ngữ TXT' : ''}
         </span>
       </div>
       <h3 className="book-card-title" title={cleanTitle}>
         {cleanTitle}
       </h3>
+      {book.has_new_data && (
+        <span className="book-new-data-badge">
+          Đã có dữ liệu mới · {book.new_data_pages} trang · {book.new_data_lines} dòng
+        </span>
+      )}
+      {book.pair_stats && <p>{book.pair_stats.pairs} cụm được tính · {book.pair_stats.pending_error_pairs || 0} cụm lỗi chờ xác nhận</p>}
       <div className="book-card-progress">
         <span>
           {book.done} / {selected} trang đã hoàn thành · {book.excluded || 0} bỏ qua

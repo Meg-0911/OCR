@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { CheckCheck, Link2, SplitSquareVertical, Trash2 } from 'lucide-react';
 import type { Alignment, ReviewKind, ReviewMark } from '../types';
 import { splitAlignmentText } from './alignmentSplit';
+import { withReviewMarks } from '../reviewColors';
 
 function exportPreview(value: string, side: 'source' | 'target') {
   const text = value.normalize('NFC');
@@ -12,12 +13,7 @@ function exportPreview(value: string, side: 'source' | 'target') {
 
 function colorsFor(value: string, base: (ReviewKind | undefined)[], marks: ReviewMark[], side: 'source' | 'target') {
   const characters = Array.from(value);
-  const kinds = characters.map((_, index) => base[index] || 'match');
-  for (const mark of marks) {
-    const start = Array.from(value.slice(0, mark[`${side}_start`])).length;
-    const end = Array.from(value.slice(0, mark[`${side}_end`])).length;
-    kinds.fill(mark.kind, start, end);
-  }
+  const kinds = withReviewMarks(value, base, marks, side);
   return { characters, kinds };
 }
 
@@ -162,7 +158,7 @@ export default function AlignmentRow({
         <span>{row.sentence_id}</span>
         <button onClick={() => onChange({ ...row, reviewed: !row.reviewed })}>
           {row.reviewed ? <CheckCheck size={13} /> : <span className="status-dot pending" />}
-          {row.reviewed ? 'Đã đọc lại' : 'Chờ đọc lại'}
+          {row.duplicate_of ? 'Trùng cụm · không tính' : row.review_state === 'excluded' ? 'Bỏ qua' : row.reviewed ? 'Đã xác nhận cụm' : row.has_errors ? 'Có lỗi · chờ xác nhận' : 'Chưa kiểm tra'}
         </button>
         {onDrawBox && (
           <div className="sentence-box-actions">

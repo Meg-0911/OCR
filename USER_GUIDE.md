@@ -18,6 +18,7 @@ Mở PowerShell hoặc Terminal tại thư mục clone dự án. Cấu trúc c�
 
 ```text
 backend/data/raw_data/       PDF nguồn và TXT đối chiếu (đưa vào thủ công)
+backend/data/new/            XLSX dóng hàng, ảnh và nhãn mới (bổ sung theo từng đợt)
 backend/.env                 token OCR cá nhân (tạo từ .env.example)
 backend/data/                SQLite, ảnh, model, checkpoint và kết quả (tự sinh/local)
 ```
@@ -25,6 +26,8 @@ backend/data/                SQLite, ảnh, model, checkpoint và kết quả (t
 **Dữ liệu:** Lấy PDF/TXT từ gói dữ liệu, rồi chép vào `backend/data/raw_data/`. Không cần đổi tên PDF; TXT đối chiếu nên cùng thư mục và cùng tên gốc để ứng dụng nhận diện.
 
 Sau khi khởi động, ứng dụng dò PDF trong `backend/data/raw_data/` tự động. Có thể thêm PDF khác sau này rồi bấm đồng bộ nguồn hoặc khởi động lại backend.
+
+Thư mục `backend/data/raw_data/` xác định toàn bộ sách bắt buộc. Với dữ liệu cho thêm, xem [cấu trúc trong README](./README.md#thêm-dữ-liệu-mới-theo-từng-đợt), rồi chép XLSX và ảnh/nhãn vào `backend/data/new/` và quét thư mục. Chỉ cuốn khớp PDF bắt buộc mới được dùng; các cuốn khác trong `new/` được giữ nguyên để chia sẻ, không tính vào web/ZIP kết quả. Khi có bản nguồn mới hợp lệ, toàn bộ kết quả cũ của cuốn khớp bị ghi đè, đổi sang box **theo cụm**, đồng bộ chữ, màu, cặp câu, file xuất và bản nháp trên web. Trang chưa có trong bản mới được xóa kết quả và bỏ qua. Cặp đủ hai vế được lưu tự động; chỉ cụm không lỗi hoặc cụm lỗi đã xác nhận mới được đếm. Hoàn thành trang được ghi nhận riêng bằng thao tác của người dùng.
 
 ## 3. Cài đặt trên Windows
 
@@ -47,11 +50,10 @@ Sau khi khởi động, ứng dụng dò PDF trong `backend/data/raw_data/` tự
    .\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
    ```
 
-3. Cài frontend đúng lockfile và build giao diện:
+3. Cài frontend đúng lockfile để chạy từ mã nguồn:
 
    ```powershell
    npm --prefix frontend ci
-   npm --prefix frontend run build
    ```
 
 ### 3.2 Cài từ điển và model VietOCR
@@ -97,7 +99,7 @@ Giữ `HAN_OCR_FALLBACK=ppocrv5` trong `backend/.env` (mặc định nếu khôn
 .\.venv\Scripts\python.exe run.py
 ```
 
-Mở <http://127.0.0.1:8000>. Backend chỉ lắng nghe `127.0.0.1`; để tắt, quay lại cửa sổ PowerShell và nhấn `Ctrl+C`.
+Mở <http://127.0.0.1:5173>. Lệnh trên chạy cả giao diện từ `frontend/src/` và API ở cổng `8000`, cùng dùng gốc dự án chứa `run.py`. Không cần build hoặc chép `frontend/dist/`. Các dịch vụ chỉ lắng nghe `127.0.0.1`; để tắt cả hai, quay lại cửa sổ PowerShell và nhấn `Ctrl+C`.
 
 ## 4. Cài đặt tham khảo trên Ubuntu
 
@@ -134,7 +136,6 @@ Sau đó từ thư mục gốc repo:
 python -m venv .venv
 .venv/bin/python -m pip install -r backend/requirements.txt
 npm --prefix frontend ci
-npm --prefix frontend run build
 .venv/bin/python backend/setup_dictionary.py
 .venv/bin/python backend/setup_vietocr.py
 cp backend/.env.example backend/.env
@@ -146,7 +147,7 @@ cp backend/.env.example backend/.env
 .venv/bin/python run.py
 ```
 
-Mở <http://127.0.0.1:8000>. Với Tesseract dự phòng, dùng gói `tesseract-ocr`/`tesseract-ocr-vie` vừa cài; script tải Tesseract riêng trong repo là quy trình Windows.
+Mở <http://127.0.0.1:5173>. Với Tesseract dự phòng, dùng gói `tesseract-ocr`/`tesseract-ocr-vie` vừa cài; script tải Tesseract riêng trong repo là quy trình Windows.
 
 ## 5. Làm việc trên một bộ sách
 
@@ -155,38 +156,38 @@ Mở <http://127.0.0.1:8000>. Với Tesseract dự phòng, dùng gói `tesseract
    - **Gắn nhãn nhiều trang:** giữ Ctrl và nhấp các ảnh trang muốn chọn, hoặc bấm **Chọn tất cả** (Ctrl+A) để chọn toàn bộ sách. Bấm **Hán/Nôm**, **Quốc ngữ** hoặc **Cả hai** để gắn nhãn ngay cho nhóm đã chọn; các nhãn khác nằm trong danh sách bên cạnh. Bấm **Bỏ chọn** để hủy vùng chọn.
 3. **Chạy OCR:** chọn OCR từng trang hoặc theo phạm vi. OCR Hán Nôm dùng Kim Hán Nôm hoặc PP-OCRv5 CPU dự phòng đã cài; OCR Quốc ngữ dùng model VietOCR đã tải. Nếu cả hai cách OCR Hán Nôm đều thất bại ở một trang, tác vụ ghi lỗi cho trang đó và tiếp tục các trang sau. Khi chạy hết phạm vi, bấm **Tiếp tục OCR** để thử lại các trang lỗi; các trang đã thành công được giữ nguyên. Có thể tạm dừng/tiếp tục tác vụ; checkpoint nằm trong `backend/data/.workspace/ocr/`.
 4. **Gán nhãn OCR:** so box và chữ với ảnh, sửa ký tự chưa chắc (`□`), kéo/đổi kích thước box, vẽ hoặc xóa box. Ô **Chia theo cụm** nằm ngay dưới **Lưu & hoàn thành**: tick nếu mỗi box OCR chứa một cụm chữ, bỏ tick nếu mỗi box chứa một chữ. Trang chỉ gắn nhãn Hán Nôm hoặc chỉ Quốc ngữ được tick sẵn khi chưa có lựa chọn đã lưu; các trang khác mặc định bỏ tick. Bấm **Lưu & hoàn thành** để ghi cách chia và xác nhận trang. Nếu OCR lại làm thay đổi box, kiểm tra lựa chọn rồi xác nhận lại.
-5. **Căn chỉnh song ngữ:** sau khi xác nhận trang OCR, mở trang này để hệ thống tự tạo và lưu cặp theo số trang/thứ tự dòng cùng box nhãn xuất từ box OCR. Với chế độ **Theo cụm**, mỗi box OCR Hán Nôm là một dòng riêng để căn chỉnh, kể cả khi nhiều box nằm trong cùng một cột. Với chế độ **Theo chữ**, các chữ trong cùng dòng/cột đọc được tạo thành một dòng căn chỉnh. Hệ thống ghép các dòng hai vế theo thứ tự; dòng Hán Nôm chưa có vế Quốc ngữ được giữ riêng để ghép sau, không tự gộp vào dòng trước. Màn hình hiện rõ ảnh nguồn và ảnh Quốc ngữ đối chiếu cùng số trang của từng ảnh. Cặp và box đã sửa được giữ nguyên khi mở lại; chỉ trang chưa có cặp và cặp chưa có box mới được chuẩn bị thêm. Kiểm tra nội dung và box rồi bấm **Xác nhận xong trang**. Có thể chọn câu trên ảnh, phóng to, vẽ/sửa/xóa box; box nhãn xuất được lưu riêng với box chữ OCR. Danh sách dưới ảnh cho phép sửa thứ tự xuất. Nút **Tạo box từ OCR** và thao tác tách/gộp vẫn dùng được khi cần sửa kết quả tự động.
+5. **Căn chỉnh song ngữ:** cặp được tự tạo và lưu ngay khi có OCR, không cần xác nhận trang trước. Dữ liệu mới dùng trực tiếp cặp `Label`–`Vietnamese` theo `Patch ID` trong XLSX. Với nguồn cũ, chế độ **Theo cụm** giữ mỗi box OCR Hán Nôm thành một dòng; chế độ **Theo chữ** ghép chữ trong cùng dòng/cột đọc. Hệ thống ghép hai vế theo thứ tự, giữ riêng dòng Nôm chưa có Quốc ngữ để bổ sung sau. **Cụm được tính** phải đủ hai vế và không lỗi, hoặc đã xác nhận cụm có lỗi; cụm lỗi/chưa rõ chưa xác nhận không được tính. Cùng vị trí trên cùng trang chỉ tính một lần. Hai vế khác số chữ vẫn lưu và xuất được. Màn hình hiển thị ảnh và số trang nguồn để kiểm tra. Cặp và box đã sửa được giữ khi mở lại. Có thể sửa nội dung, vẽ/sửa/xóa box, dùng **Tạo box từ OCR**, tách/gộp và sửa thứ tự xuất. **Xác nhận các cụm** chỉ xác nhận các cặp đang xem; **Lưu & hoàn thành** xác nhận trang riêng. Trang có đủ cụm được tính vẫn có thể **Chưa kiểm tra**. Sửa lại chữ hoặc dấu kiểm tra sẽ bỏ xác nhận của cụm liên quan; sửa nội dung trang đưa trang về **Chưa hoàn thành**.
    - **Câu nằm lệch trang:** ở bước **Gắn nhãn trang**, chọn trang rồi đánh dấu các trang liên kết trong ô **Trang liên kết**. Có thể tìm theo số trang và sửa liên kết sau khi OCR; trạng thái duyệt, box và checkpoint OCR được giữ nguyên. Ở **Căn chỉnh song ngữ**, ứng dụng tự ghép các trang liên kết theo thứ tự dòng. Kéo một dòng Quốc ngữ sang dòng Hán Nôm cần ghép, hoặc chọn dòng rồi bấm **Gắn vào dòng** để sửa.
-   - **ID và tệp kết quả:** `sentence_id` và `img_id` luôn dùng số trang Hán Nôm, ví dụ `Tên sách.007.1` và `Tên sách.007.jpg`. `alignments.json` lưu thêm ID trang và số dòng của hai vế để truy vết. `pairs.csv`, CSV và XLSX vẫn dùng bốn cột `img_id`, `sentence_id`, `SinoNom_Char`, `ChuQN_txt`; `pages.json` lưu danh sách `linked_page_ids`.
+   - **ID và tệp kết quả:** `sentence_id` và `img_id` luôn dùng số trang Hán Nôm, ví dụ `Tên sách.007.1` và `Tên sách.007.jpg`. ID giữ nguyên khi sửa/đổi thứ tự, cụm mới nhận ID mới. `alignments.json` lưu thêm ID trang và số dòng của hai vế để truy vết. `pairs.csv`, CSV và XLSX vẫn dùng bốn cột `img_id`, `sentence_id`, `SinoNom_Char`, `ChuQN_txt`; `pages.json` lưu danh sách `linked_page_ids`.
 6. **Xuất:** trong **Xuất dữ liệu**, bấm **Tải kết quả demo (.ZIP)**. Gói chỉ gồm các cuốn xuất được cả CSV và XLSX; cuốn chưa có cặp hoặc còn cặp chưa hoàn chỉnh sẽ bị loại khỏi ZIP. Mỗi cuốn được giữ lại gồm thư mục nhãn OCR, CSV và XLSX. Có thể tải lại sau khi căn chỉnh xong thêm cuốn.
 
 ## 6. Dữ liệu, đầu ra và sao lưu
 
 - PDF/TXT nguồn: `backend/data/raw_data/`.
-- DB và bản nháp: `backend/data/.workspace/` (SQLite `workspace.sqlite3`, các trang sách và checkpoint).
+- DB và trạng thái đã lưu: `backend/data/.workspace/` (SQLite `workspace.sqlite3`, các trang sách, ảnh bản mới trong `book-assets/` và checkpoint). Bản nháp chưa lưu nằm trên trình duyệt.
 - Ảnh đã xử lý: `backend/data/processed_images/`.
 - Kết quả xuất: `backend/data/output_alignment/<book_id>/`.
 - Model/tài nguyên setup: `backend/.tools/`.
 
-Trước khi chuyển máy, dừng OCR, chờ tác vụ kết thúc, lưu bản nháp rồi dừng server. Sao lưu toàn bộ `backend/data/` và PDF/TXT nguồn. SQLite có WAL nên không chép riêng `workspace.sqlite3` khi server đang chạy. Giữ backup dữ liệu cùng PDF để khôi phục đúng sách/trang.
+Trước khi chuyển máy, dừng OCR, chờ tác vụ kết thúc, lưu bản nháp rồi dừng ứng dụng. Sao lưu toàn bộ `backend/data/` cùng mã nguồn; chép cả `data/new/` nếu đang dùng vị trí này. SQLite có WAL nên không chép riêng `workspace.sqlite3` khi server đang chạy. Giữ nguyên tên PDF và toàn bộ `.workspace/book-assets/`. Trên máy mới cài lại dependency theo lockfile rồi chạy `run.py`, không cần build giao diện. Đổi vị trí thư mục hoặc ngày sửa file không tự tạo bản dữ liệu mới hay xóa chỉnh sửa. Khi hai màn hình cùng sửa gây xung đột, ứng dụng tải bản đã lưu và giữ bản nháp xung đột để tải JSON đối chiếu, không tự ghi đè.
 
 ## 7. Kiểm thử và phát triển
 
 ```powershell
 .\.venv\Scripts\python.exe backend/test.py
 npm --prefix frontend run check
-npm --prefix frontend run build
+npm --prefix frontend run check:alignment
 ```
 
-Ubuntu thay đường dẫn Python bằng `.venv/bin/python`. Khi phát triển frontend, chạy backend trong một terminal và `npm --prefix frontend run dev` trong terminal khác; Vite proxy `/api` về `http://127.0.0.1:8000`.
+Ubuntu thay đường dẫn Python bằng `.venv/bin/python`. `run.py` đã chạy Vite và backend cùng nhau, Vite proxy `/api` về `http://127.0.0.1:8000`. `npm --prefix frontend run build` chỉ là kiểm tra đóng gói tùy chọn; bản build không được ứng dụng phục vụ.
 
 ## 8. Xử lý sự cố
 
-- **Sách không xuất hiện:** xác nhận file là PDF và nằm trong `backend/data/raw_data/`; đồng bộ nguồn trong ứng dụng hoặc khởi động lại.
+- **Sách không xuất hiện:** với PDF, kiểm tra `backend/data/raw_data/`; với dữ liệu mới, kiểm tra XLSX, ảnh và `Label.txt` trong `backend/data/new/` theo README. Quét thư mục và xem lỗi nguồn trên tổng quan, hoặc khởi động lại.
 - **401/403 từ OCR Hán Nôm:** token hết hạn/sai hoặc tài khoản thiếu quyền. Cập nhật `KHN_token` trong `backend/.env`, sau đó khởi động lại backend.
 - **Trình duyệt cảnh báo kết nối không an toàn khi mở Kim Hán Nôm, hoặc OCR báo lỗi chứng chỉ HTTPS:** đây là lỗi chứng chỉ của dịch vụ. Không chọn tiếp tục truy cập, không tắt xác minh chứng chỉ; hãy báo đơn vị quản trị Kim Hán Nôm gia hạn chứng chỉ rồi thử lại. Lỗi này không thể sửa bằng cách đổi token.
 - **VietOCR chưa sẵn sàng:** chạy lại `backend/setup_vietocr.py`, xem thông báo lỗi trong Cài đặt. Cần mạng để tải model lần đầu.
 - **ONNX báo `DLL load failed` trên Windows:** xác nhận Python 64-bit và cài Microsoft Visual C++ Redistributable x64.
 - **Thiếu từ điển:** chạy `backend/setup_dictionary.py`, rồi khởi động lại backend.
-- **Font check hoặc build lỗi:** chạy `npm --prefix frontend ci`, sau đó `npm --prefix frontend run build`; không xóa `package-lock.json`.
+- **Giao diện không khởi động/thiếu Vite:** chạy `npm --prefix frontend ci`, rồi chạy lại `run.py`; không xóa `package-lock.json`. Kiểm tra cổng `5173` và `8000` không bị một phiên ứng dụng khác chiếm.
 - **Không thấy box/nhận dạng kém:** kiểm tag ngôn ngữ, hướng đọc, vùng ảnh, độ phân giải và chất lượng ảnh; có thể vẽ box thủ công rồi lưu.

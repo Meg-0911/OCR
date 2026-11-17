@@ -15,12 +15,12 @@ from datetime import datetime, timezone
 from typing import Literal
 
 import pymupdf
-from fastapi import FastAPI, HTTPException, UploadFile
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import BackgroundTasks, FastAPI, HTTPException, UploadFile
+from fastapi.responses import FileResponse, RedirectResponse
+from starlette.background import BackgroundTask
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, model_serializer
 
 from .store import CATEGORIES, Store, box_text_lines, source_box_text_lines, label_groups
 from .ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
@@ -29,6 +29,8 @@ from .sources import source_files
 from .dictionary import Dictionary
 from .alignment_review import export_text, paint, rich_text
 from .ocr_jobs import OCRJobs
+
+
 from .vietnamese_ocr import create_vietnamese_ocr
 from PIL import Image
 from . import bilingual
@@ -36,6 +38,8 @@ from .han_layout import PIPELINE_VERSION
 from .han_layout import jpeg_bytes
 from .region_ocr import crop_selection
 from .auto_alignment import index_pages, page_rows as automatic_page_rows, boxes_for_rows
+from .new_data import NewData
+
 
 Category = Literal['ch', 'vi', 'both', 'intro', 'ref', 'toc', 'blank', 'misc']
 
@@ -71,6 +75,13 @@ class BoxInput(BaseModel):
     export_character_order: int | None = Field(default=None, ge=0)
     alignment_id: str | None = Field(default=None, min_length=1, max_length=100)
     box_axis: Literal['vertical','horizontal'] | None = None
+
+    @model_serializer(mode='wrap')
+    def serialize_box(self, handler):
+        value = handler(self)
+        if not value.get('review_marks'):
+            value.pop('review_marks', None)
+        return value
 
     @field_validator('points')
     @classmethod
@@ -157,6 +168,7 @@ def validate_export_order(boxes):
 
 
 class PageInput(BaseModel):
+    input_revision: str | None = None
     boxes: list[BoxInput] = Field(default_factory=list,max_length=5000)
     vi_boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
     export_boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
@@ -183,6 +195,8 @@ class PageInput(BaseModel):
 
 
 class PagePatch(BaseModel):
+    version: int | None = None
+    input_revision: str | None = None
     source_text: str | None = Field(default=None,max_length=200000)
     target_text: str | None = Field(default=None,max_length=200000)
     boxes: list[BoxInput] | None = Field(default=None,max_length=5000)
@@ -217,14 +231,17 @@ class PagePlan(BaseModel):
 
 
 class BookPlan(BaseModel):
+    input_revision: str | None = None
     pages: list[PagePlan] = Field(max_length=20000)
 
 
 class PageLinksInput(BaseModel):
+    input_revision: str | None = None
     linked_page_ids: list[str] = Field(default_factory=list,max_length=20000)
 
 
 class SessionInput(BaseModel):
+    input_revision: str | None = None
     page_id: str | None = None
     alignment_page: str | None = None
     view: Literal['overview','library','review','alignment','export'] = 'review'
@@ -236,6 +253,7 @@ class ImportInput(BaseModel):
 
 
 class TextSourceInput(BaseModel):
+    input_revision: str | None = None
     filename: str = Field(min_length=1,max_length=255)
     text: str = Field(max_length=2000000)
 
@@ -249,6 +267,7 @@ def validate_regions(regions):
 
 
 class LayoutInput(BaseModel):
+    input_revision: str | None = None
     source_regions: list[tuple[float,float,float,float]] = Field(default_factory=list,max_length=100)
     target_regions: list[tuple[float,float,float,float]] = Field(default_factory=list,max_length=100)
     reading_direction: Literal[1,2] | None = None
@@ -291,6 +310,7 @@ class RegionOCRInput(BaseModel):
 
 
 class OCRBookInput(OCRSettings):
+    input_revision: str | None = None
     start_page: int = Field(default=1, ge=1)
     end_page: int | None = Field(default=None, ge=1)
     include_unclassified: bool = False
@@ -298,6 +318,7 @@ class OCRBookInput(OCRSettings):
 
 
 class WorkflowInput(OCRSettings):
+    input_revision: str | None = None
     mode: Literal['bilingual','han','vi'] = 'bilingual'
     plan: list[PagePlan] = Field(default_factory=list,max_length=20000)
 
@@ -311,6 +332,7 @@ class ReviewMark(BaseModel):
 
 
 class AlignmentInput(BaseModel):
+    alignment_version: int | None = None
     id: str = Field(min_length=1, max_length=100)
     sentence_id: str = Field(min_length=1, max_length=300)
     source: str = Field(max_length=100000)
@@ -333,12 +355,15 @@ class AlignmentInput(BaseModel):
 
 
 class AlignmentsInput(BaseModel):
+    alignment_version: int | None = None
     rows: list[AlignmentInput] = Field(max_length=50000)
+    input_revision: str | None = None
 
 
 def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None, ocr_transport=None, vi_provider=None, han_fallback_provider=None):
     root = (root or Path(os.environ.get('CORPUS_ROOT', Path(__file__).resolve().parents[1]))).resolve()
     store = Store(root)
+    new_data = NewData(store)
     @asynccontextmanager
     async def lifespan(app):
         yield
@@ -358,7 +383,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
 
     def require_book(book_id):
         book = store.book(book_id)
-        if not book:
+        if not book or not book['source'] or not (raw_folder / book['filename']).is_file():
             raise HTTPException(404, 'Không tìm thấy sách.')
         return book
 
@@ -366,17 +391,20 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         page = store.page(page_id)
         if not page:
             raise HTTPException(404, 'Không tìm thấy trang.')
+        require_book(page['book_id'])
         return page
+
+    def require_revision(book_id, revision):
+        current = require_book(book_id)['input_revision']
+        if current and current != revision:
+            raise HTTPException(409, 'Bản dữ liệu đã thay đổi. Tải lại trước khi lưu; không ghi bản nháp cũ vào bản mới.')
 
     def validate_filename(name):
         if not name or any(c in name for c in ('/', '\\', '\t', '\r', '\n', '\x00', ':', '<', '>', '"', '|', '?', '*')) or Path(name).suffix.lower() != '.pdf':
             raise HTTPException(400, 'Tên nguồn phải là tên file PDF, không chứa đường dẫn.')
         return name
 
-    def import_pdf(source: Path, filename: str):
-        validate_filename(filename)
-        if any(b['filename'].casefold() == filename.casefold() for b in store.books()):
-            raise HTTPException(409, 'Sách này đã có trong tủ sách. Hãy mở sách hiện có để tiếp tục.')
+    def pdf_dimensions(source):
         try:
             # Opening from bytes avoids leaked native file handles on malformed PDFs
             # on Windows, so the upload can always be cleaned up after an error.
@@ -389,6 +417,13 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     dimensions.append((math.ceil(page.rect.width * scale), math.ceil(page.rect.height * scale)))
         except Exception as error:
             raise HTTPException(400, 'Không đọc được PDF hợp lệ, không có mật khẩu.') from error
+        return dimensions
+
+    def import_pdf(source: Path, filename: str):
+        validate_filename(filename)
+        if any(b['filename'].casefold() == filename.casefold() for b in store.books()):
+            raise HTTPException(409, 'Sách này đã có trong tủ sách. Hãy mở sách hiện có để tiếp tục.')
+        dimensions = pdf_dimensions(source)
         book_id = uuid4().hex
         destination = raw_folder / filename
         copy_source = source.resolve() != destination.resolve()
@@ -398,7 +433,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             if copy_source:
                 shutil.copyfile(source, destination)
             with store.db() as db:
-                db.execute('INSERT INTO books VALUES (?,?,?,?,?,?)', (book_id, Path(filename).stem, filename, str(destination.relative_to(root)), 0, datetime.now(timezone.utc).isoformat()))
+                db.execute('INSERT INTO books VALUES (?,?,?,?,?,?)', (book_id, Path(filename).stem, filename, destination.relative_to(root).as_posix(), 0, datetime.now(timezone.utc).isoformat()))
                 for i,(width,height) in enumerate(dimensions, start=1):
                     db.execute('INSERT INTO pages (id,book_id,number,category,width,height) VALUES (?,?,?,?,?,?)', (uuid4().hex, book_id, i, 'both', width, height))
         except Exception:
@@ -417,13 +452,14 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 if existing:
                     # Repair paths from workspaces moved into backend/data/.
                     with store.db() as db:
-                        db.execute('UPDATE books SET source=? WHERE id=?', (str(source.relative_to(root)), existing['id']))
+                        db.execute('UPDATE books SET source=? WHERE id=?', (source.relative_to(root).as_posix(), existing['id']))
                     continue
                 try:
                     book = import_pdf(source, source.name)
                     known[source.name.casefold()] = book
                 except HTTPException as error:
                     source_errors.append({'filename':source.name, 'message':str(error.detail)})
+        new_data.sync(source_errors)
 
     def text_sources(book_id):
         with store.db() as db:
@@ -432,17 +468,39 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
 
     def book_summary(book):
         reference=text_sources(book['id']).get('vi')
-        return book | {'reference_file':reference['filename'] if reference else None}
+        imported = new_data.summary(book['id'])
+        return book | {'reference_file':reference['filename'] if reference else None,
+                       'has_new_data': bool(imported['new_data_pages']), **imported,
+                       'has_pdf': bool(store.book(book['id'])['source']),
+                       'pair_stats': store.pair_stats(book['id'])}
 
     # Index every local PDF; no seeded data, fixed book count, copying or OCR calls.
     sync_sources()
 
     def rendered_image(page, high_resolution=False):
+        imported = new_data.image(page['id'])
+        if imported:
+            if not imported.is_file():
+                raise HTTPException(404, 'Không còn ảnh dữ liệu mới. Khôi phục ảnh trong data/new rồi quét lại.')
+            if imported.suffix.casefold() == '.png':
+                cache = store.local / 'input-images' / f"{page['id']}-{imported.stat().st_mtime_ns}.jpg"
+                if cache.is_file():
+                    return cache
+                with store.lock:
+                    if not cache.is_file():
+                        cache.parent.mkdir(parents=True, exist_ok=True)
+                        with Image.open(imported) as picture:
+                            picture.convert('RGB').save(cache, format='JPEG', quality=95)
+                return cache
+            return imported
         book = require_book(page['book_id'])
         filename = f"{book['name']}.{page['number']:03d}.jpg"
         cache = store.data / 'processed_images' / book['id'] / filename
         if high_resolution:
             cache = store.local / 'ocr-images' / book['id'] / filename
+        category_image = store.book_dir(book['id']) / page['category'] / filename
+        if cache.is_file() and (high_resolution or category_image.is_file()):
+            return cache
         with store.lock:
             if not cache.exists():
                 cache.parent.mkdir(parents=True, exist_ok=True)
@@ -453,7 +511,6 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     temporary = cache.with_suffix('.tmp')
                     temporary.write_bytes(pix.tobytes('jpeg', jpg_quality=92))
                     os.replace(temporary, cache)
-            category_image = store.book_dir(book['id']) / page['category'] / filename
             category_image.parent.mkdir(parents=True, exist_ok=True)
             if not high_resolution and not category_image.exists():
                 shutil.copyfile(cache, category_image)
@@ -465,6 +522,10 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
 
     @app.get('/api/workspace')
     def workspace():
+        with store.lock:
+            return workspace_snapshot()
+
+    def workspace_snapshot():
         return {
             'books': [book_summary(book) for book in store.books()],
             'pair_stats': store.pair_stats(),
@@ -526,6 +587,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         if not data.filename.lower().endswith('.txt') or not data.text.strip():
             raise HTTPException(422,'Chọn tệp TXT UTF-8 có nội dung.')
         with store.lock,store.db() as db:
+            require_revision(book_id, data.input_revision)
             db.execute('INSERT INTO book_text_sources VALUES (?,?,?,?) ON CONFLICT(book_id,language) DO UPDATE SET filename=excluded.filename,text=excluded.text',
                        (book_id,language,Path(data.filename).name,data.text.lstrip('\ufeff')))
         return text_sources(book_id)
@@ -543,8 +605,9 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     @app.put('/api/books/{book_id}/layout')
     def save_layout(book_id: str,data: LayoutInput):
         require_book(book_id)
-        profile=data.model_dump(exclude_none=True)
+        profile=data.model_dump(exclude_none=True, exclude={'input_revision'})
         with store.lock:
+            require_revision(book_id, data.input_revision)
             previous=store.book_layout(book_id)
             if 'reading_direction' not in profile and 'reading_direction' in previous:
                 profile['reading_direction']=previous['reading_direction']
@@ -589,18 +652,31 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             file.file.close()
 
     @app.get('/api/books/{book_id}/pages')
-    def pages(book_id: str):
+    def pages(book_id: str, include_export_boxes: bool = True):
         require_book(book_id)
-        return store.pages(book_id)
+        return store.pages(book_id, include_export_boxes=include_export_boxes)
+
+    @app.get('/api/pages/{page_id}')
+    def get_page(page_id: str):
+        return require_page(page_id)
 
     @app.get('/api/pages/{page_id}/image')
     def image(page_id: str, thumbnail: bool = False):
-        page = require_page(page_id)
+        # Images need location metadata, not OCR boxes or the book's alignment JSON.
+        with store.db() as db:
+            row = db.execute('SELECT id,book_id,number,category FROM pages WHERE id=?', (page_id,)).fetchone()
+        if row is None:
+            raise HTTPException(404, 'Không tìm thấy trang.')
+        page = dict(row)
+        require_book(page['book_id'])
         original = rendered_image(page,high_resolution=not thumbnail)
         if thumbnail:
-            thumb = original.with_suffix('.thumb.jpg')
+            thumb = store.local / 'thumbnails' / f"{page_id}-{original.stat().st_mtime_ns}.jpg"
+            if thumb.is_file():
+                return FileResponse(thumb,media_type='image/jpeg')
             with store.lock:
                 if not thumb.exists():
+                    thumb.parent.mkdir(parents=True, exist_ok=True)
                     pix = pymupdf.Pixmap(str(original))
                     shrink = max(0, math.floor(math.log2(max(pix.width/160, pix.height/220))))
                     if shrink:
@@ -610,9 +686,12 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         return FileResponse(original,media_type='image/jpeg')
 
     @app.put('/api/pages/{page_id}')
-    def save_page(page_id: str, data: PageInput):
+    def save_page(page_id: str, data: PageInput, background_tasks: BackgroundTasks):
         with store.lock:
             page = require_page(page_id)
+            require_revision(page['book_id'], data.input_revision)
+            if page['target_origin'] == 'new_data':
+                data.ocr_granularity = 'phrase'
             page_boxes=[*data.boxes,*(data.vi_boxes or []),*(data.export_boxes or [])]
             if any(x>page['width'] or y>page['height'] for box in page_boxes for x,y in box.points):
                 raise HTTPException(422, 'Box vượt ra ngoài kích thước ảnh.')
@@ -620,7 +699,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 raise HTTPException(422, 'ID box bị trùng.')
             source_text=page['source_text'] if data.source_text is None else data.source_text
             target_text=page['target_text'] if data.target_text is None else data.target_text
-            if data.boxes:
+            if data.boxes or page['boxes']:
                 source_text='\n'.join(source_box_text_lines(
                     [box.model_dump(mode='json',exclude_none=True) for box in data.boxes],
                     page['reading_direction'],(page['width'],page['height']),
@@ -693,16 +772,24 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 old = store.book_dir(page['book_id']) / page['category'] / f"{require_book(page['book_id'])['name']}.{page['number']:03d}.jpg"
                 old.unlink(missing_ok=True)
             store.propagate_placeholder_edits(page['book_id'],page['number'],page['source_text'],source_text)
-            store.sync_alignment_page_text(page,page['source_text'],page['target_text'],source_text,target_text)
-            store.sync_labels(page['book_id'])
-            return updated
+            store.invalidate_box_reviews(page, boxes)
+            deleted = store.sync_deleted_source_boxes(page, require_page(page_id))
+            store.sync_alignment_page_text(page,source_text if deleted else page['source_text'],page['target_text'],source_text,target_text)
+            store.prepare_label_checkpoint(page['book_id'])
+            background_tasks.add_task(store.sync_labels, page['book_id'], checkpoint=False)
+            return require_page(page_id)
 
     @app.patch('/api/pages/{page_id}')
     def patch_page(page_id: str,data: PagePatch):
         # Field-level autosave permits editing one language while the other finishes OCR.
         with store.lock:
             page=require_page(page_id)
-            changes={key:value for key,value in data.model_dump(exclude_unset=True,mode='json').items() if value is not None or key in ('source_regions','target_regions','reading_direction_override')}
+            require_revision(page['book_id'], data.input_revision)
+            if data.version is not None and data.version != page['version']:
+                raise HTTPException(409, 'Trang đã thay đổi ở màn hình khác. Tải bản đã lưu trước khi tiếp tục sửa.')
+            changes={key:value for key,value in data.model_dump(exclude_unset=True,mode='json',exclude={'input_revision','version'}).items() if value is not None or key in ('source_regions','target_regions','reading_direction_override')}
+            if page['target_origin'] == 'new_data' and 'ocr_granularity' in changes:
+                changes['ocr_granularity'] = 'phrase'
             if 'ocr_languages' in changes:
                 languages=[language for language in ('han','vi') if language in changes['ocr_languages']]
                 changes['ocr_languages']=json.dumps(languages)
@@ -720,7 +807,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 changes['reading_direction']=changes['reading_direction_override'] or store.book_layout(page['book_id']).get('reading_direction',2)
             effective_direction=changes.get('reading_direction',page['reading_direction'])
             source_boxes=changes.get('boxes',page['boxes'])
-            if source_boxes and ('boxes' in changes or 'source_text' in changes or 'ocr_granularity' in changes):
+            if (source_boxes or 'boxes' in changes) and ('boxes' in changes or 'source_text' in changes or 'ocr_granularity' in changes):
                 changes['source_text']='\n'.join(source_box_text_lines(
                     source_boxes,effective_direction,(page['width'],page['height']),
                     changes.get('ocr_granularity',page['ocr_granularity']),
@@ -759,10 +846,15 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 raise HTTPException(409,'Trang đã có trong nhóm này.') from None
             if 'source_text' in changes:
                 store.propagate_placeholder_edits(page['book_id'],page['number'],page['source_text'],changes['source_text'])
-            store.sync_alignment_page_text(page,page['source_text'],page['target_text'],
+            if data.boxes is not None:
+                current = require_page(page_id)
+                store.invalidate_box_reviews(page, current['boxes'])
+                deleted = store.sync_deleted_source_boxes(page, current)
+            else:
+                deleted = False
+            store.sync_alignment_page_text(page,changes.get('source_text',page['source_text']) if deleted else page['source_text'],page['target_text'],
                                            changes.get('source_text',page['source_text']),
                                            changes.get('target_text',page['target_text']))
-            store.sync_labels(page['book_id'])
             return require_page(page_id)
 
     @app.get('/api/books/{book_id}/session')
@@ -773,6 +865,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     @app.put('/api/books/{book_id}/session')
     def save_book_session(book_id: str,data: SessionInput):
         require_book(book_id)
+        require_revision(book_id, data.input_revision)
         for page_id in (data.page_id,data.alignment_page):
             if page_id and require_page(page_id)['book_id']!=book_id:
                 raise HTTPException(422,'Vị trí trang không thuộc sách.')
@@ -785,6 +878,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     def save_book_plan(book_id: str,data: BookPlan):
         require_book(book_id)
         with store.lock:
+            require_revision(book_id, data.input_revision)
             known={p['id'] for p in store.pages(book_id)}
             if len({p.page_id for p in data.pages})!=len(data.pages) or any(p.page_id not in known for p in data.pages):
                 raise HTTPException(422,'Danh sách trang bị trùng hoặc không thuộc sách.')
@@ -808,6 +902,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     @app.put('/api/pages/{page_id}/links')
     def save_page_links(page_id: str,data: PageLinksInput):
         page=require_page(page_id)
+        require_revision(page['book_id'], data.input_revision)
         linked=set(data.linked_page_ids)
         if page_id in linked or len(linked)!=len(data.linked_page_ids):
             raise HTTPException(422,'Danh sách trang liên kết bị trùng hoặc chứa chính trang này.')
@@ -851,7 +946,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         return recover_ocr(page_id)
 
     def effective_settings(book_id,data):
-        settings=data.model_dump(exclude={'version','force','reuse_saved_settings','start_page','end_page','include_unclassified','apply_texts'})
+        settings=data.model_dump(exclude={'version','force','reuse_saved_settings','start_page','end_page','include_unclassified','apply_texts','input_revision'})
         status=vietnamese.status()
         settings['vi_engine']=status.get('cache_key',status['engine'])
         layout=store.book_layout(book_id)
@@ -976,8 +1071,20 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         return {**settings,'mode':mode,**overrides}
 
     jobs = OCRJobs(store, recognize_for_job,
-                   lambda page,settings:bilingual.needs_ocr(page,page_settings(page,settings),recover_ocr(page['id'])))
+                   lambda page,settings:not new_data.image(page['id']) and
+                   bilingual.needs_ocr(page,page_settings(page,settings),recover_ocr(page['id'])))
     app.state.ocr_jobs = jobs
+
+    def stop_replaced_book(book_id):
+        current = jobs.latest(book_id)
+        if current:
+            if current['status'] in ('running', 'pausing'):
+                jobs.pause(current['id'])
+            future = jobs.futures.get(current['id'])
+            if future:
+                future.result()
+
+    new_data.before_replace = stop_replaced_book
 
     @app.get('/api/books/{book_id}/ocr-job')
     def latest_book_job(book_id: str):
@@ -987,7 +1094,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     @app.post('/api/books/{book_id}/ocr-job')
     def start_book_job(book_id: str, data: OCRBookInput):
         require_book(book_id)
-        selected=[p for p in store.pages(book_id) if p['status']!='done' and not p['ocr_skip'] and p['category']!='blank' and p['number']>=data.start_page and (data.end_page is None or p['number']<=data.end_page)]
+        require_revision(book_id, data.input_revision)
+        selected=[p for p in store.pages(book_id) if p['status']!='done' and not p['ocr_skip'] and p['category']!='blank' and not new_data.image(p['id']) and p['number']>=data.start_page and (data.end_page is None or p['number']<=data.end_page)]
         modes=[page_settings(p,{'mode':data.mode})['mode'] for p in selected]
         if any(mode!='vi' for mode in modes) and not ocr.ready:
             raise HTTPException(503, 'Thiếu KHN_token và PP-OCRv5 CPU chưa sẵn sàng. Cài backend/requirements-han-fallback.txt hoặc cấu hình KHN_token.')
@@ -1008,7 +1116,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
 
     @app.post('/api/books/{book_id}/workflow')
     def start_workflow(book_id: str,data: WorkflowInput):
-        save_book_plan(book_id,BookPlan(pages=data.plan))
+        save_book_plan(book_id,BookPlan(pages=data.plan,input_revision=data.input_revision))
         current=jobs.latest(book_id)
         if current and current['status'] in ('running','pausing'):
             return current
@@ -1046,17 +1154,19 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     def get_alignments(book_id: str):
         require_book(book_id)
         with store.lock:
-            if store.reconcile_alignment_ocr(book_id):
+            deleted = store.reconcile_deleted_source_boxes(book_id)
+            if store.reconcile_alignment_ocr(book_id) or deleted:
                 store.sync_results(book_id,'reconcile_alignment_ocr')
         with store.db() as db:
             row = db.execute('SELECT rows FROM alignments WHERE book_id=?',(book_id,)).fetchone()
-        return json.loads(row['rows']) if row else []
+        return store.describe_alignments(book_id, json.loads(row['rows']) if row else [])
 
     @app.post('/api/books/{book_id}/alignments/prepare')
     def prepare_alignments(book_id: str):
         """Fill untouched OCR pages and their export boxes before human review."""
         book = require_book(book_id)
         with store.lock:
+            deleted = store.reconcile_deleted_source_boxes(book_id)
             pages = store.pages(book_id)
             page_indexes = index_pages(pages)
             with store.db() as db:
@@ -1073,8 +1183,13 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     rows_by_page.setdefault(int(page_number), []).append(row)
             source_pages = [page for page in pages if not page['ocr_skip']
                             and page['category'] not in ('blank', 'misc')
-                            and 'han' in page['ocr_languages'] and page['status'] == 'done'
-                            and page['ocr_granularity']]
+                            and 'han' in page['ocr_languages']
+                            and (page['source_text'].strip() or page['boxes'])
+                            and not new_data.image(page['id'])]
+            for page in source_pages:
+                if not page['ocr_granularity']:
+                    page['ocr_granularity'] = ('phrase' if any(len(box['transcription'].strip()) > 1
+                        for box in page['boxes']) else 'character')
             reference = text_sources(book_id).get('vi', {}).get('text', '')
             if reference and not (re.search(r'^\s*\*+\s*Page\s+\d+\s*\*+\s*$', reference, re.I | re.M)
                                   or '\f' in reference or len(source_pages) == 1):
@@ -1159,15 +1274,17 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 with store.db() as db:
                     db.execute('INSERT INTO alignments VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET rows=excluded.rows',
                                (book_id, json.dumps(rows, ensure_ascii=False)))
-            if created or boxes_created or boxes_removed or boxes_renumbered:
+            if created or boxes_created or boxes_removed or boxes_renumbered or deleted:
                 store.sync_labels(book_id)
                 store.sync_results(book_id, 'prepare_alignments')
-        return {'rows': rows, 'created': created, 'boxes_created': boxes_created,
+        return {'rows': store.describe_alignments(book_id, rows), 'created': created, 'boxes_created': boxes_created,
                 'boxes_removed': boxes_removed, 'boxes_renumbered': boxes_renumbered}
 
     @app.put('/api/books/{book_id}/alignments')
     def save_alignments(book_id: str, data: AlignmentsInput):
         book = require_book(book_id)
+        if book['input_revision'] and data.input_revision != book['input_revision']:
+            raise HTTPException(409, 'Dữ liệu sách đã được thay bằng bản mới. Tải lại trước khi lưu căn chỉnh.')
         ids = [r.sentence_id for r in data.rows]
         if len(ids) != len(set(ids)) or len({r.id for r in data.rows}) != len(data.rows):
             raise HTTPException(422,'ID câu hoặc ID hàng bị trùng.')
@@ -1186,29 +1303,63 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             if row.target_page_id and (row.target_page_id not in pages_by_id or
                     'vi' not in pages_by_id[row.target_page_id]['ocr_languages']):
                 raise HTTPException(422,'Trang Quốc ngữ không thuộc sách hoặc chưa có nhãn Quốc ngữ.')
-        rows = [r.model_dump(exclude_none=True) for r in data.rows]
-        counters = {}
+        rows = [r.model_dump(exclude_none=True, exclude={'alignment_version'}) for r in data.rows]
         for row in rows:
             for mark in row['marks']:
                 if not (0 <= mark['source_start'] < mark['source_end'] <= len(row['source'])
                         and 0 <= mark['target_start'] < mark['target_end'] <= len(row['target'])):
                     raise HTTPException(422, 'Vùng tô màu phải nằm trong cả hai vế của cặp căn chỉnh.')
-            prefix = row['sentence_id'].rsplit('.', 1)[0]
-            counters[prefix] = counters.get(prefix, 0) + 1
-            row['sentence_id'] = f"{prefix}.{counters[prefix]}"
-        with store.db() as db:
-            db.execute('INSERT INTO alignments VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET rows=excluded.rows',(book_id,json.dumps(rows,ensure_ascii=False)))
-        store.sync_results(book_id,'save_alignments')
-        return rows
+        with store.lock:
+            current = store.book(book_id)
+            if current['input_revision'] and current['input_revision'] != data.input_revision:
+                raise HTTPException(409, 'Dữ liệu sách đã thay đổi. Tải lại trước khi lưu căn chỉnh.')
+            versions = {row.alignment_version for row in data.rows if row.alignment_version is not None}
+            expected = data.alignment_version if data.alignment_version is not None else next(iter(versions), None)
+            if len(versions) > 1 or (expected is not None and expected != current['alignment_version']):
+                raise HTTPException(409, 'Các cụm đã thay đổi ở màn hình khác. Tải lại trước khi lưu để tránh ghi đè chữ/màu mới.')
+            previous = store.alignment_rows(book_id)
+            old_rows = {row['id']: row for row in previous}
+            for row in rows:
+                old = old_rows.get(row['id'])
+                if old and old.get('reviewed') and any(row.get(key) != old.get(key) for key in ('source', 'target', 'marks')):
+                    row['reviewed'] = False
+            with store.db() as db:
+                db.execute('INSERT INTO alignments VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET rows=excluded.rows',(book_id,json.dumps(rows,ensure_ascii=False)))
+            store.sync_alignment_edits(book_id, previous, rows)
+            store.sync_labels(book_id)
+            store.sync_results(book_id,'save_alignments')
+            return store.describe_alignments(book_id)
+
+    def download_response(path):
+        folder = store.local / 'downloads' / uuid4().hex
+        folder.mkdir(parents=True)
+        snapshot = folder / path.name
+        shutil.copyfile(path, snapshot)
+        def cleanup():
+            if not folder.resolve().is_relative_to((store.local / 'downloads').resolve()):
+                raise ValueError('Đường dẫn tải xuống không thuộc workspace.')
+            snapshot.unlink(missing_ok=True)
+            folder.rmdir()
+        return FileResponse(snapshot, filename=path.name, background=BackgroundTask(cleanup))
 
     @app.get('/api/books/{book_id}/export')
     def export(book_id: str, format: Literal['csv','xlsx','labels']='csv'):
+        with store.lock:
+            return download_response(build_export(book_id, format))
+
+    def build_export(book_id, format):
         book = require_book(book_id)
         folder = store.data / 'output_alignment' / book_id
         folder.mkdir(exist_ok=True)
         if format == 'labels':
             store.sync_labels(book_id)
             pages=store.pages(book_id)
+            if book['input_revision']:
+                assigned = {box.get('alignment_id') for page in pages for box in page['export_boxes']}
+                missing = [row for row in get_alignments(book_id) if not row.get('duplicate_of')
+                           and row['source'].strip() and row['target'].strip() and row['id'] not in assigned]
+                if missing:
+                    raise HTTPException(400, 'Còn cụm chưa có box nhãn thật. Vẽ/gán box cho các cụm đã tách hoặc thêm trước khi xuất ZIP nhãn.')
             path = folder / f"{book['name']}_{format}.zip"
             temporary = path.with_suffix('.zip.tmp')
             with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
@@ -1226,7 +1377,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                         archive.write(original,f"{book['name']}/{category}/{image_name}")
             os.replace(temporary,path)
         else:
-            rows = get_alignments(book_id)
+            rows = [row for row in get_alignments(book_id) if not row.get('duplicate_of') and row['review_state'] != 'excluded']
             if not rows:
                 raise HTTPException(400,'Chưa có cặp căn chỉnh. Hãy tạo và lưu các cặp trước khi xuất.')
             if any(not row['source'].strip() or not row['target'].strip() for row in rows):
@@ -1284,7 +1435,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     sheet.column_dimensions[column].width = width
                 sheet.freeze_panes = 'A2'
                 workbook.save(path)
-        return FileResponse(path,filename=path.name)
+        return path
 
     @app.get('/api/results/archive')
     def all_results_archive():
@@ -1303,13 +1454,13 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 store.sync_results(book_id)
                 for format in ('csv', 'xlsx'):
                     try:
-                        export(book_id, format)
+                        build_export(book_id, format)
                     except HTTPException as error:
                         if error.status_code != 400:
                             raise
                         break
                 else:
-                    export(book_id, 'labels')
+                    build_export(book_id, 'labels')
                     books.append(book)
             if not books:
                 raise HTTPException(404, 'Ch\u01b0a c\u00f3 cu\u1ed1n n\u00e0o c\u00f3 k\u1ebft qu\u1ea3 d\u00f3ng h\u00e0ng \u0111\u1ea7y \u0111\u1ee7 \u0111\u1ec3 t\u1ea3i demo.')
@@ -1332,18 +1483,20 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                         result = folder / f"{book['name']}.{format}"
                         archive.write(result, f"{book['name']}/{result.name}")
             os.replace(temporary, path)
-        return FileResponse(path, filename=path.name, media_type='application/zip')
+            response = download_response(path)
+        return response
 
     @app.get('/api/books/{book_id}/results/{filename}')
     def result_file(book_id: str,filename: Literal['summary.json','pages.json','alignments.json','pairs.csv','events.jsonl']):
-        require_book(book_id)
-        store.sync_results(book_id)
-        path=store.data/'output_alignment'/book_id/filename
-        if not path.is_file():
-            raise HTTPException(404,'Chưa có sự kiện để tải.')
-        return FileResponse(path,filename=filename)
+        with store.lock:
+            require_book(book_id)
+            store.sync_results(book_id)
+            path=store.data/'output_alignment'/book_id/filename
+            if not path.is_file():
+                raise HTTPException(404,'Chưa có sự kiện để tải.')
+            return download_response(path)
 
-    dist = root / 'frontend' / 'dist'
-    if dist.exists():
-        app.mount('/',StaticFiles(directory=dist,html=True),name='web')
+    @app.get('/', include_in_schema=False)
+    def frontend_source():
+        return RedirectResponse('http://127.0.0.1:5173')
     return app

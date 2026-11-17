@@ -592,6 +592,7 @@ def test_pair_counter_excludes_incomplete_and_duplicates_and_resumes(workspace):
     stats = client.get('/api/workspace').json()['pair_stats']
     assert stats == {
         'target':2000, 'pairs':0, 'reviewed_pairs':0, 'remaining':2000,
+        'saved_pairs':0, 'pending_error_pairs':0, 'excluded_pairs':0,
         'duplicate_pairs':0, 'incomplete_pairs':0,
     }
     first = save_counted_pairs(client, 'Stats One.pdf', [
@@ -606,8 +607,9 @@ def test_pair_counter_excludes_incomplete_and_duplicates_and_resumes(workspace):
     ])
     stats = client.get('/api/workspace').json()['pair_stats']
     assert stats == {
-        'target':2000, 'pairs':1, 'reviewed_pairs':1, 'remaining':1999,
-        'duplicate_pairs':2, 'incomplete_pairs':2,
+        'target':2000, 'pairs':3, 'reviewed_pairs':0, 'remaining':1997,
+        'saved_pairs':3, 'pending_error_pairs':0, 'excluded_pairs':0,
+        'duplicate_pairs':1, 'incomplete_pairs':2,
     }
     assert Store(root).pair_stats() == stats
     assert client.put(f"/api/books/{second['id']}/alignments", json={'rows':[]}).status_code == 200

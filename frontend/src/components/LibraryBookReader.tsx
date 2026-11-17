@@ -14,6 +14,9 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 import { formatBookTitle } from './BookCard';
+import ReviewText from './ReviewText';
+import { pageStatusLabel } from '../pageStatus';
+import { reviewColorsForLines } from '../reviewColors';
 import type { Book, Category, Page } from '../types';
 
 const categories: Record<Category, string> = {
@@ -184,7 +187,8 @@ export default function LibraryBookReader({ book, onClose, onError }: Props) {
         setPages(data);
         if (data.length > 0) {
           const firstWithContent = data.find((p) => p.source_text || p.target_text);
-          setSelectedId(firstWithContent ? firstWithContent.id : data[0].id);
+          setSelectedId((current) => data.some((page) => page.id === current)
+            ? current : firstWithContent ? firstWithContent.id : data[0].id);
         }
       })
       .catch((err) => {
@@ -196,7 +200,7 @@ export default function LibraryBookReader({ book, onClose, onError }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [book.id]);
+  }, [book.id, book.input_revision, book.content_version, book.alignment_version]);
 
   const cleanTitle = formatBookTitle(book.name);
   const selectedPage = pages.find((p) => p.id === selectedId);
@@ -206,7 +210,8 @@ export default function LibraryBookReader({ book, onClose, onError }: Props) {
     return String(p.number).includes(search);
   });
 
-  const doneCount = pages.filter((p) => p.status === 'done').length;
+  const doneCount = pages.filter((p) => pageStatusLabel(p) === 'Đã hoàn thành').length;
+  const skippedCount = pages.filter((p) => pageStatusLabel(p) === 'Bỏ qua').length;
 
   const hanLines = selectedPage?.source_text
     ? selectedPage.source_text.split(/\r?\n/).filter((l) => l.trim().length > 0)
@@ -215,6 +220,8 @@ export default function LibraryBookReader({ book, onClose, onError }: Props) {
   const viLines = selectedPage?.target_text
     ? selectedPage.target_text.split(/\r?\n/).filter((l) => l.trim().length > 0)
     : [];
+  const hanColors = selectedPage ? reviewColorsForLines(selectedPage.source_text, selectedPage.boxes, 'source', selectedPage.reading_direction, selectedPage.review_rows) : [];
+  const viColors = selectedPage ? reviewColorsForLines(selectedPage.target_text, selectedPage.boxes, 'target', selectedPage.reading_direction, selectedPage.review_rows) : [];
 
   return (
     <div className="library-reader">
@@ -230,7 +237,7 @@ export default function LibraryBookReader({ book, onClose, onError }: Props) {
             </h2>
             <div className="reader-badges">
               <span className="reader-stat-pill">
-                {pages.length} trang · {doneCount} đã duyệt
+                {doneCount}/{pages.length - skippedCount} trang đã hoàn thành · {skippedCount} bỏ qua
               </span>
               <span className="safe-badge">
                 <Eye size={13} />
@@ -277,8 +284,8 @@ export default function LibraryBookReader({ book, onClose, onError }: Props) {
                   onClick={() => setSelectedId(p.id)}
                 >
                   <div className="reader-page-thumb">
-                    <img loading="lazy" src={`${p.image_url}?thumbnail=true`} alt="" />
-                    {p.status === 'done' && (
+                    <img loading="lazy" src={`${p.image_url}${p.image_url.includes('?') ? '&' : '?'}thumbnail=true`} alt="" />
+                    {pageStatusLabel(p) === 'Đã hoàn thành' && (
                       <span className="thumb-done">
                         <Check size={11} />
                       </span>
@@ -365,7 +372,7 @@ export default function LibraryBookReader({ book, onClose, onError }: Props) {
                     <p>
                       Nhãn: <strong>{categories[selectedPage.category]}</strong> · Trạng thái:{' '}
                       <strong>
-                        {selectedPage.status === 'done' ? 'Đã xác nhận' : 'Chưa xác nhận'}
+                        {pageStatusLabel(selectedPage)}
                       </strong>
                     </p>
                   </div>
@@ -382,7 +389,7 @@ export default function LibraryBookReader({ book, onClose, onError }: Props) {
                         {hanLines.map((line, idx) => (
                           <div key={idx} className="reader-line-item">
                             <span className="line-num">{idx + 1}</span>
-                            <span className="line-content han-text">{line}</span>
+                            <span className="line-content han-text"><ReviewText text={line} colors={hanColors[idx]} /></span>
                           </div>
                         ))}
                       </div>
@@ -401,7 +408,7 @@ export default function LibraryBookReader({ book, onClose, onError }: Props) {
                         {viLines.map((line, idx) => (
                           <div key={idx} className="reader-line-item">
                             <span className="line-num">{idx + 1}</span>
-                            <span className="line-content">{line}</span>
+                            <span className="line-content"><ReviewText text={line} colors={viColors[idx]} /></span>
                           </div>
                         ))}
                       </div>

@@ -20,11 +20,16 @@ import type {
   TextReference as UploadedText,
 } from './types';
 
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) { super(message); this.status = status; }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, init);
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(
+    throw new ApiError(response.status,
       typeof error.detail === 'string'
         ? error.detail
         : Array.isArray(error.detail)
@@ -54,9 +59,12 @@ function json(method: string, body: unknown): RequestInit {
 }
 export const api = {
   workspace: () => request<Workspace>('/workspace'),
-  pages: (book: string) => request<Page[]>(`/books/${book}/pages`),
-  savePageLinks: (page: string, linked_page_ids: string[]) =>
-    request<Page[]>(`/pages/${page}/links`, json('PUT', { linked_page_ids })),
+  pages: (book: string, includeExportBoxes = false) => request<Page[]>(
+    `/books/${book}/pages?include_export_boxes=${includeExportBoxes}`,
+  ),
+  page: (page: string) => request<Page>(`/pages/${page}`),
+  savePageLinks: (page: string, linked_page_ids: string[], input_revision?: string) =>
+    request<Page[]>(`/pages/${page}/links`, json('PUT', { linked_page_ids, input_revision })),
   patchPage: (
     page: string,
     patch: Partial<
@@ -76,20 +84,22 @@ export const api = {
         | 'ocr_granularity'
       >
     >,
-  ) => request<Page>(`/pages/${page}`, json('PATCH', patch)),
+    input_revision?: string,
+    version?: number,
+  ) => request<Page>(`/pages/${page}`, json('PATCH', { ...patch, input_revision, version })),
   bookSession: (book: string) => request<BookSession>(`/books/${book}/session`),
   saveSession: (book: string, state: BookSession) =>
     request<BookSession>(`/books/${book}/session`, json('PUT', state)),
-  savePlan: (book: string, pages: PagePlan[]) =>
-    request<Page[]>(`/books/${book}/plan`, json('PUT', { pages })),
-  startWorkflow: (book: string, settings: OCRSettings, plan: PagePlan[]) =>
-    request<OCRJob>(`/books/${book}/workflow`, json('POST', { ...settings, plan })),
+  savePlan: (book: string, pages: PagePlan[], input_revision?: string) =>
+    request<Page[]>(`/books/${book}/plan`, json('PUT', { pages, input_revision })),
+  startWorkflow: (book: string, settings: OCRSettings, plan: PagePlan[], input_revision?: string) =>
+    request<OCRJob>(`/books/${book}/workflow`, json('POST', { ...settings, plan, input_revision })),
   sources: () => request<SourceFile[]>('/sources'),
   syncSources: () => request<Workspace>('/sources/sync', { method: 'POST' }),
   reference: (book: string) => request<TextReference | null>(`/books/${book}/reference`),
   textSources: (book: string) => request<TextSources>(`/books/${book}/text-sources`),
-  saveTextSource: (book: string, language: 'han' | 'vi', source: UploadedText) =>
-    request<TextSources>(`/books/${book}/text-sources/${language}`, json('PUT', source)),
+  saveTextSource: (book: string, language: 'han' | 'vi', source: UploadedText, input_revision?: string) =>
+    request<TextSources>(`/books/${book}/text-sources/${language}`, json('PUT', { ...source, input_revision })),
   importSource: (name: string) => request<Book>('/books/import', json('POST', { filename: name })),
   upload: async (file: File) => {
     const body = new FormData();
@@ -106,7 +116,7 @@ export const api = {
   ) =>
     request<Page>(
       `/pages/${page.id}`,
-      json('PUT', { boxes, export_boxes: page.export_boxes, done, category, version: page.version, reading_direction, ...texts }),
+      json('PUT', { boxes, done, category, version: page.version, input_revision: page.input_revision, reading_direction, ...texts }),
     ),
   duplicatePage: (page: string) => request<Page>(`/pages/${page}/duplicate`, { method: 'POST' }),
   latestOCR: (page: string) => request<OCRResult | null>(`/pages/${page}/ocr`),
@@ -117,8 +127,8 @@ export const api = {
       json('POST', { box, language, reading_direction })),
   ocrJob: (book: string) => request<OCRJob | null>(`/books/${book}/ocr-job`),
   bookLayout: (book: string) => request<BookLayout>(`/books/${book}/layout`),
-  saveBookLayout: (book: string, layout: BookLayout) =>
-    request<BookLayout>(`/books/${book}/layout`, json('PUT', layout)),
+  saveBookLayout: (book: string, layout: BookLayout, input_revision?: string) =>
+    request<BookLayout>(`/books/${book}/layout`, json('PUT', { ...layout, input_revision })),
   startOCRJob: (
     book: string,
     settings: OCRSettings,
@@ -143,8 +153,8 @@ export const api = {
   reverseSearchDictionary: (query: string) =>
     request<DictionaryReverseMatch[]>(`/dictionary/reverse?q=${encodeURIComponent(query)}`),
   alignments: (book: string) => request<Alignment[]>(`/books/${book}/alignments`),
-  saveAlignments: (book: string, rows: Alignment[]) =>
-    request<Alignment[]>(`/books/${book}/alignments`, json('PUT', { rows })),
+  saveAlignments: (book: string, rows: Alignment[], input_revision?: string, alignment_version?: number) =>
+    request<Alignment[]>(`/books/${book}/alignments`, json('PUT', { rows, input_revision, alignment_version })),
   prepareAlignments: (book: string) =>
     request<{ rows: Alignment[]; created: number; boxes_created: number }>(
       `/books/${book}/alignments/prepare`, { method: 'POST' }),

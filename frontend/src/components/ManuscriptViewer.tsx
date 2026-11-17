@@ -65,10 +65,20 @@ export default function ManuscriptViewer({
     if (!selected || !svg.current) return;
     const frame = requestAnimationFrame(() => {
       if (drag.current) return;
-      const box = Array.from(
-        svg.current?.querySelectorAll<SVGPolygonElement>('[data-box]') || [],
-      ).find((element) => element.dataset.box === selected);
-      box?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+      const image = svg.current;
+      const stage = image?.closest<HTMLElement>('.manuscript-stage');
+      if (!image || !stage) return;
+      const box = Array.from(image.querySelectorAll<SVGPolygonElement>('[data-box]'))
+        .find((element) => element.dataset.box === selected);
+      if (!box) return;
+      const boxRect = box.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+      const top = boxRect.top - stageRect.top;
+      const left = boxRect.left - stageRect.left;
+      if (top < 0) stage.scrollTop += top;
+      else if (boxRect.bottom > stageRect.bottom) stage.scrollTop += boxRect.bottom - stageRect.bottom;
+      if (left < 0) stage.scrollLeft += left;
+      else if (boxRect.right > stageRect.right) stage.scrollLeft += boxRect.right - stageRect.right;
     });
     return () => cancelAnimationFrame(frame);
   }, [selected, page.id, zoom]);

@@ -6620,3 +6620,19 @@ h1 {
   .linked-alignment { padding: 10px; }
   .linked-alignment-grid { gap: 5px; }
 }
+.book-new-data-badge {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  color: #155e46;
+  background: #e0f3e9;
+  border: 1px solid #b6dfc8;
+  font-size: 12px;
+  font-weight: 600;
+}
+.review-text-preview {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  padding: 8px 0;
+}

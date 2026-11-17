@@ -16,6 +16,11 @@ def joined(text):
 def source_groups(page):
     boxes = ordered_boxes(page['boxes'], 'ch', page['reading_direction'],
                           (page['width'], page['height']))
+    if boxes and all(box.get('export_group') for box in boxes):
+        groups = {}
+        for box in sorted(boxes, key=lambda item: (item.get('export_order') or 0, item.get('export_character_order') or 0)):
+            groups.setdefault(box['export_group'], []).append(box)
+        return list(groups.values())
     if page.get('ocr_granularity') == 'phrase':
         return [[box] for box in boxes]
     return character_box_groups(boxes, page['reading_direction'])
@@ -60,10 +65,13 @@ def reference_for_page(text, number):
 
 
 def page_rows(source, pages, book_name, reference='', indexes=None):
-    source_lines = ([box['transcription'].strip() for group in source_groups(source)
-                     for box in group if box['transcription'].strip()]
-                    if source.get('ocr_granularity') == 'phrase' else lines(source['source_text'])) or [
-        ''.join(box['transcription'] for box in group) for group in source_groups(source)]
+    if source.get('boxes') and all(box.get('export_group') for box in source['boxes']):
+        source_lines = [''.join(box['transcription'] for box in group).strip() for group in source_groups(source)]
+    else:
+        source_lines = ([box['transcription'].strip() for group in source_groups(source)
+                         for box in group if box['transcription'].strip()]
+                        if source.get('ocr_granularity') == 'phrase' else lines(source['source_text'])) or [
+            ''.join(box['transcription'] for box in group) for group in source_groups(source)]
     targets = [(line, page['id'], index) for page in target_pages(source, pages, indexes)
                for index, line in enumerate(lines(page['target_text']))]
     if not targets and source['target_text']:

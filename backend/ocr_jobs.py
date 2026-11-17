@@ -108,13 +108,20 @@ class OCRJobs:
     def _run(self, job_id):
         try:
             job = self.get(job_id)
+            if not job:
+                return
             for item in job['pages']:
-                if self.stopping.is_set() or self.get(job_id)['status'] != 'running':
+                current = self.get(job_id)
+                if not current:
+                    return  # A complete input replacement retired this job and its page IDs.
+                if self.stopping.is_set() or current['status'] != 'running':
                     self._status(job_id, 'paused')
                     return
                 if item['status'] != 'pending':
                     continue
                 page = self.store.page(item['page_id'])
+                if not page:
+                    return
                 if not self.needs_ocr(page,job['settings']) or page['category']=='blank' or page.get('ocr_skip',False):
                     self._page_status(job_id, page['id'], 'skipped')
                     continue
@@ -137,7 +144,10 @@ class OCRJobs:
                     self._page_status(job_id, page['id'], 'failed', str(message))
                     continue
                 self._page_status(job_id, page['id'], 'succeeded')
-            pages = self.get(job_id)['pages']
+            current = self.get(job_id)
+            if not current:
+                return
+            pages = current['pages']
             partial = [page for page in pages if page['status'] == 'partial']
             failed = [page for page in pages if page['status'] == 'failed']
             if partial or failed:
@@ -156,12 +166,16 @@ class OCRJobs:
     def _status(self, job_id, status, error=None):
         with self.store.db() as db:
             db.execute('UPDATE ocr_jobs SET status=?,error=? WHERE id=?', (status,error,job_id))
-        self.store.sync_results(self.get(job_id)['book_id'],'ocr_'+status)
+        current = self.get(job_id)
+        if current:
+            self.store.sync_results(current['book_id'],'ocr_'+status)
 
     def _page_status(self, job_id, page_id, status, error=None):
         with self.store.db() as db:
             db.execute('UPDATE ocr_job_pages SET status=?,error=? WHERE job_id=? AND page_id=?', (status,error,job_id,page_id))
-        self.store.sync_results(self.get(job_id)['book_id'])
+        current = self.get(job_id)
+        if current:
+            self.store.sync_results(current['book_id'])
 
     def close(self):
         self.stopping.set()

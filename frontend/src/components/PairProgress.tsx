@@ -19,7 +19,7 @@ export default function PairProgress({
       aria-label="Mục tiêu ngữ liệu song ngữ"
     >
       <div className="pair-progress-count">
-        <span className="pair-progress-label">CẶP ĐÃ XÁC NHẬN</span>
+        <span className="pair-progress-label">CỤM ĐƯỢC TÍNH</span>
         <div>
           <strong>{number(stats.pairs)}</strong>
           <span>/ {number(stats.target)} cặp</span>
@@ -59,9 +59,10 @@ export default function PairProgress({
         Bổ sung tài liệu
       </button>
       <div className="pair-progress-rule">
-        Chỉ tính các cặp đã xác nhận, đủ hai vế; không tính cặp trùng văn bản.
+        Tính cụm đủ hai vế, không lỗi hoặc đã xác nhận. Cụm còn lỗi chưa xác nhận không được tính. Số cụm tách riêng với hoàn thành trang.
         {(stats.incomplete_pairs > 0 || stats.duplicate_pairs > 0) &&
           ` Đang bỏ qua ${number(stats.incomplete_pairs)} cặp thiếu nội dung và ${number(stats.duplicate_pairs)} cặp trùng.`}
+        {!!stats.pending_error_pairs && ` Còn ${number(stats.pending_error_pairs)} cụm lỗi chờ xác nhận.`}
       </div>
     </section>
   );

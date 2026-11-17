@@ -6,6 +6,7 @@ import type { OCRJob, OCRSettings } from '../types';
 type OCRAction = 'start' | 'pause' | 'resume';
 type ControllerProps = {
   bookId: string;
+  inputRevision?: string;
   job: OCRJob | null;
   onJob: (job: OCRJob | null) => void;
   onRefresh: () => void;
@@ -57,7 +58,7 @@ export function useBookOCR(props: ControllerProps) {
       if (action !== 'pause') await props.beforeStart();
       const next =
         action === 'start'
-          ? await api.startWorkflow(props.bookId, props.settings, [])
+          ? await api.startWorkflow(props.bookId, props.settings, [], props.inputRevision)
           : await api.controlOCRJob(props.job!.id, action);
       props.onJob(next);
       props.onRefresh();

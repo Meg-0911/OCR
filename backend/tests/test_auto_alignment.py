@@ -35,8 +35,9 @@ def test_prepare_saves_pairs_and_ocr_boxes_without_overwriting_review(tmp_path):
         })
         assert response.status_code == 200, response.text
         waiting = client.post(f"/api/books/{book['id']}/alignments/prepare")
-        assert waiting.status_code == 200 and waiting.json()['created'] == 0
-        page = response.json()
+        assert waiting.status_code == 200 and waiting.json()['created'] == 2
+        assert waiting.json()['boxes_created'] == 2
+        page = client.get(f"/api/books/{book['id']}/pages").json()[0]
         confirmed = client.put(f"/api/pages/{page['id']}", json={
             'version': page['version'], 'category': 'both', 'boxes': page['boxes'],
             'vi_boxes': page['vi_boxes'], 'reading_direction': 1,
@@ -45,8 +46,8 @@ def test_prepare_saves_pairs_and_ocr_boxes_without_overwriting_review(tmp_path):
         assert confirmed.status_code == 200, confirmed.text
         prepared = client.post(f"/api/books/{book['id']}/alignments/prepare")
         assert prepared.status_code == 200, prepared.text
-        assert prepared.json()['created'] == 2
-        assert prepared.json()['boxes_created'] == 2
+        assert prepared.json()['created'] == 0
+        assert prepared.json()['boxes_created'] == 0
         rows = prepared.json()['rows']
         assert [(row['source'], row['target']) for row in rows] == [('天', 'trời'), ('地', 'đất')]
         saved_page = client.get(f"/api/books/{book['id']}/pages").json()[0]
@@ -193,26 +194,27 @@ def test_prepare_removes_redundant_phrase_export_boxes(tmp_path):
         assert all(box['alignment_id'] for box in saved['export_boxes'])
 
 
-def test_archive_contains_results_from_every_book_before_completion(tmp_path):
+def test_archive_rebuilds_results_and_does_not_ship_stale_exports(tmp_path):
     with TestClient(create_app(tmp_path)) as client:
-        first, _ = upload(client, 'first.pdf')
-        second, _ = upload(client, 'second.pdf')
+        first, first_page = upload(client, 'first.pdf')
+        second, second_page = upload(client, 'second.pdf')
         stale = tmp_path / 'backend' / 'data' / 'output_alignment' / first['id'] / f"{first['name']}.csv"
         stale.parent.mkdir(exist_ok=True)
         stale.write_text('old export', encoding='utf-8')
+        assert client.get('/api/results/archive').status_code == 404
+        for book, page, source, target in ((first, first_page, '天', 'trời'), (second, second_page, '地', 'đất')):
+            client.patch(f"/api/pages/{page['id']}", json={'category': 'ch', 'source_text': source, 'target_text': target})
+            assert client.post(f"/api/books/{book['id']}/alignments/prepare").status_code == 200
         response = client.get('/api/results/archive')
         assert response.status_code == 200, response.text
         with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
             names = archive.namelist()
             for book in (first, second):
-                prefix = f"books/{book['name']}__{book['id']}/"
-                assert prefix + 'summary.json' in names
-                assert prefix + 'pages.json' in names
-                assert prefix + f"{book['name']}_labels.zip" in names
-            manifest = json.loads(archive.read('manifest.json'))
-            assert len(manifest['books']) == 2
-            assert len(manifest['omitted_exports']) == 4
-            assert not any(name.endswith('/' + stale.name) for name in names)
+                prefix = f"{book['name']}/"
+                assert prefix + f"{book['name']}.csv" in names
+                assert prefix + f"{book['name']}.xlsx" in names
+                assert prefix + 'ch/Label.txt' in names
+                assert b'old export' not in archive.read(prefix + f"{book['name']}.csv")
 
 
 def test_unequal_line_counts_leave_extra_source_line_separate():

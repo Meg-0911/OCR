@@ -17,6 +17,9 @@ export type Box = {
 export type Region = [number, number, number, number];
 export type TextSources = Partial<Record<'han' | 'vi', TextReference>>;
 export type Page = {
+  input_revision?: string;
+  edited_fields?: string[];
+  review_state?: 'unchecked' | 'in_progress' | 'done' | 'skipped';
   id: string;
   book_id: string;
   number: number;
@@ -35,6 +38,7 @@ export type Page = {
   vi_boxes: Box[];
   ocr_skip: boolean;
   target_origin: string;
+  review_rows?: Alignment[];
   source_regions: Region[] | null;
   target_regions: Region[] | null;
   ocr_languages: ('han' | 'vi')[];
@@ -42,6 +46,9 @@ export type Page = {
   linked_page_ids: string[];
 };
 export type Book = {
+  content_version?: number;
+  pair_stats?: PairStats;
+  alignment_version?: number;
   id: string;
   name: string;
   filename: string;
@@ -51,8 +58,19 @@ export type Book = {
   first_page_id: string | null;
   reference_file: string | null;
   created_at: string;
+  has_new_data?: boolean;
+  new_data_pages?: number;
+  new_data_lines?: number;
+  has_pdf?: boolean;
+  input_revision?: string;
 };
 export type Alignment = {
+  alignment_version?: number;
+  review_colors?: { source: ReviewKind[]; target: ReviewKind[] };
+  has_errors?: boolean;
+  countable?: boolean;
+  review_state?: 'incomplete' | 'clean' | 'needs_review' | 'accepted' | 'duplicate' | 'excluded';
+  duplicate_of?: string;
   id: string;
   sentence_id: string;
   source: string;
@@ -73,6 +91,9 @@ export type ReviewMark = {
   kind: 'match' | 'mismatch' | 'unknown';
 };
 export type PairStats = {
+  excluded_pairs?: number;
+  saved_pairs?: number;
+  pending_error_pairs?: number;
   target: number;
   pairs: number;
   reviewed_pairs: number;
@@ -93,6 +114,7 @@ export type Workspace = {
   resume?: BookSession;
 };
 export type BookSession = {
+  input_revision?: string;
   workflow_step?: 1 | 2 | 3 | 4;
   book_id?: string;
   page_id?: string | null;

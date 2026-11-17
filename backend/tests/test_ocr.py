@@ -71,7 +71,10 @@ def test_ocr_upload_recognize_preview_save_and_horizontal_label_order(tmp_path):
     assert result['text_lines'] == ['\u5929\u5730\u7384\u9ec3'] and len(result['boxes']) == 2
     assert len(calls) == 2 and TOKEN not in response.text
     saved = client.get(f"/api/books/{page['book_id']}/pages").json()[0]
-    assert saved == page  # Recognition is a preview, never an automatic edit.
+    # OCR now prepares derived sentence pairs/label boxes before optional review.
+    assert saved['export_boxes']
+    assert {key: value for key, value in saved.items() if key != 'export_boxes'} == {
+        key: value for key, value in page.items() if key != 'export_boxes'}
     files = list((tmp_path / 'backend/data/.workspace/ocr' / page['id']).glob('*.json'))
     assert len(files) == 1 and TOKEN not in files[0].read_text(encoding='utf-8')
     assert client.put(url, json={

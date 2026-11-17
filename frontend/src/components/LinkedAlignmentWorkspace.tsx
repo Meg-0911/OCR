@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { Alignment, Page } from '../types';
 import { linkedLines, reorderLinkedTargets, type Dragged } from './linkedAlignment';
+import ReviewText from './ReviewText';
+import { reviewColorsForAlignmentRows, withReviewMarks } from '../reviewColors';
 
 export default function LinkedAlignmentWorkspace({ page, pages, bookName, rows, busy, onReviewPage, onRows }: {
   page: Page;
@@ -22,6 +24,8 @@ export default function LinkedAlignmentWorkspace({ page, pages, bookName, rows, 
       .map((text, lineIndex) => ({ text, pageId: item.id, lineIndex }))), [linkedPages]);
   const prefix = `${bookName}.${String(page.number).padStart(3, '0')}.`;
   const pageRows = rows.filter((row) => row.sentence_id.startsWith(prefix));
+  const sourceColors = reviewColorsForAlignmentRows(pageRows, page.boxes, 'source', page.reading_direction);
+  const targetColors = reviewColorsForAlignmentRows(pageRows, page.boxes, 'target', page.reading_direction);
   const claimedElsewhere = new Set(rows.filter((row) => !row.sentence_id.startsWith(prefix) &&
     row.target_page_id && row.target_line_index != null)
     .map((row) => `${row.target_page_id}:${row.target_line_index}`));
@@ -50,7 +54,7 @@ export default function LinkedAlignmentWorkspace({ page, pages, bookName, rows, 
     <section className="linked-alignment" aria-label="Ghép dòng giữa các trang">
       <div className="linked-alignment-title">
         <h3>Ghép dòng trên ảnh · Hán Nôm {String(page.number).padStart(3, '0')} ↔ Quốc ngữ {linkedPages.filter((item) => item.ocr_languages.includes('vi')).map((item) => String(item.number).padStart(3, '0')).join(', ')}</h3>
-        <div><span>{reviewedCount}/{pageRows.length} cặp đã xác nhận</span><button type="button" className="secondary-button" disabled={busy} onClick={() => onReviewPage(!allReviewed)}>{allReviewed ? 'Mở lại trang để đọc lại' : 'Xác nhận xong trang'}</button></div>
+        <div><span>{reviewedCount}/{pageRows.length} cụm đã xác nhận</span><button type="button" className="secondary-button" disabled={busy} onClick={() => onReviewPage(!allReviewed)}>{allReviewed ? 'Bỏ xác nhận các cụm' : 'Xác nhận các cụm'}</button></div>
       </div>
       <p>Kéo dòng Quốc ngữ tới dòng Hán Nôm tương ứng. Thứ tự mặc định là dòng 1 ↔ dòng 1; kéo B lên dòng 1 sẽ đẩy A xuống dòng 2. Mỗi cặp giữ ID theo trang Hán Nôm.</p>
       <div className="linked-alignment-controls">
@@ -68,7 +72,7 @@ export default function LinkedAlignmentWorkspace({ page, pages, bookName, rows, 
         <div className="linked-alignment-grid linked-alignment-pair" key={row.id}>
           <div className="linked-alignment-source">
             <small>{row.sentence_id}</small>
-            <span className="han-text">{row.source}</span>
+            <span className="han-text"><ReviewText text={row.source} colors={withReviewMarks(row.source, sourceColors.get(row.id) || [], row.marks, 'source')} /></span>
           </div>
           <div className="linked-alignment-target"
             onDragOver={(event) => event.preventDefault()}
@@ -76,7 +80,7 @@ export default function LinkedAlignmentWorkspace({ page, pages, bookName, rows, 
             {row.target && <button type="button" draggable
               onDragStart={() => setDragged({ rowId: row.id, target: { text: row.target, pageId: row.target_page_id || null, lineIndex: row.target_line_index ?? null } })}
               onClick={() => setSelected({ rowId: row.id, target: { text: row.target, pageId: row.target_page_id || null, lineIndex: row.target_line_index ?? null } })}>
-              {row.target} <small>· trang {pages.find((item) => item.id === row.target_page_id)?.number || page.number}</small>
+              <ReviewText text={row.target} colors={withReviewMarks(row.target, targetColors.get(row.id) || [], row.marks, 'target')} /> <small>· trang {pages.find((item) => item.id === row.target_page_id)?.number || page.number}</small>
             </button>}
             {selected && <button type="button" className="secondary-button" onClick={() => assign(selected, index)}>Gắn vào dòng {index + 1}</button>}
           </div>
@@ -90,7 +94,7 @@ export default function LinkedAlignmentWorkspace({ page, pages, bookName, rows, 
           {unmatchedSource.map(({ row, index }) => <div className="linked-alignment-unmatched" key={row.id}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => { event.preventDefault(); if (dragged) assign(dragged, index); }}>
-            <span className="han-text">{row.source}</span>
+            <span className="han-text"><ReviewText text={row.source} colors={sourceColors.get(row.id)} /></span>
             {selected && <button type="button" className="secondary-button" onClick={() => assign(selected, index)}>Gắn dòng đã chọn</button>}
           </div>)}
         </div>}

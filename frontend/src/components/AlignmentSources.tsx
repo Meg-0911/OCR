@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import type { Alignment, Page, ReviewKind, TextReference } from '../types';
 import { reviewColorsForText } from '../reviewColors';
+import { cleanAlignmentText } from '../alignmentText';
 import AlignmentBoxEditor from './AlignmentBoxEditor';
 import ManuscriptViewer from './ManuscriptViewer';
 
@@ -38,21 +39,27 @@ export default function AlignmentSources({
   );
   const [sourceSelection, setSourceSelection] = useState('');
   const [targetSelection, setTargetSelection] = useState('');
-  const sourceText = page?.ocr_granularity === 'phrase'
-    ? page.boxes.map((box) => box.transcription).join('\n')
-    : page?.source_text || page?.boxes.map((box) => box.transcription).join('\n') || '';
+  const rawSourceText = page?.source_text || page?.boxes.map((box) => box.transcription).join('\n') || '';
   const selectedTarget = targets.find((p) => p.id === targetId);
   const imageTarget = page?.linked_page_ids.length ? selectedTarget : page?.vi_boxes.length ? page : selectedTarget;
-  const targetText = page?.linked_page_ids.length
+  const rawTargetText = page?.linked_page_ids.length
     ? selectedTarget?.target_text || selectedTarget?.vi_boxes.map((box) => box.transcription).join('\n') || page.target_text || ''
     : page?.target_text || reference?.text || selectedTarget?.target_text ||
       selectedTarget?.vi_boxes.map((box) => box.transcription).join('\n') || '';
-  const sourceColors = page
-    ? reviewColorsForText(sourceText, page.boxes, 'source')
-    : [];
-  const targetColors = page
-    ? reviewColorsForText(targetText, page.linked_page_ids.length ? selectedTarget?.vi_boxes || [] : page.boxes, 'target')
-    : [];
+  const source = useMemo(() => cleanAlignmentText(rawSourceText, 'source', page
+    ? reviewColorsForText(rawSourceText, page.boxes, 'source', page.reading_direction, page.review_rows)
+    : []), [rawSourceText, page?.boxes, page?.reading_direction, page?.review_rows]);
+  const target = useMemo(() => cleanAlignmentText(rawTargetText, 'target', page
+    ? reviewColorsForText(rawTargetText, page.boxes.length ? page.boxes : selectedTarget?.vi_boxes || [], 'target', page.reading_direction, page.review_rows, true)
+    : []), [rawTargetText, page?.boxes, page?.reading_direction, page?.review_rows, selectedTarget?.vi_boxes]);
+  const sourceText = source.text;
+  const targetText = target.text;
+  const sourceColors = source.colors;
+  const targetColors = target.colors;
+  useEffect(() => {
+    setSourceSelection('');
+    setTargetSelection('');
+  }, [sourceText, targetText]);
   function selectedText(event: MouseEvent<HTMLDivElement>, setter: (value: string) => void) {
     const selection = window.getSelection();
     if (!selection || !event.currentTarget.contains(selection.anchorNode)) return;
@@ -107,19 +114,19 @@ export default function AlignmentSources({
       )}
       <div className="alignment-source-grid">
         <label>
-          Hán Nôm · {page ? `trang ${page.number}` : 'chọn trang nguồn phía trên'}
+          Hán Nôm · đã làm sạch · {page ? `trang ${page.number}` : 'chọn trang nguồn phía trên'}
           <div
             className="alignment-source-text han-text"
-            aria-label="Văn bản Hán Nôm đã lưu"
+            aria-label="Văn bản Hán Nôm đã làm sạch"
             onMouseUp={(event) => selectedText(event, setSourceSelection)}
           >
             {sourceText
               ? coloredText(sourceText, sourceColors)
-              : 'Chạy OCR, Gán nhãn và lưu trang Hán Nôm trước khi chọn câu.'}
+              : rawSourceText ? 'Không còn nội dung sau khi làm sạch.' : 'Chạy OCR, Gán nhãn và lưu trang Hán Nôm trước khi chọn câu.'}
           </div>
         </label>
         <label>
-          Quốc ngữ ·{' '}
+          Quốc ngữ · đã làm sạch ·{' '}
           {page?.linked_page_ids.length
             ? `trang ${selectedTarget?.number || 'liên kết'}`
             : page?.target_text
@@ -146,18 +153,19 @@ export default function AlignmentSources({
           )}
           <div
             className="alignment-source-text"
-            aria-label="Văn bản Quốc ngữ đối chiếu"
+            aria-label="Văn bản Quốc ngữ đã làm sạch"
             onMouseUp={(event) => selectedText(event, setTargetSelection)}
           >
             {targetText
               ? coloredText(targetText, targetColors)
-              : 'Sách này chưa có TXT đối chiếu. Nhập văn bản ở trang Quốc ngữ hoặc thêm cặp thủ công.'}
+              : rawTargetText ? 'Không còn nội dung sau khi làm sạch.' : 'Sách này chưa có TXT đối chiếu. Nhập văn bản ở trang Quốc ngữ hoặc thêm cặp thủ công.'}
           </div>
         </label>
       </div>
       <p>
-        Cặp được tự ghép theo trang và thứ tự dòng OCR. Kiểm tra lại trên ảnh trước khi xác nhận
-        vì thứ tự dòng không bảo đảm hai vế tương ứng về nghĩa.
+        {page?.target_origin === 'new_data'
+          ? 'Cặp và box cụm lấy từ XLSX cùng Label.txt của bản mới. Màu từng chữ lấy từ Correctness và các chỉnh sửa đã lưu.'
+          : 'Cặp được tự ghép theo trang và thứ tự dòng OCR. Có thể kiểm tra và sửa lại trên ảnh.'}
       </p>
       <div className="alignment-source-selection">
         <button
