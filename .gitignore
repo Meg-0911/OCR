@@ -15,6 +15,7 @@ __pycache__/
 /test_pytest_export_clean/
 *.tsbuildinfo
 *.sqlite3*
+*.zip
 
 # Local configuration and logs.
 .env

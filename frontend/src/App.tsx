@@ -1632,7 +1632,7 @@ export default function App() {
                         <Link2 size={19} />
                         Cụm đã lưu được tính <span className="count-badge">{activeBook?.pair_stats?.pairs ?? rows.filter((row) => row.countable).length}</span>
                       </h2>
-                      <p>Cụm không lỗi được tự tính. Cụm có lỗi cần xác nhận; hoàn thành trang là trạng thái riêng.</p>
+                      <p>Chỉ đếm các cụm đã xác nhận; hoàn thành trang là trạng thái riêng.</p>
                     </div>
                     <div className="button-group">
                       <select

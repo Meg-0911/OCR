@@ -26,12 +26,12 @@ def test_count_and_completion_are_independent_and_errors_need_confirmation(tmp_p
         workspace = client.get('/api/workspace').json()
         book, = workspace['books']
         endpoint = f"/api/books/{book['id']}"
-        assert workspace['pair_stats']['pairs'] == 1 and book['done'] == 0
+        assert workspace['pair_stats']['pairs'] == 0 and book['done'] == 0
         rows = client.get(endpoint+'/alignments').json()
-        assert [row['countable'] for row in rows] == [False, True]
+        assert [row['countable'] for row in rows] == [False, False]
         rows[0]['reviewed'] = True
         rows = save(client, book, rows)
-        assert client.get('/api/workspace').json()['pair_stats']['pairs'] == 2
+        assert client.get('/api/workspace').json()['pair_stats']['pairs'] == 1
         page = imported_page(client, book)
         assert page['status'] == 'pending'
         assert page['review_state'] == 'in_progress'
@@ -43,9 +43,9 @@ def test_count_and_completion_are_independent_and_errors_need_confirmation(tmp_p
         rows[0]['reviewed'] = False
         save(client, book, rows)
         data = client.get('/api/workspace').json()
-        assert data['pair_stats']['pairs'] == 1 and data['books'][0]['done'] == 1
+        assert data['pair_stats']['pairs'] == 0 and data['books'][0]['done'] == 1
         summary = client.get(endpoint+'/results/summary.json').json()
-        assert summary['pairs'] == 1 and summary['reviewed_pages'] == 1
+        assert summary['pairs'] == 0 and summary['reviewed_pages'] == 1
 
 
 def test_workspace_reuses_statistics_until_saved_data_changes(tmp_path):
@@ -62,7 +62,7 @@ def test_workspace_reuses_statistics_until_saved_data_changes(tmp_path):
         rows[0]['reviewed'] = True
         save(client, book, rows)
         updated = client.get('/api/workspace').json()
-        assert updated['pair_stats']['pairs'] == updated['books'][0]['pair_stats']['pairs'] == 2
+        assert updated['pair_stats']['pairs'] == updated['books'][0]['pair_stats']['pairs'] == 1
         page = imported_page(client, book)
         page['boxes'][1]['review_kind'] = 'unknown'
         page['boxes'][1]['review_marks'] = []
@@ -110,8 +110,11 @@ def test_unequal_sides_can_be_imported_saved_confirmed_and_exported(tmp_path, so
         assert response.status_code == 200, response.text
         rows = client.get(endpoint+'/alignments').json()
         assert rows[0]['source'] == source and rows[0]['target'] == target
-        assert rows[0]['countable'] is True
-        assert save(client, book, rows)[0]['target'] == target
+        assert rows[0]['countable'] is False
+        rows[0]['reviewed'] = True
+        saved = save(client, book, rows)
+        assert saved[0]['countable'] is True
+        assert saved[0]['target'] == target
         assert client.get(endpoint+'/export?format=xlsx').status_code == 200
 
 
@@ -294,7 +297,7 @@ def test_colors_follow_source_page_id_when_physical_page_has_multiple_records(tm
                        ('other-source', book['id'], json.dumps([{**box, 'id': 'second-box', 'review_kind': 'match'}])))
         rows = [
             {'id': 'first', 'sentence_id': 'Book_Y.001.1', 'source': '天', 'target': 'trời', 'source_page_id': page['id'], 'source_line_index': 0},
-            {'id': 'other', 'sentence_id': 'Book_Y.001.2', 'source': '天', 'target': 'trời', 'source_page_id': 'other-source', 'source_line_index': 0},
+            {'id': 'other', 'sentence_id': 'Book_Y.001.2', 'source': '天', 'target': 'trời', 'source_page_id': 'other-source', 'source_line_index': 0, 'reviewed': True},
         ]
         saved = save(client, book, rows)
         assert saved[0]['review_colors']['source'] == ['mismatch']

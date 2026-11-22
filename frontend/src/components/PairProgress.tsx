@@ -59,10 +59,10 @@ export default function PairProgress({
         Bổ sung tài liệu
       </button>
       <div className="pair-progress-rule">
-        Tính cụm đủ hai vế, không lỗi hoặc đã xác nhận. Cụm còn lỗi chưa xác nhận không được tính. Số cụm tách riêng với hoàn thành trang.
+        Chỉ đếm cụm đủ hai vế đã xác nhận. Cụm chưa xác nhận không được tính. Số cụm tách riêng với hoàn thành trang.
         {(stats.incomplete_pairs > 0 || stats.duplicate_pairs > 0) &&
           ` Đang bỏ qua ${number(stats.incomplete_pairs)} cặp thiếu nội dung và ${number(stats.duplicate_pairs)} cặp trùng.`}
-        {!!stats.pending_error_pairs && ` Còn ${number(stats.pending_error_pairs)} cụm lỗi chờ xác nhận.`}
+        {!!stats.pending_error_pairs && ` Còn ${number(stats.pending_error_pairs)} cụm chờ xác nhận.`}
       </div>
     </section>
   );

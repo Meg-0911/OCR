@@ -596,18 +596,18 @@ def test_pair_counter_excludes_incomplete_and_duplicates_and_resumes(workspace):
         'duplicate_pairs':0, 'incomplete_pairs':0,
     }
     first = save_counted_pairs(client, 'Stats One.pdf', [
-        ('天地', 'Thiên địa', False),
+        ('天地', 'Thiên địa', True),
         ('天， 地。', 'thie\u0302n đi\u0323a!', True),
         ('', 'Nội dung', True),
         ('玄黃', ' \t\n', False),
     ])
     second = save_counted_pairs(client, 'Stats Two.pdf', [
-        ('天地', 'THIÊN   ĐỊA', False),
-        ('宇宙', 'Vũ trụ', False),
+        ('天地', 'THIÊN   ĐỊA', True),
+        ('宇宙', 'Vũ trụ', True),
     ])
     stats = client.get('/api/workspace').json()['pair_stats']
     assert stats == {
-        'target':2000, 'pairs':3, 'reviewed_pairs':0, 'remaining':1997,
+        'target':2000, 'pairs':3, 'reviewed_pairs':3, 'remaining':1997,
         'saved_pairs':3, 'pending_error_pairs':0, 'excluded_pairs':0,
         'duplicate_pairs':1, 'incomplete_pairs':2,
     }

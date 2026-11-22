@@ -404,7 +404,7 @@ class Store:
             complete = all(comparison_key(row[side]).strip() for side in ('source', 'target'))
             eligible = (row['source_page_id'] in eligible_ids if row.get('source_page_id') else int(row['sentence_id'].rsplit('.',2)[1]) in eligible_numbers)
             errors = '□' in row['source'] or any(kind in ('mismatch', 'unknown') for values in colors.values() for kind in values)
-            counted = bool(eligible and complete and (not errors or row.get('reviewed')))
+            counted = bool(eligible and complete and row.get('reviewed'))
             output.append({**row, 'alignment_version': version, 'review_colors': colors, 'has_errors': errors, 'countable': counted,
                            'review_state': 'excluded' if not eligible else 'incomplete' if not complete else 'accepted' if row.get('reviewed') else 'needs_review' if errors else 'clean'})
         groups = {}
