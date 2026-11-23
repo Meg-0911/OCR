@@ -463,7 +463,8 @@ def test_correcting_vietnamese_boxes_updates_ocr_text_and_existing_pairs(workspa
     assert all(row['target'].lower() in downloaded for row in saved)
 
 
-def test_loading_pairs_repairs_older_ocr_text_after_saved_correction(workspace):
+@pytest.mark.parametrize('prepare', [False, True])
+def test_loading_pairs_repairs_older_ocr_text_after_saved_correction(workspace, prepare):
     client,store,_=workspace
     book,pages=upload_book(client,'Older pairs.pdf')
     page=client.patch(f"/api/pages/{pages[0]['id']}",json={
@@ -477,7 +478,8 @@ def test_loading_pairs_repairs_older_ocr_text_after_saved_correction(workspace):
     row={'id':'old-pair','sentence_id':f"{book['name']}.001.1",'source':'天地',
          'target':'Thiên địa','reviewed':True}
     assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':[row]}).status_code==200
-    saved=client.get(f"/api/books/{book['id']}/alignments").json()
+    endpoint = f"/api/books/{book['id']}/alignments"
+    saved = client.post(endpoint+'/prepare').json()['rows'] if prepare else client.get(endpoint).json()
     assert saved[0]['target']=='Thiên địa đã sửa'
     assert saved[0]['reviewed'] is False
 

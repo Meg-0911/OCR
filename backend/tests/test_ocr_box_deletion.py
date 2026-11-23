@@ -132,3 +132,34 @@ def test_ocr_deletion_keeps_manually_added_pair_and_its_box(tmp_path):
         current = client.post(f"/api/books/{book['id']}/alignments/prepare").json()['rows']
         assert [r['id'] for r in current] == [original[0]['id'],original[1]['id'],'manual']
         assert next(r for r in current if r['id']=='manual')['reviewed'] is True
+
+
+@pytest.mark.parametrize('manual_order', [False, True])
+def test_prepare_removes_unboxed_stale_phrase_and_repairs_only_default_targets(tmp_path, manual_order):
+    raw_book(tmp_path, count=1)
+    app = create_app(tmp_path, ocr_config=KHNConfig())
+    with TestClient(app) as client:
+        book, page, original = setup_page(client)
+        orphan = {**original[1], 'id': 'obsolete-ocr', 'source': '舊文'}
+        rows = [dict(original[0]), orphan, dict(original[1]), dict(original[2])]
+        for index, row in enumerate(rows):
+            row['source_line_index'] = index
+            row['sentence_id'] = f"{book['name']}.001.{index+1}"
+            target = original[index] if index < len(original) else {}
+            row.update(target=target.get('target', ''), target_page_id=target.get('target_page_id'),
+                       target_line_index=target.get('target_line_index'))
+        if manual_order:
+            rows[0]['target'], rows[1]['target'] = rows[1]['target'], rows[0]['target']
+            rows[0]['target_line_index'], rows[1]['target_line_index'] = rows[1]['target_line_index'], rows[0]['target_line_index']
+        with app.state.store.db() as db:
+            db.execute('UPDATE alignments SET rows=? WHERE book_id=?', (json.dumps(rows), book['id']))
+        endpoint = f"/api/books/{book['id']}/alignments"
+        for _ in range(2):
+            response = client.post(endpoint+'/prepare')
+            assert response.status_code == 200, response.text
+            current = response.json()['rows']
+            assert [r['id'] for r in current] == [r['id'] for r in original]
+            assert [r['source_line_index'] for r in current] == [0, 1, 2]
+            expected = [rows[i]['target'] for i in (0, 2, 3)] if manual_order else [r['target'] for r in original]
+            assert [r['target'] for r in current] == expected
+            assert client.get(endpoint).json() == current

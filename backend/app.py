@@ -1167,6 +1167,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         book = require_book(book_id)
         with store.lock:
             deleted = store.reconcile_deleted_source_boxes(book_id)
+            reconciled = store.reconcile_alignment_ocr(book_id)
             pages = store.pages(book_id)
             page_indexes = index_pages(pages)
             with store.db() as db:
@@ -1203,7 +1204,12 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 if (page_pairs and page['ocr_granularity'] == 'phrase'
                         and 'boxes' in page['edited_fields']):
                     fresh = automatic_page_rows(page, pages, book['name'], reference, page_indexes)
-                    if len(page_pairs) >= len(fresh):
+                    legacy_grouping = (
+                        len(page_pairs) < len(fresh)
+                        and ''.join(row['source'] for row in page_pairs) == ''.join(row['source'] for row in fresh)
+                        and all(not row.get('reviewed') and not row.get('marks') for row in page_pairs)
+                    )
+                    if len(page_pairs) >= len(fresh) or legacy_grouping:
                         fresh = []
                     used_indexes = set()
                     source_pairs = sorted(
@@ -1353,7 +1359,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 with store.db() as db:
                     db.execute('INSERT INTO alignments VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET rows=excluded.rows',
                                (book_id, json.dumps(rows, ensure_ascii=False)))
-            if created or boxes_created or boxes_removed or boxes_renumbered or deleted:
+            if created or boxes_created or boxes_removed or boxes_renumbered or deleted or reconciled:
                 store.sync_labels(book_id)
                 store.sync_results(book_id, 'prepare_alignments')
         return {'rows': store.describe_alignments(book_id, rows), 'created': created, 'boxes_created': boxes_created,

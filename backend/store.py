@@ -853,7 +853,7 @@ class Store:
 
     def reconcile_deleted_source_boxes(self, book_id):
         """Repair deletions saved before OCR and sentence boxes were synchronized."""
-        from .auto_alignment import source_groups, joined
+        from .auto_alignment import source_groups, joined, page_rows
         book = self.book(book_id)
         with self.db() as db:
             versions = tuple(tuple(row) for row in db.execute('SELECT id,version FROM pages WHERE book_id=? ORDER BY id', (book_id,)))
@@ -882,6 +882,33 @@ class Store:
             exports = {box.get('alignment_id'): box for box in page['export_boxes']}
             anchored = {box.get('alignment_id') for box in page['boxes'] if box.get('alignment_id')}
             removed = set()
+            # Old preparation could leave a raw OCR row without an export box,
+            # even though every current phrase already had its own saved row.
+            # Require an exact, unique cover before treating that row as obsolete.
+            group_texts = [joined(''.join(b['transcription'] for b in group)) for group in groups]
+            group_matches = {row['id']: [i for i, text in enumerate(group_texts)
+                                         if text and joined(row['source']) == text] for row in local}
+            covered = [indexes[0] for indexes in group_matches.values() if len(indexes) == 1]
+            orphans = [row for row in local if not group_matches[row['id']]]
+            obsolete_defaults = (
+                page['ocr_granularity'] == 'phrase' and bool(orphans)
+                and sorted(covered) == list(range(len(groups)))
+                and len(covered) + len(orphans) == len(local)
+                and all(not row.get('reviewed') and not row.get('marks')
+                        and row['id'] not in exports and row['id'] not in anchored for row in orphans)
+            )
+            fresh = page_rows(page, self.pages(book_id), book['name']) if obsolete_defaults else []
+            # Reflow only untouched default assignments; manual target ordering survives.
+            reflow = bool(fresh) and all(
+                not row.get('reviewed') and not row.get('marks') and (
+                    (not row['target'] and row.get('target_line_index') is None)
+                    or (isinstance(row.get('source_line_index'), int)
+                        and row['source_line_index'] < len(fresh)
+                        and all(row.get(key) == fresh[row['source_line_index']].get(key)
+                                for key in ('target', 'target_page_id', 'target_line_index')))
+                ) for row in local)
+            if obsolete_defaults:
+                removed.update(row['id'] for row in orphans)
             for row in local:
                 box = exports.get(row['id'])
                 if not box or row['id'] in anchored:
@@ -909,6 +936,11 @@ class Store:
                            if joined(row['source']) == joined(''.join(box['transcription'] for box in group))]
                 if len(matches) == 1:
                     row['source_line_index'] = matches[0]
+                    if reflow:
+                        current = fresh[matches[0]]
+                        for field in ('target', 'target_page_id', 'target_line_index'):
+                            row[field] = current.get(field)
+                        row.update(reviewed=False, marks=[])
             self.save_ocr_alignment_changes(page, rows, removed, {})
             changed = True
         with self.db() as db:
