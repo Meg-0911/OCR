@@ -1200,6 +1200,85 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             boxes_renumbered = 0
             for page in source_pages:
                 page_pairs = rows_by_page.get(page['number'], [])
+                if (page_pairs and page['ocr_granularity'] == 'phrase'
+                        and 'boxes' in page['edited_fields']):
+                    fresh = automatic_page_rows(page, pages, book['name'], reference, page_indexes)
+                    if len(page_pairs) >= len(fresh):
+                        fresh = []
+                    used_indexes = set()
+                    source_pairs = sorted(
+                        (row for row in page_pairs
+                         if row.get('source_page_id') in (None, page['id'])),
+                        key=lambda row: row.get('source_line_index')
+                        if isinstance(row.get('source_line_index'), int) else float('inf'),
+                    )
+
+                    def normalized_source(value):
+                        return re.sub(r'\s+', '', value or '')
+
+                    # Preserve existing pair IDs and targets, but re-anchor them to
+                    # current OCR groups. Exact text matches handle inserted boxes;
+                    # the previous line index handles a corrected/replaced phrase.
+                    unmatched = []
+                    for row in (source_pairs if fresh else []):
+                        expected = normalized_source(row['source'])
+                        old_index = row.get('source_line_index')
+                        candidates = [index for index, current in enumerate(fresh)
+                                      if index not in used_indexes
+                                      and normalized_source(current['source']) == expected]
+                        if candidates:
+                            index = min(candidates, key=lambda item: (
+                                abs(item - old_index) if isinstance(old_index, int) else item,
+                                item,
+                            ))
+                            row['source_line_index'] = index
+                            row['source_page_id'] = page['id']
+                            used_indexes.add(index)
+                        else:
+                            unmatched.append(row)
+
+                    for row in unmatched:
+                        old_index = row.get('source_line_index')
+                        if not isinstance(old_index, int) or not 0 <= old_index < len(fresh) or old_index in used_indexes:
+                            continue
+                        current = fresh[old_index]
+                        row['source_line_index'] = old_index
+                        row['source_page_id'] = page['id']
+                        if row['source'] != current['source'] and not row.get('reviewed') and not row.get('marks'):
+                            row['source'] = current['source']
+                            row['reviewed'] = False
+                            row['marks'] = []
+                        used_indexes.add(old_index)
+
+                    existing_sentence_ids = {row['sentence_id'] for row in rows}
+                    next_sentence_number = max(
+                        (int(row['sentence_id'].rsplit('.', 1)[-1]) for row in rows
+                         if row['sentence_id'].startswith(f"{book['name']}.{page['number']:03d}.")
+                         and row['sentence_id'].rsplit('.', 1)[-1].isdigit()),
+                        default=0,
+                    ) + 1
+                    added = []
+                    for index, current in enumerate(fresh):
+                        if index in used_indexes:
+                            continue
+                        candidate = dict(current)
+                        if candidate['sentence_id'] in existing_sentence_ids:
+                            candidate['sentence_id'] = f"{book['name']}.{page['number']:03d}.{next_sentence_number}"
+                            next_sentence_number += 1
+                        existing_sentence_ids.add(candidate['sentence_id'])
+                        added.append(candidate)
+                        used_indexes.add(index)
+                    if added:
+                        rows.extend(added)
+                        page_pairs.extend(added)
+                        rows_by_page[page['number']] = page_pairs
+                        created += len(added)
+                    page_pairs.sort(key=lambda row: (
+                        row.get('source_line_index')
+                        if isinstance(row.get('source_line_index'), int) else float('inf'),
+                        row['sentence_id'],
+                    ))
+
                 if page_pairs and page['ocr_granularity'] == 'phrase' and len(page_pairs) < len(page['boxes']):
                     fresh = automatic_page_rows(page, pages, book['name'], reference, page_indexes)
                     old_boxes = {box.get('alignment_id'): box for box in page['export_boxes'] if box.get('alignment_id')}
