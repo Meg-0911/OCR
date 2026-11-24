@@ -426,6 +426,50 @@ def test_correcting_placeholder_updates_saved_pairs_after_split_and_merge(worksp
     assert [row['source'] for row in client.get(f"/api/books/{book['id']}/alignments").json()]==['地天玄']
 
 
+def test_inserting_ocr_line_preserves_existing_translations(workspace):
+    client,store,_=workspace
+    book,pages=upload_book(client,'Inserted line.pdf')
+    page=client.patch(f"/api/pages/{pages[0]['id']}",json={
+        'category':'ch','source_text':'天\n地','target_text':'trời\nđất',
+    }).json()
+    endpoint=f"/api/books/{book['id']}/alignments"
+    rows=[{'id':str(index),'sentence_id':f"{book['name']}.001.{index+1}",
+           'source':source,'target':target,'reviewed':True,
+           'source_page_id':page['id'],'source_line_index':index}
+          for index,(source,target) in enumerate([('天','trời'),('地','đất')])]
+    assert client.put(endpoint,json={'rows':rows}).status_code==200
+    for text,indices in [('天\n玄\n地',[0,2]),('天\n地',[0,1])]:
+        response=client.patch(f"/api/pages/{page['id']}",json={'source_text':text})
+        assert response.status_code==200,response.text
+        saved=client.get(endpoint).json()
+        assert [(row['source'],row['target']) for row in saved]==[('天','trời'),('地','đất')]
+        assert [row['source_line_index'] for row in saved]==indices
+        assert all(row['reviewed'] for row in saved)
+
+
+def test_reassigning_translation_does_not_rewrite_original_ocr(workspace):
+    client,store,_=workspace
+    book,pages=upload_book(client,'Moved translation.pdf')
+    source=client.patch(f"/api/pages/{pages[0]['id']}",json={
+        'category':'ch','source_text':'天\n地',
+    }).json()
+    target=client.patch(f"/api/pages/{pages[1]['id']}",json={
+        'category':'vi','target_text':'trời\nđất',
+    }).json()
+    endpoint=f"/api/books/{book['id']}/alignments"
+    rows=[{'id':str(index),'sentence_id':f"{book['name']}.001.{index+1}",
+           'source':text,'target':translation,'reviewed':False,
+           'source_page_id':source['id'],'source_line_index':index,
+           'target_page_id':target['id'],'target_line_index':index}
+          for index,(text,translation) in enumerate([('天','trời'),('地','đất')])]
+    assert client.put(endpoint,json={'rows':rows}).status_code==200
+    for index,row in enumerate(rows):
+        row.update(target=['đất','trời'][index],target_line_index=1-index)
+    assert client.put(endpoint,json={'rows':rows}).status_code==200
+    assert client.get(f"/api/pages/{target['id']}").json()['target_text']=='trời\nđất'
+    assert [row['target'] for row in client.get(endpoint).json()]==['đất','trời']
+
+
 def test_correcting_vietnamese_boxes_updates_ocr_text_and_existing_pairs(workspace):
     client,_,_=workspace
     book,pages=upload_book(client,'Vietnamese corrections.pdf')

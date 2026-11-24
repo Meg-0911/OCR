@@ -17,7 +17,23 @@ assert.deepEqual(moved.map((row) => row.id), rows.map((row) => row.id));
 
 const extra = { text: 'D', pageId: 'other-page', lineIndex: 0 };
 const inserted = reorderLinkedTargets(moved, { target: extra }, 1);
-assert.deepEqual(inserted.map((row) => row.target), ['B', 'D', 'A']);
+assert.deepEqual(inserted.map((row) => row.target), ['B', 'D', 'C']);
 assert.equal(inserted[1].target_page_id, 'other-page');
 assert.equal(inserted[1].reviewed, false);
-console.log('Linked alignment defaults, reordering, and IDs: OK');
+// Moving across several rows swaps only the selected pair, without shifting a range.
+const swapped = reorderLinkedTargets(rows, { rowId: rows[2].id, target: targets[2] }, 0);
+assert.deepEqual(swapped.map((row) => row.target), ['C', 'B', 'A']);
+assert.strictEqual(swapped[1], rows[1]);
+assert.deepEqual(swapped.map((row) => row.id), rows.map((row) => row.id));
+// An empty destination releases the original assignment, without moving neighbours.
+const emptyLast = rows.map((row, index) => index === 2
+  ? { ...row, target: '', target_page_id: null, target_line_index: null } : row);
+const filled = reorderLinkedTargets(emptyLast, { rowId: rows[0].id, target: targets[0] }, 2);
+assert.deepEqual(filled.map((row) => row.target), ['', 'B', 'A']);
+assert.strictEqual(filled[1], rows[1]);
+// A stale pool selection that is already assigned cannot duplicate the target.
+const fromPool = reorderLinkedTargets(rows, { target: targets[2] }, 0);
+assert.deepEqual(fromPool.map((row) => row.target), ['C', 'B', 'A']);
+assert.strictEqual(reorderLinkedTargets(rows, { target: extra }, -1), rows);
+assert.strictEqual(reorderLinkedTargets(rows, { rowId: 'deleted', target: extra }, 0), rows);
+console.log('Linked alignment defaults, local swaps, pool assignment, and IDs: OK');

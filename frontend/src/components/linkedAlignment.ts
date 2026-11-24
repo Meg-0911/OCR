@@ -32,14 +32,25 @@ export function defaultLinkedRows(page: Page, bookName: string, targets: Target[
 }
 
 export function reorderLinkedTargets(pageRows: Alignment[], item: Dragged, destination: number): Alignment[] {
+  if (destination < 0 || destination >= pageRows.length) return pageRows;
   const assignments: Target[] = pageRows.map((row) => ({
     text: row.target,
     pageId: row.target_page_id || null,
     lineIndex: row.target_line_index ?? null,
   }));
-  const previous = item.rowId ? pageRows.findIndex((row) => row.id === item.rowId) : -1;
-  if (previous >= 0) assignments.splice(previous, 1);
-  assignments.splice(destination, 0, item.target);
+  const previous = item.rowId ? pageRows.findIndex((row) => row.id === item.rowId)
+    : assignments.findIndex((target) => item.target.pageId != null && item.target.lineIndex != null &&
+      target.pageId === item.target.pageId && target.lineIndex === item.target.lineIndex);
+  if (previous === destination) return pageRows;
+  if (item.rowId && previous < 0) return pageRows;
+  // Move only the two selected assignments. A pool item replaces the chosen
+  // target; the displaced line becomes unassigned and remains in the pool.
+  if (previous >= 0) assignments[previous] = assignments[destination];
+  assignments[destination] = previous >= 0 ? {
+    text: pageRows[previous].target,
+    pageId: pageRows[previous].target_page_id || null,
+    lineIndex: pageRows[previous].target_line_index ?? null,
+  } : item.target;
   return pageRows.map((row, index) => {
     const target = assignments[index] || { text: '', pageId: null, lineIndex: null };
     if (row.target === target.text && row.target_page_id === target.pageId && row.target_line_index === target.lineIndex) return row;

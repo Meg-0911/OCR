@@ -81,9 +81,25 @@ def page_rows(source, pages, book_name, reference='', indexes=None):
                    enumerate(lines(reference_for_page(reference, source['number'])))]
     if not source_lines:
         return []
+    # A stray OCR glyph between otherwise long lines must not consume a full
+    # translation and shift the rest of the page. Keep the glyph for review.
+    # This is only a surplus-line heuristic, not an equal-length requirement.
+    substantive = [index for index, text in enumerate(source_lines) if len(joined(text)) >= 4]
+    skip_fragments = (
+        len(source_lines) > len(targets) >= 4
+        and len(substantive) == len(targets)
+        and len(substantive) / len(source_lines) >= 0.75
+        and all(len(joined(text)) <= 2 for index, text in enumerate(source_lines) if index not in substantive)
+        and all(len(re.findall(r'[^\W\d_]+', text, re.UNICODE)) >= 4 for text, _, _ in targets)
+    )
+    target_cursor = 0
     result = []
     for index, source_line in enumerate(source_lines):
-        target = targets[index] if index < len(targets) else None
+        if skip_fragments and index not in substantive:
+            target = None
+        else:
+            target = targets[target_cursor] if target_cursor < len(targets) else None
+            target_cursor += 1
         target_text, target_page_id, target_line_index = target if target else ('', None, None)
         result.append({
             'id': uuid4().hex,

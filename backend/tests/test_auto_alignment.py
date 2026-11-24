@@ -225,6 +225,28 @@ def test_unequal_line_counts_leave_extra_source_line_separate():
     assert [(row['source'], row['target']) for row in rows] == [
         ('天', 'trời'), ('地', 'đất'), ('玄', '')]
     assert [row['source_line_index'] for row in rows] == [0, 1, 2]
+
+
+def test_surplus_ocr_glyph_does_not_shift_long_translations():
+    source = ['天地玄黃宇宙', '洪荒日月盈昃', '湖', '辰宿列張寒來', '暑往秋收冬藏']
+    target = ['trời đất huyền hoàng vũ trụ', 'hồng hoang nhật nguyệt doanh trắc',
+              'thần tú liệt trương hàn lai', 'thử vãng thu thâu đông tàng']
+    page = {'id': 'source', 'number': 1, 'source_text': '\n'.join(source),
+            'target_text': '\n'.join(target), 'linked_page_ids': [], 'ocr_skip': False,
+            'ocr_languages': ['han', 'vi']}
+    rows = page_rows(page, [page], 'Book')
+    assert [row['source'] for row in rows] == source
+    assert [row['target'] for row in rows] == [*target[:2], '', *target[2:]]
+    assert [row['target_line_index'] for row in rows] == [0, 1, None, 2, 3]
+    assert [row['source_line_index'] for row in rows] == list(range(5))
+
+
+def test_short_source_lines_still_pair_with_long_translations():
+    page = {'id': 'source', 'number': 1, 'source_text': '天\n地\n玄\n黃\n宇',
+            'target_text': 'bầu trời trên cao\nmặt đất dưới chân\nmàu đen huyền bí\nsắc vàng rực rỡ',
+            'linked_page_ids': [], 'ocr_skip': False, 'ocr_languages': ['han', 'vi']}
+    rows = page_rows(page, [page], 'Book')
+    assert [row['target'] for row in rows] == [*page['target_text'].splitlines(), '']
     assert all(not row['reviewed'] for row in rows)
 
 

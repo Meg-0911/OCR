@@ -924,6 +924,21 @@ class Store:
                     min(xs)-1 <= sum(point[0] for point in member['points'])/4 <= max(xs)+1 and
                     min(ys)-1 <= sum(point[1] for point in member['points'])/4 <= max(ys)+1
                     for group in groups for member in group)
+                if not present and joined(row['source']):
+                    # A saved sentence may occupy only half of a larger OCR
+                    # column. Its centre can lie outside the sentence rectangle.
+                    # Keep it when text and overlapping geometry both survive.
+                    area = max(0, max(xs)-min(xs)) * max(0, max(ys)-min(ys))
+                    for group, text in zip(groups, group_texts):
+                        if joined(row['source']) not in text or not area:
+                            continue
+                        gx = [point[0] for member in group for point in member['points']]
+                        gy = [point[1] for member in group for point in member['points']]
+                        overlap = max(0, min(max(xs), max(gx))-max(min(xs), min(gx))) * max(
+                            0, min(max(ys), max(gy))-max(min(ys), min(gy)))
+                        if overlap / area >= 0.5:
+                            present = True
+                            break
                 if not present and not any(joined(row['source']) and joined(row['source']) == joined(''.join(b['transcription'] for b in group)) for group in groups):
                     removed.add(row['id'])
             if not removed:
@@ -1072,6 +1087,16 @@ class Store:
             ('source', 'source_page_id', 'source_line_index', lines(old_source), lines(new_source), old_source != new_source),
             ('target', 'target_page_id', 'target_line_index', lines(old_target), lines(new_target), old_target != new_target),
         )
+        # Inserting/removing an OCR line must not replace every subsequent
+        # sentence by its new neighbour while retaining the old translation.
+        line_maps = {}
+        for field, _, _, old_lines, new_lines, _ in changes:
+            mapping = {}
+            for operation, start, end, new_start, new_end in SequenceMatcher(
+                    None, old_lines, new_lines, autojunk=False).get_opcodes():
+                if operation == 'equal' or (operation == 'replace' and end-start == new_end-new_start):
+                    mapping.update((index, new_start + index-start) for index in range(start, end))
+            line_maps[field] = mapping
         imported = page.get('target_origin') == 'new_data'
         previous_boxes = {box.get('alignment_id'): box for box in page.get('boxes', [])} if imported else {}
         current_boxes = {box.get('alignment_id'): box for box in self.page(page['id'])['boxes']} if imported and old_source != new_source else {}
@@ -1112,7 +1137,13 @@ class Store:
                         index = matching[0]
                     if index >= len(old_lines) or row[field].strip() != old_lines[index]:
                         continue
-                    replacement = new_lines[index] if index < len(new_lines) else ''
+                    new_index = index if imported else line_maps[field].get(index)
+                    if new_index is None:
+                        continue  # Deleted/ambiguous lines are handled by box reconciliation.
+                    if explicit_page and row.get(index_key) != new_index:
+                        row[index_key] = new_index
+                        changed = True
+                    replacement = new_lines[new_index] if new_index < len(new_lines) else ''
                     if row[field] == replacement:
                         continue
                     row[field] = replacement
@@ -1220,6 +1251,9 @@ class Store:
                                              'points': [[x0,y0],[x1,y0],[x1,y1],[x0,y1]]}]
                             changed = True
                 if original['target'] != row['target']:
+                    if (original.get('target_page_id'), original.get('target_line_index')) != (
+                            row.get('target_page_id'), row.get('target_line_index')):
+                        continue  # Moving a translation changes the pair, not the OCR on its old page.
                     target_id = original.get('target_page_id') or page['id']
                     target_page = self.page(target_id)
                     target_index = original.get('target_line_index')

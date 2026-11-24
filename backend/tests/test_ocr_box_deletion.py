@@ -116,6 +116,28 @@ def test_legacy_empty_surplus_pair_is_removed_even_when_its_old_frame_overlaps_l
         assert len(client.get(f"/api/pages/{page['id']}").json()['export_boxes']) == 2
 
 
+def test_sentence_fragments_inside_larger_ocr_column_survive_prepare(tmp_path):
+    raw_book(tmp_path, count=1)
+    app = create_app(tmp_path, ocr_config=KHNConfig())
+    with TestClient(app) as client:
+        book, page, original = setup_page(client)
+        rows = [{**r, 'reviewed': True} for r in original[:2]]
+        combined = {**page['boxes'][0], 'transcription': '天地玄黃',
+                    'points': [[10,10],[90,10],[90,95],[10,95]]}
+        with app.state.store.db() as db:
+            db.execute('UPDATE alignments SET rows=? WHERE book_id=?', (json.dumps(rows), book['id']))
+            db.execute("UPDATE pages SET boxes=?,export_boxes=?,source_text=?,edited_fields=?,version=version+1 WHERE id=?",
+                       (json.dumps([combined]), json.dumps(page['export_boxes'][:2]),
+                        combined['transcription'], json.dumps(['boxes', 'source_text']), page['id']))
+        endpoint = f"/api/books/{book['id']}/alignments/prepare"
+        for _ in range(2):
+            response = client.post(endpoint)
+            assert response.status_code == 200, response.text
+            saved = response.json()['rows']
+            assert [(r['id'],r['source'],r['target'],r['reviewed']) for r in saved] == [
+                (r['id'],r['source'],r['target'],True) for r in rows]
+
+
 def test_ocr_deletion_keeps_manually_added_pair_and_its_box(tmp_path):
     raw_book(tmp_path, count=1)
     app = create_app(tmp_path, ocr_config=KHNConfig())

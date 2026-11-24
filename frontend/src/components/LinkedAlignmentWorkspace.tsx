@@ -56,7 +56,7 @@ export default function LinkedAlignmentWorkspace({ page, pages, bookName, rows, 
         <h3>Ghép dòng trên ảnh · Hán Nôm {String(page.number).padStart(3, '0')} ↔ Quốc ngữ {linkedPages.filter((item) => item.ocr_languages.includes('vi')).map((item) => String(item.number).padStart(3, '0')).join(', ')}</h3>
         <div><span>{reviewedCount}/{pageRows.length} cụm đã xác nhận</span><button type="button" className="secondary-button" disabled={busy} onClick={() => onReviewPage(!allReviewed)}>{allReviewed ? 'Bỏ xác nhận các cụm' : 'Xác nhận các cụm'}</button></div>
       </div>
-      <p>Kéo dòng Quốc ngữ tới dòng Hán Nôm tương ứng. Thứ tự mặc định là dòng 1 ↔ dòng 1; kéo B lên dòng 1 sẽ đẩy A xuống dòng 2. Mỗi cặp giữ ID theo trang Hán Nôm.</p>
+      <p>Kéo dòng Quốc ngữ tới dòng Hán Nôm tương ứng. Hai dòng đã ghép sẽ hoán đổi; gắn dòng từ danh sách bên dưới sẽ trả dòng bị thay về danh sách. Các cặp khác giữ nguyên. Mỗi cặp giữ ID theo trang Hán Nôm.</p>
       <div className="linked-alignment-controls">
         <input type="search" aria-label="Tìm nội dung trong trang liên kết" placeholder="Tìm dòng hoặc số trang…" value={search} onChange={(event) => setSearch(event.target.value)} />
         {linkedPages.filter((item) => item.ocr_languages.includes('vi')).map((item) => (

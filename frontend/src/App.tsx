@@ -1664,7 +1664,7 @@ export default function App() {
                   <div key={`${bookId}:${alignmentSourcePage?.id || 'none'}`} className="alignment-active-page">
                   {!alignmentLoading && alignmentSourcePage?.linked_page_ids.length && activeBook && (
                     <LinkedAlignmentWorkspace
-                      key={`${bookId}-${alignmentSourcePage.id}`}
+                      key={`linked-${bookId}-${alignmentSourcePage.id}`}
                       page={alignmentSourcePage}
                       pages={alignmentContentPages}
                       bookName={activeBook.name}
@@ -1685,7 +1685,7 @@ export default function App() {
                   )}
                   {!alignmentLoading && (
                     <AlignmentSources
-                      key={`${bookId}-${alignmentSourcePage?.id || ''}`}
+                      key={`sources-${bookId}-${alignmentSourcePage?.id || ''}`}
                       page={alignmentSource}
                       pages={alignmentContentPages}
                       reference={reference}
