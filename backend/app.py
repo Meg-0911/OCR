@@ -22,7 +22,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from pydantic import BaseModel, Field, field_validator, model_validator, model_serializer
 
-from .store import CATEGORIES, Store, box_text_lines, source_box_text_lines, label_groups
+from .store import CATEGORIES, Store, box_text_lines, source_box_text_lines, label_groups, label_boxes
 from .ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
 from .han_ocr import HanFallbackConfig, PPOCRv5, HanOCRWithFallback
 from .sources import source_files
@@ -1432,14 +1432,38 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         with store.lock:
             return download_response(build_export(book_id, format))
 
-    def build_export(book_id, format):
+    def build_export(book_id, format, *, complete_only=False, reviewed_only=False):
         book = require_book(book_id)
         folder = store.data / 'output_alignment' / book_id
         folder.mkdir(exist_ok=True)
         if format == 'labels':
             store.sync_labels(book_id)
             pages=store.pages(book_id)
-            if book['input_revision']:
+            if reviewed_only:
+                selected = [row for row in get_alignments(book_id) if row.get('reviewed')
+                            and not row.get('duplicate_of') and row['review_state'] != 'excluded'
+                            and all(export_text(row[side], side)[0].strip() for side in ('source', 'target'))]
+                selected_ids = {row['id'] for row in selected}
+                filtered = []
+                for page in pages:
+                    sources = [row for row in selected if row.get('source_page_id') == page['id'] or (
+                        not row.get('source_page_id') and int(row['sentence_id'].rsplit('.', 2)[1]) == page['number'])]
+                    targets = [row for row in selected if row.get('target_page_id') == page['id'] or (
+                        not row.get('target_page_id') and row in sources)]
+                    if not sources and not targets:
+                        continue
+                    source_texts = {re.sub(r'\s+', '', row['source']) for row in sources}
+                    target_texts = {export_text(row['target'], 'target')[0].strip() for row in targets
+                                    if row.get('target_line_index') is None}
+                    target_indexes = {row.get('target_line_index') for row in targets if row.get('target_line_index') is not None}
+                    source_boxes = [box for box in page['export_boxes'] if box.get('alignment_id') in selected_ids or (
+                        not box.get('alignment_id') and re.sub(r'\s+', '', box['transcription']) in source_texts)]
+                    vi_boxes = [box for index, box in enumerate(label_boxes(page, 'vi'))
+                                if index in target_indexes or export_text(box['transcription'], 'target')[0].strip() in target_texts]
+                    filtered.append({**page, 'export_boxes': source_boxes, 'vi_boxes': vi_boxes,
+                                     'boxes': vi_boxes if page['category'] == 'vi' else source_boxes})
+                pages = filtered
+            if book['input_revision'] and not complete_only:
                 assigned = {box.get('alignment_id') for page in pages for box in page['export_boxes']}
                 missing = [row for row in get_alignments(book_id) if not row.get('duplicate_of')
                            and row['source'].strip() and row['target'].strip() and row['id'] not in assigned]
@@ -1454,7 +1478,23 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     archive.writestr(f"{book['name']}/{category}/", b'')
                     if category not in ('blank','misc','both'):
                         for name in ('Label.txt','fileState.txt'):
-                            archive.write(store.book_dir(book_id)/category/name, f"{book['name']}/{category}/{name}")
+                            destination = f"{book['name']}/{category}/{name}"
+                            if reviewed_only:
+                                entries = []
+                                for page in pages:
+                                    if category not in label_groups(page):
+                                        continue
+                                    image_name = f"{category}/{book['name']}.{page['number']:03d}.jpg"
+                                    if name == 'fileState.txt':
+                                        entries.append(image_name + '\t1')
+                                    else:
+                                        side = 'target' if category == 'vi' else 'source'
+                                        boxes = [{'transcription': export_text(box['transcription'], side)[0], 'points': box['points']}
+                                                 for box in label_boxes(page, category) if export_text(box['transcription'], side)[0].strip()]
+                                        entries.append(image_name + '\t' + json.dumps(boxes, ensure_ascii=False))
+                                archive.writestr(destination, '\n'.join(entries) + ('\n' if entries else ''))
+                            else:
+                                archive.write(store.book_dir(book_id)/category/name, destination)
                 for page in pages:
                     original=rendered_image(page)
                     image_name=f"{book['name']}.{page['number']:03d}.jpg"
@@ -1463,12 +1503,17 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             os.replace(temporary,path)
         else:
             rows = [row for row in get_alignments(book_id) if not row.get('duplicate_of') and row['review_state'] != 'excluded']
+            if reviewed_only:
+                rows = [row for row in rows if row.get('reviewed')]
+            if complete_only:
+                rows = [row for row in rows if row['source'].strip() and row['target'].strip()]
             if not rows:
                 raise HTTPException(400,'Chưa có cặp căn chỉnh. Hãy tạo và lưu các cặp trước khi xuất.')
             if any(not row['source'].strip() or not row['target'].strip() for row in rows):
                 raise HTTPException(400,'Còn cặp căn chỉnh thiếu một vế. Hãy sửa hoặc gộp cặp trước khi xuất.')
             box_colors = store.source_box_colors(book_id, rows)
             prepared = []
+            prepared_rows = []
             for row in rows:
                 marks = row.get('marks', [])
                 source_colors = paint(row['source'], marks, 'source')
@@ -1491,10 +1536,15 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 source, source_colors = export_text(row['source'], 'source', source_colors)
                 target, target_colors = export_text(row['target'], 'target', target_colors)
                 if not source or not target:
+                    if complete_only:
+                        continue
                     raise HTTPException(400, f"Cặp {row['sentence_id']} không còn văn bản sau khi bỏ dấu câu. Hãy sửa cặp trước khi xuất.")
                 prepared.append((source, source_colors, target, target_colors))
+                prepared_rows.append(row)
+            if not prepared:
+                raise HTTPException(400, 'Chưa có cặp đủ hai vế để xuất.')
             values = [[row['sentence_id'].rsplit('.',1)[0]+'.jpg', row['sentence_id'], source, target]
-                      for row, (source, _, target, _) in zip(rows, prepared)]
+                      for row, (source, _, target, _) in zip(prepared_rows, prepared)]
             path = folder / f"{book['name']}.{format}"
             if format == 'csv':
                 with path.open('w',encoding='utf-8-sig',newline='') as output:
@@ -1524,7 +1574,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
 
     @app.get('/api/results/archive')
     def all_results_archive():
-        """Download successful demo alignments and their OCR label files."""
+        """Download only confirmed, complete pairs and their OCR labels."""
         candidates = [book for book in store.books() if not store.book(book['id'])['demo']]
         if not candidates:
             raise HTTPException(404, 'Ch\u01b0a c\u00f3 s\u00e1ch \u0111\u1ec3 t\u1ea3i k\u1ebft qu\u1ea3.')
@@ -1533,23 +1583,30 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
         temporary = output / 'tat-ca-ket-qua.zip.tmp'
         with store.lock:
             books = []
+            manifest = []
             for book in candidates:
                 book_id = book['id']
-                prepare_alignments(book_id)
                 store.sync_results(book_id)
                 for format in ('csv', 'xlsx'):
                     try:
-                        build_export(book_id, format)
+                        build_export(book_id, format, complete_only=True, reviewed_only=True)
                     except HTTPException as error:
                         if error.status_code != 400:
                             raise
                         break
                 else:
-                    build_export(book_id, 'labels')
+                    build_export(book_id, 'labels', complete_only=True, reviewed_only=True)
                     books.append(book)
+                    saved_rows = [row for row in get_alignments(book_id)
+                                  if not row.get('duplicate_of') and row['review_state'] != 'excluded']
+                    with (output / book_id / f"{book['name']}.csv").open(encoding='utf-8-sig', newline='') as stream:
+                        exported = sum(1 for _ in csv.reader(stream)) - 1
+                    manifest.append({'book_id': book_id, 'book': book['name'],
+                                     'exported_pairs': exported, 'skipped_pairs': len(saved_rows)-exported})
             if not books:
-                raise HTTPException(404, 'Ch\u01b0a c\u00f3 cu\u1ed1n n\u00e0o c\u00f3 k\u1ebft qu\u1ea3 d\u00f3ng h\u00e0ng \u0111\u1ea7y \u0111\u1ee7 \u0111\u1ec3 t\u1ea3i demo.')
+                raise HTTPException(404, 'Chưa có cặp đã xác nhận và đủ hai vế để tải. Hãy xác nhận ít nhất một cặp trước.')
             with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
+                archive.writestr('manifest.json', json.dumps({'books': manifest}, ensure_ascii=False, indent=2))
                 for book in books:
                     folder = output / book['id']
                     labels_path = folder / f"{book['name']}_labels.zip"

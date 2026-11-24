@@ -204,7 +204,10 @@ def test_archive_rebuilds_results_and_does_not_ship_stale_exports(tmp_path):
         assert client.get('/api/results/archive').status_code == 404
         for book, page, source, target in ((first, first_page, '天', 'trời'), (second, second_page, '地', 'đất')):
             client.patch(f"/api/pages/{page['id']}", json={'category': 'ch', 'source_text': source, 'target_text': target})
-            assert client.post(f"/api/books/{book['id']}/alignments/prepare").status_code == 200
+            prepared = client.post(f"/api/books/{book['id']}/alignments/prepare")
+            assert prepared.status_code == 200
+            rows = [{**row, 'reviewed': True} for row in prepared.json()['rows']]
+            assert client.put(f"/api/books/{book['id']}/alignments", json={'rows': rows}).status_code == 200
         response = client.get('/api/results/archive')
         assert response.status_code == 200, response.text
         with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
@@ -215,6 +218,76 @@ def test_archive_rebuilds_results_and_does_not_ship_stale_exports(tmp_path):
                 assert prefix + f"{book['name']}.xlsx" in names
                 assert prefix + 'ch/Label.txt' in names
                 assert b'old export' not in archive.read(prefix + f"{book['name']}.csv")
+
+
+def test_archive_exports_complete_pairs_without_requiring_a_finished_book(tmp_path):
+    with TestClient(create_app(tmp_path)) as client:
+        book, page = upload(client, 'partial.pdf')
+        other, other_page = upload(client, 'not-aligned.pdf')
+        client.patch(f"/api/pages/{page['id']}", json={'category': 'ch', 'source_text': '天\n地\n玄'})
+        client.patch(f"/api/pages/{other_page['id']}", json={'category': 'ch', 'source_text': '宇'})
+        rows = [
+            {'id': 'complete', 'sentence_id': 'partial.001.1', 'source': '天', 'target': 'trời', 'reviewed': True},
+            {'id': 'unpaired', 'sentence_id': 'partial.001.2', 'source': '地', 'target': '', 'reviewed': False},
+            {'id': 'punctuation', 'sentence_id': 'partial.001.3', 'source': '玄', 'target': '!!!', 'reviewed': False},
+            {'id': 'unreviewed', 'sentence_id': 'partial.001.4', 'source': '黃', 'target': 'vàng', 'reviewed': False},
+        ]
+        endpoint = f"/api/books/{book['id']}/alignments"
+        assert client.put(endpoint, json={'rows': rows}).status_code == 200
+        before = client.get(endpoint).json()
+        # Individual full-book export keeps its existing validation.
+        assert client.get(f"/api/books/{book['id']}/export?format=csv").status_code == 400
+        response = client.get('/api/results/archive')
+        assert response.status_code == 200, response.text
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            manifest = json.loads(archive.read('manifest.json'))
+            assert manifest['books'] == [{'book_id': book['id'], 'book': 'partial',
+                                          'exported_pairs': 1, 'skipped_pairs': 3}]
+            text = archive.read('partial/partial.csv').decode('utf-8-sig')
+            assert 'partial.001.1' in text
+            assert 'partial.001.2' not in text and 'partial.001.3' not in text
+            assert 'partial.001.4' not in text
+            assert 'partial/partial.xlsx' in archive.namelist()
+            assert 'partial/ch/Label.txt' in archive.namelist()
+            assert not any(name.startswith('not-aligned/') for name in archive.namelist())
+        after = client.get(endpoint).json()
+        assert [(r['id'], r['source'], r['target'], r['reviewed']) for r in after] == [
+            (r['id'], r['source'], r['target'], r['reviewed']) for r in before]
+        assert client.get(f"/api/books/{other['id']}/alignments").json() == []
+
+
+def test_archive_filters_unconfirmed_pairs_from_spreadsheet_and_ocr_labels(tmp_path):
+    from openpyxl import load_workbook
+
+    with TestClient(create_app(tmp_path)) as client:
+        book, page = upload(client, 'reviewed.pdf')
+        client.patch(f"/api/pages/{page['id']}", json={
+            'category': 'both', 'ocr_granularity': 'phrase',
+            'boxes': [box('han1', '天地', 160), box('han2', '玄黃', 100)],
+            'vi_boxes': [box('vi1', 'trời đất', 20), box('vi2', 'huyền hoàng', 50)],
+            'reading_direction_override': 1,
+        })
+        endpoint = f"/api/books/{book['id']}/alignments"
+        rows = client.post(endpoint+'/prepare').json()['rows']
+        assert client.get('/api/results/archive').status_code == 404
+        rows[0]['reviewed'] = True
+        assert client.put(endpoint, json={'rows': rows}).status_code == 200
+        response = client.get('/api/results/archive')
+        assert response.status_code == 200, response.text
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            csv_text = archive.read('reviewed/reviewed.csv').decode('utf-8-sig')
+            assert rows[0]['sentence_id'] in csv_text and rows[1]['sentence_id'] not in csv_text
+            workbook = load_workbook(io.BytesIO(archive.read('reviewed/reviewed.xlsx')))
+            assert workbook.active.max_row == 2
+            assert workbook.active['B2'].value == rows[0]['sentence_id']
+            for language, text in [('ch', rows[0]['source']), ('vi', rows[0]['target'])]:
+                label = archive.read(f'reviewed/{language}/Label.txt').decode('utf-8')
+                entries = label.strip().splitlines()
+                assert len(entries) == 1
+                boxes = json.loads(entries[0].split('\t', 1)[1])
+                assert [b['transcription'] for b in boxes] == [text]
+        saved = client.get(endpoint).json()
+        assert [r['reviewed'] for r in saved] == [True, False]
 
 
 def test_unequal_line_counts_leave_extra_source_line_separate():

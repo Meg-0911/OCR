@@ -1922,13 +1922,13 @@ export default function App() {
                       <Download size={26} />
                     </span>
                     <div>
-                      <h2>{'G\u00f3i demo c\u00e1c k\u1ebft qu\u1ea3 \u0111\u00e3 c\u0103n ch\u1ec9nh th\u00e0nh c\u00f4ng'}</h2>
+                      <h2>Tải kết quả dóng hàng</h2>
                       <p>
-                        {'ZIP ch\u1ec9 g\u1ed3m c\u00e1c cu\u1ed1n xu\u1ea5t \u0111\u01b0\u1ee3c c\u1ea3 CSV v\u00e0 XLSX. Nh\u00e3n OCR \u0111\u01b0\u1ee3c x\u1ebfp v\u00e0o th\u01b0 m\u1ee5c t\u1eebng cu\u1ed1n; cu\u1ed1n ch\u01b0a c\u00f3 c\u1eb7p ho\u1eb7c c\u00f2n c\u1eb7p thi\u1ebfu v\u1ebf s\u1ebd kh\u00f4ng \u0111\u01b0\u1ee3c th\u00eam v\u00e0o ZIP.'}
+                        ZIP chỉ gồm CSV, XLSX và nhãn OCR của các cặp đã xác nhận và đủ hai vế. Cặp chưa xác nhận vẫn được giữ để sửa tiếp. Trong ZIP có thống kê số cặp đã xuất và chưa xuất.
                       </p>
                       <button className="primary-button" disabled={busy || !workspace?.books.length}
                         onClick={() => void downloadAllResults()}>
-                        <Download size={16} /> {'T\u1ea3i k\u1ebft qu\u1ea3 demo (.ZIP)'}
+                        <Download size={16} /> Tải kết quả (.ZIP)
                       </button>
                     </div>
                   </div>

@@ -103,7 +103,7 @@ Mở <http://127.0.0.1:5173>. Lệnh trên chạy cả giao diện từ `fronten
 5. **Căn chỉnh song ngữ:** cặp được tự tạo và lưu ngay khi có OCR, không cần xác nhận trang trước. Dữ liệu OCR sẵn dùng trực tiếp cặp `Label`–`Vietnamese` theo `Patch ID` trong XLSX. Với raw_data, chế độ **Theo cụm** giữ mỗi box OCR Hán Nôm thành một dòng; chế độ **Theo chữ** ghép chữ trong cùng dòng/cột đọc. Hệ thống ghép hai vế theo thứ tự, giữ riêng dòng Nôm chưa có Quốc ngữ để bổ sung sau.
    - **Câu nằm lệch trang:** ở bước **Gắn nhãn trang**, chọn trang rồi đánh dấu các trang liên kết trong ô **Trang liên kết**. Có thể tìm theo số trang và sửa liên kết sau khi OCR; trạng thái duyệt, box và checkpoint OCR được giữ nguyên. Ở **Căn chỉnh song ngữ**, ứng dụng tự ghép các trang liên kết theo thứ tự dòng. Kéo một dòng Quốc ngữ sang dòng Hán Nôm cần ghép, hoặc chọn dòng rồi bấm **Gắn vào dòng** để sửa.
    - **ID và tệp kết quả:** `sentence_id` và `img_id` luôn dùng số trang Hán Nôm, ví dụ `Tên sách.007.1` và `Tên sách.007.jpg`. ID giữ nguyên khi sửa/đổi thứ tự, cụm mới nhận ID mới. `alignments.json` lưu thêm ID trang và số dòng của hai vế để truy vết. `pairs.csv`, CSV và XLSX vẫn dùng bốn cột `img_id`, `sentence_id`, `SinoNom_Char`, `ChuQN_txt`; `pages.json` lưu danh sách `linked_page_ids`.
-6. **Xuất:** trong **Xuất dữ liệu**, bấm **Tải kết quả demo (.ZIP)**.
+6. **Xuất:** trong **Xuất dữ liệu**, bấm **Tải kết quả (.ZIP)**. ZIP chỉ gồm CSV/XLSX và nhãn OCR của các cặp **đã xác nhận và đủ hai vế**; không cần hoàn thành toàn bộ sách. Các cặp chưa xác nhận hoặc thiếu vế vẫn được giữ trong ứng dụng để sửa tiếp. `manifest.json` trong ZIP ghi số cặp đã xuất và chưa xuất của từng cuốn.
 
 ## 6. Dữ liệu, đầu ra và sao lưu
 
