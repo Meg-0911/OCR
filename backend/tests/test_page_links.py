@@ -50,7 +50,7 @@ def test_page_links_preserve_ocr_and_export_source_image_id(tmp_path):
     sentence_id = f"{book['name']}.{first['number']:03d}.1"
     row = {'id': 'linked-1', 'sentence_id': sentence_id, 'source': '天地',
            'target': 'Thiên địa', 'source_page_id': first['id'], 'source_line_index': 0,
-           'target_page_id': second['id'], 'target_line_index': 0, 'page_linked': True}
+           'target_page_id': second['id'], 'target_line_index': 0, 'page_linked': True, 'reviewed': True}
     response = client.put(f'/api/books/{book_id}/alignments', json={'rows': [row]})
     assert response.status_code == 200, response.text
     output = tmp_path / 'backend/data/output_alignment' / book_id

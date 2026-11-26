@@ -1,132 +1,117 @@
-# User Guide
+# Hướng dẫn sử dụng
 
-## 1. Chuẩn bị máy
+## 1. Môi trường
 
-### Cấu hình đề nghị
+- Windows 10/11, Python 3.13.5 64-bit và Node.js 24.11.1.
+- Tối thiểu 8 GB RAM; khuyến nghị 16 GB khi xử lý sách nhiều trang.
+- Kết nối mạng để cài dependency, tải model/từ điển và sử dụng Kim Hán Nôm. VietOCR và từ điển chạy cục bộ sau khi cài đặt.
 
-- Windows 10/11 +.
-- Python 3.13.5 64-bit và Node.js 24.11.1; phiên bản tham chiếu nằm trong `.python-version` và `.nvmrc`.
-- Tối thiểu 8 GB RAM; khuyến nghị 16 GB trở lên khi xử lý PDF lớn/nhiều trang.
+Phiên bản runtime tham chiếu nằm trong `.python-version` và `.nvmrc`.
 
-## 2. Lấy mã nguồn và dữ liệu nhóm
+## 2. Cài đặt
 
-Mở PowerShell hoặc Terminal tại thư mục clone dự án. Cấu trúc cần giữ:
-
-```text
-backend/data/raw_data/       PDF nguồn và TXT đối chiếu (đưa vào thủ công)
-backend/data/new/            XLSX dóng hàng, ảnh và nhãn mới (bổ sung theo từng đợt)
-backend/.env                 token OCR cá nhân (tạo từ .env.example)
-backend/data/                SQLite, ảnh, model, checkpoint và kết quả (tự sinh/local)
-```
-
-**Dữ liệu:** Lấy PDF/TXT từ gói dữ liệu, rồi chép vào `backend/data/raw_data/`.
-
-Sau khi khởi động, ứng dụng dò PDF trong `backend/data/raw_data/` tự động. Có thể thêm PDF khác sau này rồi bấm đồng bộ nguồn hoặc khởi động lại backend.
-Với dữ liệu OCR sẵn, tạo thư mục new theo đúng cấu trúc bên dưới.
-
-## 3. Cài đặt trên Windows
-
-### 3.1 Cài runtime
-
-1. Cài Python 3.13.5 x64 và Node.js 24.11.1 x64. Xác nhận trong PowerShell:
-
-   ```powershell
-   py -3.13 --version
-   node --version
-   npm --version
-   ```
-
-   Phiên bản tham chiếu là `Python 3.13.5`, `v24.11.1` và npm 11.x. Nếu Windows không nhận lệnh `py`, cài lại Python và chọn Python Launcher; nếu không nhận `node`, cài Node.js LTS và mở terminal mới.
-
-2. Tạo virtualenv và cài Python packages đã pin:
-
-   ```powershell
-   py -3.13 -m venv .venv
-   .\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
-   ```
-
-3. Cài frontend đúng lockfile để chạy từ mã nguồn:
-
-   ```powershell
-   npm --prefix frontend ci
-   ```
-
-### 3.2 Cài từ điển và model VietOCR
-
-Chạy tại thư mục gốc repo:
+Mở PowerShell tại thư mục gốc dự án:
 
 ```powershell
+py -3.13 --version
+node --version
+py -3.13 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
+npm --prefix frontend ci
 .\.venv\Scripts\python.exe backend/setup_dictionary.py
 .\.venv\Scripts\python.exe backend/setup_vietocr.py
 ```
 
-Tesseract chỉ là phương án OCR dự phòng. Trên Windows, script `backend/setup_vietnamese_ocr.py` cần 7-Zip; không cần chạy nếu VietOCR đã hoạt động.
+Nếu dùng dịch vụ Kim Hán Nôm, tạo `backend/.env` từ `backend/.env.example` khi chưa có file cấu hình. Điền cookie `token` của tài khoản vào `KHN_token`. Token được lưu riêng trên mỗi máy.
 
-### 3.3 Cấu hình OCR Hán Nôm
-
-Tạo file cấu hình từ mẫu nếu chưa có:
-
-```powershell
-Copy-Item backend/.env.example backend/.env
-```
-
-Nếu dùng Kim Hán Nôm, mở `backend/.env` và điền token cookie `token` của tài khoản vào `KHN_token`. Nếu chỉ dùng PP-OCRv5 CPU, có thể để trống token.
-
-### 3.3.1 Cài PP-OCRv5 CPU dự phòng
-
-Trong virtualenv của backend, cài thêm hai gói tùy chọn:
+PP-OCRv5 CPU là phương án OCR Hán Nôm dự phòng tùy chọn:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r backend/requirements-han-fallback.txt
 ```
 
-Giữ `HAN_OCR_FALLBACK=ppocrv5` trong `backend/.env` (mặc định nếu không khai báo). `HAN_OCR_THREADS=4` giới hạn luồng CPU.
-OCR dự phòng là model chữ Hán tổng quát, cần kiểm tra độ đúng trên sách thực tế. Đặt `HAN_OCR_FALLBACK=off` nếu muốn tắt.
+`HAN_OCR_FALLBACK=ppocrv5` bật phương án dự phòng; `HAN_OCR_FALLBACK=off` tắt. `HAN_OCR_THREADS=4` đặt số luồng CPU. Tesseract là phương án Quốc ngữ dự phòng khác; script `backend/setup_vietnamese_ocr.py` trên Windows cần 7-Zip.
 
-### 3.4 Khởi động
+## 3. Chuẩn bị dữ liệu và khởi động
 
-Đảm bảo PDF sách đã ở `backend/data/raw_data/`, sau đó chạy:
+```text
+backend/data/raw_data/       PDF nguồn, TXT tham chiếu nếu có
+backend/data/new/            XLSX căn chỉnh, ảnh và Label.txt có sẵn
+backend/data/.workspace/     SQLite, ảnh nhập và checkpoint làm việc
+backend/data/output_alignment/  Tệp kết quả tự sinh
+```
+
+Chép PDF vào `raw_data/`, giữ nguyên tên tài liệu. Với OCR có sẵn, chuẩn bị `new/` theo [README](./README.md#dữ-liệu-đầu-vào). Trang ảnh tính từ trang đầu PDF; chỉ số dòng trong `Patch ID` tính từ 0 theo mảng box của `Label.txt`.
 
 ```powershell
 .\.venv\Scripts\python.exe run.py
 ```
 
-Mở <http://127.0.0.1:5173>. Lệnh trên chạy cả giao diện từ `frontend/src/` và API ở cổng `8000`, cùng dùng gốc dự án chứa `run.py`.
+Mở `http://127.0.0.1:5173`. `run.py` khởi động frontend và backend cùng nhau. Khi thêm dữ liệu, sử dụng thao tác đồng bộ nguồn trong ứng dụng.
 
-## 4. Làm việc trên một bộ sách
+Quét lại `new/` giữ các trang đã có dữ liệu làm việc. Thay XLSX nguồn không thay các cặp đã sửa trên web. Một `Patch ID` xuất hiện với hai nội dung khác nhau trong các file nguồn cần được đối chiếu trước khi nhập; dữ liệu đã lưu vẫn được giữ.
 
-1. **Kiểm tra nguồn:** trong ứng dụng, chọn sách đã dò từ `raw_data/` hoặc tải PDF. Tải TXT UTF-8 Hán Nôm/Quốc ngữ làm bản tham chiếu nếu có.
-2. **Lập kế hoạch trang:** mỗi trang có một nhãn `ch` (Hán Nôm), `vi` (Quốc ngữ), `both` (cả hai), `intro`, `ref`, `toc`, `blank` hoặc `misc`; chọn vùng nội dung. Chọn **Chiều đọc Hán/Nôm mặc định cho cả sách** là dọc hoặc ngang, rồi dùng **Chiều đọc riêng của trang** khi trang Hán/Nôm cần khác mặc định. Trang chỉ có Quốc ngữ luôn đọc ngang từ trái sang phải. Đây là thiết lập OCR, không phải nhãn xuất chuẩn. Trang trắng/không cần xử lý có thể bỏ qua OCR. Ảnh hai trang cần kiểm tra thứ tự trang trái trước, trang phải sau.
-   - **Gắn nhãn nhiều trang:** giữ Ctrl và nhấp các ảnh trang muốn chọn, hoặc bấm **Chọn tất cả** (Ctrl+A) để chọn toàn bộ sách.
-3. **Chạy OCR:** chọn OCR từng trang hoặc theo phạm vi. OCR Hán Nôm dùng Kim Hán Nôm hoặc PP-OCRv5 CPU dự phòng đã cài; OCR Quốc ngữ dùng model VietOCR đã tải. Nếu cả hai cách OCR Hán Nôm đều thất bại ở một trang, tác vụ ghi lỗi cho trang đó và tiếp tục các trang sau. Khi chạy hết phạm vi, bấm **Tiếp tục OCR** để thử lại các trang lỗi; các trang đã thành công được giữ nguyên. Có thể tạm dừng/tiếp tục tác vụ; checkpoint nằm trong `backend/data/.workspace/ocr/`.
-4. **Gán nhãn OCR:** so box và chữ với ảnh, sửa ký tự chưa chắc (`□`), kéo/đổi kích thước box, vẽ hoặc xóa box. Ô **Chia theo cụm** nằm ngay dưới **Lưu & hoàn thành**: tick nếu mỗi box OCR chứa một cụm chữ, bỏ tick nếu mỗi box chứa một chữ. Bấm **Lưu & hoàn thành** để ghi cách chia và xác nhận trang.
-5. **Căn chỉnh song ngữ:** cặp được tự tạo và lưu ngay khi có OCR, không cần xác nhận trang trước. Dữ liệu OCR sẵn dùng trực tiếp cặp `Label`–`Vietnamese` theo `Patch ID` trong XLSX. Với raw_data, chế độ **Theo cụm** giữ mỗi box OCR Hán Nôm thành một dòng; chế độ **Theo chữ** ghép chữ trong cùng dòng/cột đọc. Hệ thống ghép hai vế theo thứ tự, giữ riêng dòng Nôm chưa có Quốc ngữ để bổ sung sau.
-   - **Câu nằm lệch trang:** ở bước **Gắn nhãn trang**, chọn trang rồi đánh dấu các trang liên kết trong ô **Trang liên kết**. Có thể tìm theo số trang và sửa liên kết sau khi OCR; trạng thái duyệt, box và checkpoint OCR được giữ nguyên. Ở **Căn chỉnh song ngữ**, ứng dụng tự ghép các trang liên kết theo thứ tự dòng. Kéo một dòng Quốc ngữ sang dòng Hán Nôm cần ghép, hoặc chọn dòng rồi bấm **Gắn vào dòng** để sửa.
-   - **ID và tệp kết quả:** `sentence_id` và `img_id` luôn dùng số trang Hán Nôm, ví dụ `Tên sách.007.1` và `Tên sách.007.jpg`. ID giữ nguyên khi sửa/đổi thứ tự, cụm mới nhận ID mới. `alignments.json` lưu thêm ID trang và số dòng của hai vế để truy vết. `pairs.csv`, CSV và XLSX vẫn dùng bốn cột `img_id`, `sentence_id`, `SinoNom_Char`, `ChuQN_txt`; `pages.json` lưu danh sách `linked_page_ids`.
-6. **Xuất:** trong **Xuất dữ liệu**, bấm **Tải kết quả (.ZIP)**. ZIP chỉ gồm CSV/XLSX và nhãn OCR của các cặp **đã xác nhận và đủ hai vế**; không cần hoàn thành toàn bộ sách. Các cặp chưa xác nhận hoặc thiếu vế vẫn được giữ trong ứng dụng để sửa tiếp. `manifest.json` trong ZIP ghi số cặp đã xuất và chưa xuất của từng cuốn.
+## 4. Xử lý sách
 
-## 6. Dữ liệu, đầu ra và sao lưu
+1. **Phân loại trang:** chọn `ch`, `vi`, `both`, `intro`, `ref`, `toc`, `blank` hoặc `misc`. Đặt chiều đọc Nôm và vùng OCR. Quốc ngữ đọc ngang. Ảnh hai trang đọc trang trái trước, trang phải sau.
+2. **OCR:** sách đã nhập từ `new/` có thể chuyển trực tiếp sang kiểm tra. Với PDF chưa có OCR, chạy theo trang hoặc phạm vi. Tác vụ hỗ trợ tạm dừng, tiếp tục và thử lại trang lỗi.
+3. **Hiệu chỉnh:** đối chiếu chữ với ảnh, sửa nội dung và vùng box. Chọn theo chữ hoặc theo cụm phù hợp với OCR. Lưu và hoàn thành trang sau khi kiểm tra.
+4. **Căn chỉnh:** kiểm tra hai vế và trang đối chiếu. Dùng trang liên kết khi Nôm và Quốc ngữ nằm khác trang. Kéo/gắn dòng để sửa cách ghép. ID cặp giữ nguyên khi chỉnh sửa và đổi thứ tự.
+5. **Tách/gộp:** kiểm tra cả hai vế sau thao tác. Box OCR có thể chứa nhiều cặp; vùng chữ được liên kết theo từng đoạn. Vẽ/gán box Nôm cho cặp mới trước khi xuất. Nếu một box Quốc ngữ chứa nhiều cặp, xác nhận đủ các phần hoặc tách box thực trên ảnh.
+6. **Xác nhận:** xác nhận từng cặp hoặc các cặp trên trang. Cặp đã xác nhận vẫn giữ dấu khi sửa nội dung, box hoặc màu. Thao tác bỏ xác nhận đưa cặp trở lại danh sách cần kiểm tra.
 
-- PDF/TXT nguồn: `backend/data/raw_data/`.
-- DB và trạng thái đã lưu: `backend/data/.workspace/` (SQLite `workspace.sqlite3`, các trang sách, ảnh bản mới trong `book-assets/` và checkpoint). Bản nháp chưa lưu nằm trên trình duyệt.
-- Ảnh đã xử lý: `backend/data/processed_images/`.
-- Kết quả xuất: `backend/data/output_alignment/<book_id>/`.
-- Model/tài nguyên setup: `backend/.tools/`.
+Trạng thái hoàn thành trang và xác nhận cặp là hai trạng thái riêng. Dữ liệu một cặp có thể gồm số chữ Nôm và số từ Quốc ngữ khác nhau; người dùng kiểm tra quan hệ nội dung của hai vế.
 
-## 7. Kiểm thử và phát triển
+## 5. Lưu và xuất
+
+Chỉnh sửa được lưu tự động; `Ctrl+S` lưu ngay. Theo dõi trạng thái lưu trước khi đóng trình duyệt. Khi hai phiên chỉnh sửa bảng căn chỉnh, hệ thống kết hợp các thay đổi độc lập. Nếu cùng một trường có hai nội dung khác nhau, thông báo xung đột xuất hiện và bản nháp được giữ để khôi phục; đối chiếu trước khi lưu tiếp. Chỉnh sửa trang OCR sử dụng kiểm tra phiên bản để tránh ghi đè dữ liệu mới.
+
+Trong **Xuất dữ liệu**, chọn **Tải kết quả (.ZIP)**. Ứng dụng chờ các lần lưu đang chạy rồi đóng gói từ dữ liệu đã lưu. Gói chứa:
+
+- PDF nguồn và ảnh theo phân loại trang của từng sách.
+- CSV/XLSX của các cặp đã xác nhận, đủ hai vế sau làm sạch.
+- `Label.txt` và `fileState.txt` theo PPOCRLabel cho nhãn được chọn. Trang chỉ hoàn thành khi nhãn xuất bao phủ đủ OCR của trang.
+- Nhãn Quốc ngữ khi có box thực. Với `new/` chỉ có văn bản Quốc ngữ, vế dịch vẫn nằm trong bảng căn chỉnh; không tạo nhãn hoặc ảnh Quốc ngữ giả.
+
+Số, dấu câu và ký tự điều khiển được bỏ khi xuất. Nôm không có khoảng trắng; Quốc ngữ viết thường, bỏ khoảng trắng dư. Xem phần xem trước của từng cặp để đối chiếu nội dung xuất. CSV có UTF-8 BOM; XLSX giữ màu đen/đỏ theo đánh dấu.
+
+Nếu xuất bị chặn vì thiếu box hoặc sai liên kết, mở cặp được nêu trong thông báo, kiểm tra ID trang và vùng ảnh, rồi lưu lại. Cặp thiếu liên kết không bị âm thầm bỏ khỏi kết quả.
+
+Các file `<Tên sách>.csv` và `<Tên sách>.xlsx` trong `output_alignment/<book_id>/` tự cập nhật sau khi lưu. Các file JSON và `pairs.csv` dùng theo dõi dữ liệu làm việc, bao gồm cặp chưa xác nhận. ZIP tải xuống là một bản chụp; tải lại để nhận chỉnh sửa mới.
+
+Cấu trúc dữ liệu từng sách được mô tả trong [README](./README.md#kết-quả). Báo cáo và gói mã nguồn cấp dự án được chuẩn bị riêng khi bàn giao.
+
+## 6. Sao lưu và chuyển máy
+
+1. Chờ lưu hoàn tất, sau đó dừng ứng dụng.
+2. Sao lưu toàn bộ `backend/data/.workspace/` cùng `raw_data/` và `new/`. Giữ nguyên cấu trúc đường dẫn và tên sách.
+3. Khi chuyển máy, khôi phục bộ dữ liệu làm việc cùng nhau, cài dependency/model và cấu hình token riêng.
+4. Mở sách, kiểm tra số cặp, dấu xác nhận và một số trang đại diện trước khi tiếp tục.
+
+Các thành viên đang dùng bản cũ nên giữ nguyên bản sao dữ liệu làm việc trước khi cập nhật mã nguồn. CSV/XLSX xuất là sản phẩm dữ liệu; bộ làm việc đầy đủ cần SQLite, ảnh và các liên kết đã lưu.
+
+## 7. Kiểm thử
 
 ```powershell
 .\.venv\Scripts\python.exe backend/test.py
 npm --prefix frontend run check
 npm --prefix frontend run check:alignment
+node --experimental-strip-types frontend/scripts/check-linked-alignment.mjs
+node --experimental-strip-types frontend/scripts/check-result-pipeline.mjs
+```
+
+Khi Vite đang chạy, kiểm tra component qua runtime phát triển:
+
+```powershell
+npm --prefix frontend run check:review-runtime
 ```
 
 ## 8. Xử lý sự cố
 
-- **Sách không xuất hiện:** với PDF, kiểm tra `backend/data/raw_data/`; với dữ liệu mới, kiểm tra XLSX, ảnh và `Label.txt` trong `backend/data/new/` theo README. Quét thư mục và xem lỗi nguồn trên tổng quan, hoặc khởi động lại.
-- **401/403 từ OCR Hán Nôm:** token hết hạn/sai hoặc tài khoản thiếu quyền. Cập nhật `KHN_token` trong `backend/.env`, sau đó khởi động lại backend.
-- **VietOCR chưa sẵn sàng:** chạy lại `backend/setup_vietocr.py`, xem thông báo lỗi trong Cài đặt. Cần mạng để tải model lần đầu.
-- **ONNX báo `DLL load failed` trên Windows:** xác nhận Python 64-bit và cài Microsoft Visual C++ Redistributable x64.
-- **Thiếu từ điển:** chạy `backend/setup_dictionary.py`, rồi khởi động lại backend.
-- **Giao diện không khởi động/thiếu Vite:** chạy `npm --prefix frontend ci`, rồi chạy lại `run.py`; không xóa `package-lock.json`. Kiểm tra cổng `5173` và `8000` không bị một phiên ứng dụng khác chiếm.
-- **Không thấy box/nhận dạng kém:** kiểm tag ngôn ngữ, hướng đọc, vùng ảnh, độ phân giải và chất lượng ảnh; có thể vẽ box thủ công rồi lưu.
+- **Sách không xuất hiện:** kiểm tra PDF tương ứng trong `raw_data/` và lỗi đồng bộ nguồn. `new/` chỉ được nhập khi tìm được đúng sách nguồn.
+- **Không có box Quốc ngữ ở sách nhập sẵn:** XLSX có thể chỉ cung cấp văn bản. Đây là dữ liệu không có tọa độ; nhãn Quốc ngữ được bỏ qua khi xuất.
+- **Xung đột lưu:** kiểm tra phiên đang mở và bản nháp khôi phục. Giữ nội dung cần đối chiếu trước khi đóng trình duyệt.
+- **Kim Hán Nôm trả 401/403:** kiểm tra token và quyền tài khoản, cập nhật `backend/.env`, sau đó khởi động lại.
+- **VietOCR chưa sẵn sàng:** chạy lại `backend/setup_vietocr.py`. Nếu ONNX báo `DLL load failed`, kiểm tra Python 64-bit và Microsoft Visual C++ Redistributable x64.
+- **Thiếu từ điển:** chạy `backend/setup_dictionary.py` rồi khởi động lại.
+- **Frontend không chạy:** chạy `npm --prefix frontend ci`, kiểm tra cổng `5173` và `8000`, rồi khởi động lại bằng `run.py`.

@@ -3,12 +3,10 @@ import { CheckCheck, Link2, SplitSquareVertical, Trash2 } from 'lucide-react';
 import type { Alignment, ReviewKind, ReviewMark } from '../types';
 import { splitAlignmentText } from './alignmentSplit';
 import { withReviewMarks } from '../reviewColors';
+import { cleanExportText } from '../alignmentText';
 
 function exportPreview(value: string, side: 'source' | 'target') {
-  const text = value.normalize('NFC');
-  return side === 'source'
-    ? text.replace(/\p{P}|\s/gu, '')
-    : text.toLocaleLowerCase('vi').replace(/\p{P}/gu, '');
+  return cleanExportText(value, side).text;
 }
 
 function colorsFor(value: string, base: (ReviewKind | undefined)[], marks: ReviewMark[], side: 'source' | 'target') {
@@ -130,7 +128,6 @@ export default function AlignmentRow({
             onChange({
               ...row,
               [side]: next,
-              reviewed: false,
               marks: [],
             });
           }

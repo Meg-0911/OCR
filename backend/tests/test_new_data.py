@@ -70,8 +70,8 @@ def test_matching_mandatory_book_uses_phrase_boxes_and_consistent_exports(tmp_pa
         book, = workspace['books']
         assert book['has_new_data'] and book['has_pdf'] and book['input_revision']
         assert (book['pages'], book['new_data_pages'], book['new_data_lines']) == (5, 1, 2)
-        assert workspace['pair_stats']['pairs'] == 1 and workspace['pair_stats']['reviewed_pairs'] == 0
-        assert workspace['pair_stats']['pending_error_pairs'] == 1 and book['done'] == 0
+        assert workspace['pair_stats']['pairs'] == 0 and workspace['pair_stats']['reviewed_pairs'] == 0
+        assert workspace['pair_stats']['pending_error_pairs'] == 2 and book['done'] == 0
         page = imported_page(client, book)
         assert page['ocr_granularity'] == 'phrase'
         assert page['status'] == 'pending' and page['review_state'] == 'unchecked'
@@ -94,7 +94,7 @@ def test_matching_mandatory_book_uses_phrase_boxes_and_consistent_exports(tmp_pa
             assert [box['transcription'] for box in output] == ['𡗶地', '玄黃']
             assert len([name for name in archive.namelist() if name.endswith('.jpg')]) == 5
         summary = client.get(f"/api/books/{book['id']}/results/summary.json").json()
-        assert summary['pairs'] == 1 and summary['ocr_pages'] == 1
+        assert summary['pairs'] == 0 and summary['ocr_pages'] == 1
         assert summary['similarity_review'] == {'total': 4, 'red': 1, 'unmarked': 0, 'percent': 75.0}
         assert client.get(f"/api/pages/{page['id']}/ocr").json()['text_lines'] == ['𡗶地', '玄黃']
         assert client.post(f"/api/books/{book['id']}/alignments/prepare").json()['created'] == 0
@@ -123,58 +123,33 @@ def test_new_without_any_mandatory_pdf_never_becomes_a_book(tmp_path):
         assert len(workspace['books']) == 1 and workspace['books'][0]['has_new_data']
 
 
-def test_full_book_replacement_removes_old_results_caches_and_character_tags(tmp_path):
+def test_new_input_preserves_existing_work_references_and_layout(tmp_path):
     raw_book(tmp_path)
     app = create_app(tmp_path, ocr_config=KHNConfig())
     with TestClient(app) as client:
         book, = client.get('/api/workspace').json()['books']
-        pages = client.get(f"/api/books/{book['id']}/pages").json()
-        old_page = pages[0]
-        url = f"/api/books/{book['id']}"
-        client.patch(f"/api/pages/{old_page['id']}", json={'source_text': '舊', 'target_text': 'cũ', 'ocr_granularity': 'character'})
-        old_rows = [{'id': 'old', 'sentence_id': 'Book_Y.001.1', 'source': '舊', 'target': 'cũ', 'source_page_id': old_page['id']}]
-        assert client.put(url+'/alignments', json={'rows': old_rows}).status_code == 200
-        client.put(url+'/text-sources/vi', json={'filename': 'old.txt', 'text': 'tham chiếu cũ'})
-        client.put(url+'/layout', json={'reading_direction': 1, 'source_regions': [[0,0,.5,.5]]})
-        output = tmp_path / 'backend/data/output_alignment' / book['id']
-        for name in ('Book_Y.csv', 'Book_Y.xlsx', 'Book_Y_labels.zip'):
-            (output / name).write_bytes(b'old result')
-        checkpoint = tmp_path / 'backend/data/.workspace/ocr' / old_page['id'] / 'old.json'
-        checkpoint.parent.mkdir(parents=True)
-        checkpoint.write_text('{"old": true}')
-        # Migrate the previous importer, which stored character-level new_data without a book revision.
-        with app.state.store.db() as db:
-            db.execute("UPDATE pages SET target_origin='new_data' WHERE id=?", (old_page['id'],))
-            db.execute('INSERT INTO new_data_pages VALUES (?,?,?)', (old_page['id'], 'backend/data/new/old.jpg', 'legacy'))
-            db.execute('INSERT INTO new_data_rows VALUES (?,?,?,?)', (old_page['id'], 'Book.001.000', 'old', '{}'))
-            db.execute('INSERT INTO ocr_jobs VALUES (?,?,?,?,?,?)', ('retired-job', book['id'], 'paused', '{}', None, '2026'))
-            db.execute('INSERT INTO ocr_job_pages VALUES (?,?,?,?)', ('retired-job', old_page['id'], 'pending', None))
+        endpoint = f"/api/books/{book['id']}"
+        pages = client.get(endpoint+'/pages').json()
+        page = pages[0]
+        client.patch(f"/api/pages/{page['id']}", json={'source_text': '舊', 'target_text': 'cũ'})
+        old = [{'id': 'old', 'sentence_id': 'Book_Y.001.1', 'source': '舊', 'target': 'cũ', 'reviewed': True,
+                'source_page_id': page['id']}]
+        assert client.put(endpoint+'/alignments', json={'rows': old}).status_code == 200
+        client.put(endpoint+'/text-sources/vi', json={'filename': 'old.txt', 'text': 'tham chiếu cũ'})
+        client.put(endpoint+'/layout', json={'reading_direction': 1, 'source_regions': [[0,0,.5,.5]]})
+        before = client.get(f"/api/pages/{page['id']}").json()
         bundle(tmp_path)
         workspace = client.post('/api/sources/sync').json()
-        assert workspace['source_errors'] == [] and len(workspace['books']) == 1
-        assert workspace['pair_stats']['pairs'] == 1
-        updated = client.get(url+'/pages').json()
-        assert [page['id'] for page in pages] == [page['id'] for page in updated]
-        assert all(page['ocr_skip'] and page['source_text'] == '' for page in updated if page['number'] != 3)
-        assert imported_page(client, book)['ocr_granularity'] == 'phrase'
-        assert client.get(url+'/text-sources').json() == {}
-        assert client.get(url+'/layout').json()['source_regions'] == []
-        assert not checkpoint.exists()
-        assert not (output / 'Book_Y.csv').exists()
-        assert all(row['id'] != 'old' for row in client.get(url+'/alignments').json())
-        assert client.patch(f"/api/pages/{old_page['id']}", json={'source_text': 'stale'}).status_code == 409
-        assert client.put(url+'/alignments', json={'rows': old_rows}).status_code == 409
-        app.state.ocr_jobs._status('retired-job', 'completed')
-        app.state.ocr_jobs._page_status('retired-job', old_page['id'], 'succeeded')
-        assert client.get(url+'/ocr-job').json() is None
-        archive = client.get('/api/results/archive')
-        assert archive.status_code == 200, archive.text
-        with zipfile.ZipFile(io.BytesIO(archive.content)) as result:
-            csv = result.read('Book_Y/Book_Y.csv').decode('utf-8-sig')
-            assert 'cũ' not in csv and 'thiên địa' in csv
+        assert workspace['source_errors'] == []
+        rows = client.get(endpoint+'/alignments').json()
+        assert rows[0]['id'] == 'old' and rows[0]['reviewed'] and rows[0]['target'] == 'cũ'
+        assert len(rows) == 3
+        assert client.get(f"/api/pages/{page['id']}").json()['version'] == before['version']
+        assert client.get(endpoint+'/text-sources').json()['vi']['text'] == 'tham chiếu cũ'
+        assert client.get(endpoint+'/layout').json()['source_regions'] == [[0,0,.5,.5]]
 
 
-def test_reimport_is_idempotent_but_changed_book_replaces_every_prior_edit(tmp_path):
+def test_reimport_preserves_edits_and_adds_only_untouched_pages(tmp_path):
     path = bundle(tmp_path)
     with TestClient(create_app(tmp_path, ocr_config=KHNConfig())) as client:
         book, = client.get('/api/workspace').json()['books']
@@ -186,15 +161,15 @@ def test_reimport_is_idempotent_but_changed_book_replaces_every_prior_edit(tmp_p
         assert client.get(endpoint).json()[0]['target'] == 'đã sửa'
         bundle(tmp_path, page=4, records=[(0, '宇宙', 'vũ trụ', '11')])
         fresh = client.post('/api/sources/sync').json()['books'][0]
-        assert fresh['input_revision'] != book['input_revision']
-        assert [row['target'] for row in client.get(endpoint).json()] == ['thiên địa', 'huyền hoàng', 'vũ trụ']
-        assert client.put(endpoint, json={'rows': client.get(endpoint).json(), 'input_revision': book['input_revision']}).status_code == 409
-        path.unlink()  # The source snapshot is authoritative; deleted rows are not merged back from DB.
+        assert fresh['input_revision'] == book['input_revision']
+        assert [row['target'] for row in client.get(endpoint).json()] == ['đã sửa', 'huyền hoàng', 'vũ trụ']
+        assert client.put(endpoint, json={'rows': client.get(endpoint).json(), 'input_revision': 'obsolete-revision'}).status_code == 409
+        path.unlink()  # Removing a supplied file does not delete saved editing work.
         latest = client.post('/api/sources/sync').json()['books'][0]
-        assert latest['new_data_lines'] == 1
-        assert [row['target'] for row in client.get(endpoint).json()] == ['vũ trụ']
+        assert latest['new_data_lines'] == 3
+        assert [row['target'] for row in client.get(endpoint).json()] == ['đã sửa', 'huyền hoàng', 'vũ trụ']
     with TestClient(create_app(tmp_path, ocr_config=KHNConfig())) as restarted:
-        assert restarted.get('/api/workspace').json()['pair_stats']['pairs'] == 1
+        assert restarted.get('/api/workspace').json()['pair_stats']['saved_pairs'] == 3
 
 
 def test_incomplete_delivery_does_not_partly_replace_a_book(tmp_path):
@@ -229,7 +204,7 @@ def test_phrase_edits_synchronize_page_pairs_colors_and_xlsx(tmp_path):
         page = imported_page(client, book)
         assert page['source_text'].startswith('天地\n') and page['target_text'].startswith('bầu trời\n')
         assert page['boxes'][0]['transcription'] == page['export_boxes'][0]['transcription'] == '天地'
-        assert not (tmp_path / 'backend/data/output_alignment' / book['id'] / 'Book_Y.xlsx').exists()
+        assert (tmp_path / 'backend/data/output_alignment' / book['id'] / 'Book_Y.xlsx').exists()
         assert client.patch(f"/api/pages/{page['id']}", json={'target_text': 'trời đất\nhuyền hoàng', 'input_revision': book['input_revision']}).status_code == 200
         assert client.get(endpoint+'/alignments').json()[0]['target'] == 'trời đất'
 
@@ -256,7 +231,7 @@ def test_incomplete_pairs_are_not_counted_and_empty_target_keeps_its_row_positio
         page = imported_page(client, book)
         assert client.patch(f"/api/pages/{page['id']}", json={'target_text': 'thiên địa\nhuyền hoàng', 'input_revision': book['input_revision']}).status_code == 200
         assert client.get(f"/api/books/{book['id']}/alignments").json()[0]['target'] == 'thiên địa'
-        assert client.get('/api/workspace').json()['pair_stats']['pairs'] == 1
+        assert client.get('/api/workspace').json()['pair_stats']['pairs'] == 0
 
 
 @pytest.mark.parametrize('value,expected', [(1,'01'), (0,'00'), (11.0,'11'), ('01','01'), (None,'')])
@@ -272,7 +247,7 @@ def test_bad_correctness_or_out_of_range_pages_leave_mandatory_book_intact(tmp_p
         assert 'Correctness' in data['source_errors'][0]['message']
 
 
-def test_ocr_checkpoints_create_and_count_pairs_without_review(tmp_path):
+def test_ocr_checkpoints_save_pairs_but_count_only_reviewed_pairs(tmp_path):
     raw_book(tmp_path, count=1)
     app = create_app(tmp_path, ocr_config=KHNConfig())
     with TestClient(app) as client:
@@ -285,4 +260,4 @@ def test_ocr_checkpoints_create_and_count_pairs_without_review(tmp_path):
         app.state.store.save_ocr({**result, 'result_id': 'both', 'completed_languages': ['han','vi'],
                                  'vi_text_lines': ['thiên địa']}, {}, '2026-11-17T00:00:01+00:00')
         stats = client.get('/api/workspace').json()['pair_stats']
-        assert stats['pairs'] == 1 and stats['reviewed_pairs'] == 0
+        assert stats['pairs'] == 0 and stats['saved_pairs'] == 1 and stats['reviewed_pairs'] == 0

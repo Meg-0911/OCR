@@ -52,10 +52,10 @@ def test_export_removes_punctuation_and_lowercases_vietnamese_without_losing_col
     assert target_colors == ['match'] * 4 + [None] + ['mismatch'] * 3
 
 
-def test_export_preserves_quoc_ngu_whitespace_exactly():
+def test_export_normalizes_quoc_ngu_whitespace():
     value = '  THIÊN,   ĐỊA!\nNGƯỜI  '
     target, colors = export_text(value, 'target', ['match'] * len(value))
-    assert target == '  thiên   địa\nngười  '
+    assert target == 'thiên địa người'
     assert colors == [
         None if char.isspace() else 'match' for char in target
     ]

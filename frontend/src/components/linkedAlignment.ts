@@ -1,6 +1,6 @@
 import type { Alignment, Page } from '../types';
 
-export type Target = { text: string; pageId: string | null; lineIndex: number | null };
+export type Target = { text: string; pageId: string | null; lineIndex: number | null; refs?: Alignment['target_refs'] };
 export type Dragged = { rowId?: string; target: Target };
 
 export function linkedLines(text: string) {
@@ -37,6 +37,7 @@ export function reorderLinkedTargets(pageRows: Alignment[], item: Dragged, desti
     text: row.target,
     pageId: row.target_page_id || null,
     lineIndex: row.target_line_index ?? null,
+    refs: row.target_refs,
   }));
   const previous = item.rowId ? pageRows.findIndex((row) => row.id === item.rowId)
     : assignments.findIndex((target) => item.target.pageId != null && item.target.lineIndex != null &&
@@ -50,11 +51,12 @@ export function reorderLinkedTargets(pageRows: Alignment[], item: Dragged, desti
     text: pageRows[previous].target,
     pageId: pageRows[previous].target_page_id || null,
     lineIndex: pageRows[previous].target_line_index ?? null,
+    refs: pageRows[previous].target_refs,
   } : item.target;
   return pageRows.map((row, index) => {
     const target = assignments[index] || { text: '', pageId: null, lineIndex: null };
     if (row.target === target.text && row.target_page_id === target.pageId && row.target_line_index === target.lineIndex) return row;
     return { ...row, target: target.text, target_page_id: target.pageId,
-      target_line_index: target.lineIndex, reviewed: false, marks: [] };
+      target_line_index: target.lineIndex, target_refs: target.refs || [], marks: [] };
   });
 }

@@ -64,6 +64,7 @@ export type Book = {
   has_pdf?: boolean;
   input_revision?: string;
 };
+export type BoxReference = { box_id: string; start: number; end: number };
 export type Alignment = {
   alignment_version?: number;
   review_colors?: { source: ReviewKind[]; target: ReviewKind[] };
@@ -81,6 +82,8 @@ export type Alignment = {
   source_line_index?: number | null;
   target_page_id?: string | null;
   target_line_index?: number | null;
+  source_refs?: BoxReference[];
+  target_refs?: BoxReference[];
   marks?: ReviewMark[];
 };
 export type ReviewMark = {

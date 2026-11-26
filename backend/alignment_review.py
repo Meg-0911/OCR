@@ -25,23 +25,25 @@ def comparison_key(value: str) -> str:
 
 
 def export_text(value: str, side: str, colors: list | None = None):
-    """Clean an alignment field at export without changing saved OCR or review marks."""
+    """Remove numbers/punctuation while retaining a color for every surviving character."""
     output, painted = [], []
-    for char, color in zip(value, colors if colors is not None else [None] * len(value)):
-        if unicodedata.category(char).startswith('P'):
+    pending_space = False
+    for index, char in enumerate(value):
+        category = unicodedata.category(char)
+        if category[0] in ('P', 'N') or category in ('Cf', 'Cc') and char not in '\r\n\t':
             continue
         if char.isspace():
-            if side == 'target':
-                output.append(char)
-                painted.append(None)
+            pending_space = side == 'target' and bool(output)
             continue
+        if pending_space:
+            output.append(' ')
+            painted.append(None)
+            pending_space = False
+        color = colors[index] if colors is not None and index < len(colors) else None
         for lowered in (char.lower() if side == 'target' else char):
             output.append(lowered)
             painted.append(color)
-    text = ''.join(output)
-    if side == 'target':
-        text = '\n'.join(re.sub(r'^[\s\d]+|[\s\d]+$', '', line) for line in text.split('\n'))
-    return text, painted
+    return ''.join(output), painted
 
 
 def paint(text: str, marks: list[dict], side: str):

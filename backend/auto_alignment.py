@@ -72,8 +72,8 @@ def page_rows(source, pages, book_name, reference='', indexes=None):
                          for box in group if box['transcription'].strip()]
                         if source.get('ocr_granularity') == 'phrase' else lines(source['source_text'])) or [
             ''.join(box['transcription'] for box in group) for group in source_groups(source)]
-    targets = [(line, page['id'], index) for page in target_pages(source, pages, indexes)
-               for index, line in enumerate(lines(page['target_text']))]
+    targets = [(line.strip(), page['id'], index) for page in target_pages(source, pages, indexes)
+               for index, line in enumerate(page['target_text'].split('\n')) if line.strip()]
     if not targets and source['target_text']:
         targets = [(line, None, index) for index, line in enumerate(lines(source['target_text']))]
     if not targets and reference:

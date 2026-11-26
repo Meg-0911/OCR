@@ -1,10 +1,9 @@
-"""Replace results of mandatory PDF books with complete aligned input snapshots."""
+"""Seed OCR from supplied labels without replacing saved editing work."""
 import hashlib
 import io
 import json
 import math
 import re
-import shutil
 import threading
 import unicodedata
 from collections import defaultdict
@@ -184,15 +183,9 @@ class NewData:
                 with store.db() as db:
                     old = db.execute('SELECT fingerprint,revision FROM new_data_books WHERE book_id=?', (snapshot['book']['id'],)).fetchone()
                 if old and old['fingerprint'] == snapshot['fingerprint']:
-                    with store.lock:
-                        assets = self.materialize_images(snapshot, old['revision'])
-                        with store.db() as db:
-                            for number, path in assets.items():
-                                db.execute('UPDATE new_data_pages SET image_path=? WHERE page_id IN (SELECT id FROM pages WHERE book_id=? AND number=?)',
-                                           (path, snapshot['book']['id'], number))
                     continue
                 self.before_replace(snapshot['book']['id'])
-                self.replace(snapshot)
+                self.seed(snapshot)
             except Exception as error:
                 errors.append({'filename': books[name][0]['filename'], 'message': str(error)})
 
@@ -261,74 +254,68 @@ class NewData:
             assets[number] = destination.relative_to(store.root).as_posix()
         return assets
 
-    def clear_cache(self, book_id, page_ids):
-        store = self.store
-        targets = [store.book_dir(book_id), store.data / 'processed_images' / book_id,
-                   store.data / 'output_alignment' / book_id, store.local / 'ocr-images' / book_id,
-                   *[store.local / 'ocr' / page_id for page_id in page_ids]]
-        for target in targets:
-            resolved = target.resolve()
-            if not resolved.is_relative_to(store.data.resolve()) or resolved == store.data.resolve():
-                raise ValueError('Đường dẫn cache nằm ngoài thư mục dữ liệu của workspace.')
-            if target.is_dir():
-                shutil.rmtree(target)
-        # A previously generated combined ZIP must never survive a replacement.
-        (store.data / 'output_alignment' / 'tat-ca-ket-qua.zip').unlink(missing_ok=True)
-
-    def replace(self, snapshot):
+    def seed(self, snapshot):
+        """Initialize untouched pages only; source revisions never replace human work."""
         store, book = self.store, snapshot['book']
-        book_id, revision = book['id'], uuid4().hex
+        book_id = book['id']
         dump = lambda value: json.dumps(value, ensure_ascii=False)
         with store.lock:
-            assets = self.materialize_images(snapshot, revision)
+            existing_pages = store.pages(book_id)
+            existing_rows = store.alignment_rows(book_id)
+            used_numbers = {int(row['sentence_id'].rsplit('.', 2)[1]) for row in existing_rows}
             with store.db() as db:
-                old_pages = [dict(row) for row in db.execute('SELECT id,number,category,version FROM pages WHERE book_id=?', (book_id,))]
-                old_ids = [page['id'] for page in old_pages]
-                identities = {}
-                for page in sorted(old_pages, key=lambda page: page['category'] not in ('ch', 'both')):
-                    identities.setdefault(page['number'], page)
-                for table in ('new_data_rows', 'new_data_pages', 'reference_allocations', 'ocr_results'):
-                    db.execute(f'DELETE FROM {table} WHERE page_id IN (SELECT id FROM pages WHERE book_id=?)', (book_id,))
-                db.execute('DELETE FROM ocr_job_pages WHERE job_id IN (SELECT id FROM ocr_jobs WHERE book_id=?)', (book_id,))
-                db.execute('DELETE FROM page_links WHERE book_id=?', (book_id,))
-                for table in ('ocr_jobs', 'alignments', 'book_layouts', 'book_text_sources'):
-                    db.execute(f'DELETE FROM {table} WHERE book_id=?', (book_id,))
-                db.execute('DELETE FROM pages WHERE book_id=?', (book_id,))
-                for session in db.execute('SELECT key,value FROM ui_sessions').fetchall():
-                    value = json.loads(session['value'])
-                    if session['key'] == 'book:' + book_id or (isinstance(value, dict) and value.get('book_id') == book_id):
-                        db.execute('DELETE FROM ui_sessions WHERE key=?', (session['key'],))
-                alignments = []
-                for number, (width, height) in enumerate(snapshot['dimensions'], 1):
-                    previous = identities.get(number)
-                    page_id = previous['id'] if previous else uuid4().hex
-                    version = max((page['version'] for page in old_pages if page['number'] == number), default=-1) + 1
-                    page = snapshot['pages'].get(number)
-                    if not page:
-                        db.execute('''INSERT INTO pages (id,book_id,number,category,width,height,ocr_skip,ocr_languages,version)
-                            VALUES (?,?,?,'misc',?,?,1,'[]',?)''', (page_id, book_id, number, width, height, version))
-                        continue
-                    rows, boxes = [], []
+                previous = db.execute('SELECT revision FROM new_data_books WHERE book_id=?', (book_id,)).fetchone()
+                imported = {row['page_id'] for row in db.execute(
+                    'SELECT n.page_id FROM new_data_pages n JOIN pages p ON p.id=n.page_id WHERE p.book_id=?', (book_id,))}
+            revision = previous['revision'] if previous else uuid4().hex
+            candidates = {}
+            for number, incoming in snapshot['pages'].items():
+                pages = [page for page in existing_pages if page['number'] == number]
+                if number in used_numbers or any(page['id'] in imported or page['edited_fields'] or
+                        page['status'] == 'done' or page['boxes'] or page['vi_boxes'] or
+                        page['source_text'].strip() or page['target_text'].strip() for page in pages):
+                    continue
+                if len(pages) != 1:
+                    continue
+                candidates[number] = pages[0]
+            if not candidates:
+                return
+            staged = {**snapshot, 'pages': {number: snapshot['pages'][number] for number in candidates}}
+            assets = self.materialize_images(staged, revision)
+            rows = list(existing_rows)
+            with store.db() as db:
+                if previous is None:
+                    for page in existing_pages:
+                        if (page['number'] not in candidates and page['number'] not in used_numbers
+                                and page['version'] == 0 and page['category'] == 'both'
+                                and not page['edited_fields'] and not page['boxes'] and not page['vi_boxes']
+                                and not page['source_text'].strip() and not page['target_text'].strip()):
+                            db.execute("UPDATE pages SET category='misc',ocr_skip=1,ocr_languages='[]',version=version+1 WHERE id=?", (page['id'],))
+                for number, previous_page in candidates.items():
+                    page = snapshot['pages'][number]
+                    page_id = previous_page['id']
+                    local, boxes = [], []
                     for index, (record, points) in enumerate(zip(page['rows'], page['points'])):
                         row_id = uuid5(NAMESPACE_URL, f"{book_id}:{number}:{record['line']}").hex
-                        rows.append({'id': row_id, 'sentence_id': f"{book['name']}.{number:03d}.{record['line']+1}",
-                                     'source': record['source'], 'target': record['target'], 'reviewed': False,
-                                     'source_page_id': page_id, 'source_line_index': index, 'marks': []})
+                        row = {'id': row_id, 'sentence_id': f"{book['name']}.{number:03d}.{record['line']+1}",
+                               'source': record['source'], 'target': record['target'], 'reviewed': False,
+                               'source_page_id': page_id, 'source_line_index': index, 'marks': []}
+                        local.append(row)
                         if record['source']:
                             boxes.append(phrase_box(record, points, row_id, len(boxes)+1))
+                        db.execute('INSERT INTO new_data_rows VALUES (?,?,?,?)',
+                                   (page_id, record['patch_id'], row_id, dump(record)))
                     direction = 1 if sum(box['box_axis'] == 'vertical' for box in boxes) > len(boxes)/2 else 2
-                    db.execute('''INSERT INTO pages (id,book_id,number,category,width,height,boxes,export_boxes,
-                        source_text,target_text,target_origin,reading_direction,reading_direction_override,
-                        ocr_granularity,status,ocr_languages,version) VALUES (?,?,?,'ch',?,?,?,?,?,?,'new_data',?,?,'phrase','pending','["han"]',?)''',
-                        (page_id, book_id, number, page['width'], page['height'], dump(boxes), dump(boxes),
-                         '\n'.join(row['source'] for row in rows), '\n'.join(row['target'] for row in rows),
-                         direction, direction, version))
+                    db.execute("""UPDATE pages SET category='ch',width=?,height=?,boxes=?,export_boxes=?,
+                        source_text=?,target_text=?,target_origin='new_data',reading_direction=?,reading_direction_override=?,
+                        ocr_granularity='phrase',status='pending',ocr_skip=0,ocr_languages='["han"]',version=version+1 WHERE id=?""",
+                        (page['width'], page['height'], dump(boxes), dump(boxes),
+                         '\n'.join(row['source'] for row in local), '\n'.join(row['target'] for row in local),
+                         direction, direction, page_id))
                     db.execute('INSERT INTO new_data_pages VALUES (?,?,?)', (page_id, assets[number], snapshot['fingerprint']))
-                    for record, row in zip(page['rows'], rows):
-                        db.execute('INSERT INTO new_data_rows VALUES (?,?,?,?)', (page_id, record['patch_id'], row['id'], dump(record)))
-                    alignments.extend(rows)
-                db.execute('INSERT INTO alignments VALUES (?,?)', (book_id, dump(alignments)))
-                db.execute('INSERT INTO new_data_books VALUES (?,?,?) ON CONFLICT(book_id) DO UPDATE SET fingerprint=excluded.fingerprint,revision=excluded.revision',
+                    rows.extend(local)
+                db.execute('INSERT INTO alignments VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET rows=excluded.rows',
+                           (book_id, dump(rows)))
+                db.execute('INSERT INTO new_data_books VALUES (?,?,?) ON CONFLICT(book_id) DO UPDATE SET fingerprint=excluded.fingerprint',
                            (book_id, snapshot['fingerprint'], revision))
-            self.clear_cache(book_id, old_ids)
             store.sync_labels(book_id)

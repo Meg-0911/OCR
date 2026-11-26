@@ -203,7 +203,7 @@ def test_archive_rebuilds_results_and_does_not_ship_stale_exports(tmp_path):
         stale.write_text('old export', encoding='utf-8')
         assert client.get('/api/results/archive').status_code == 404
         for book, page, source, target in ((first, first_page, '天', 'trời'), (second, second_page, '地', 'đất')):
-            client.patch(f"/api/pages/{page['id']}", json={'category': 'ch', 'source_text': source, 'target_text': target})
+            client.patch(f"/api/pages/{page['id']}", json={'category': 'ch', 'ocr_granularity': 'phrase', 'boxes': [box('source', source, 100)], 'target_text': target})
             prepared = client.post(f"/api/books/{book['id']}/alignments/prepare")
             assert prepared.status_code == 200
             rows = [{**row, 'reviewed': True} for row in prepared.json()['rows']]
@@ -224,7 +224,7 @@ def test_archive_exports_complete_pairs_without_requiring_a_finished_book(tmp_pa
     with TestClient(create_app(tmp_path)) as client:
         book, page = upload(client, 'partial.pdf')
         other, other_page = upload(client, 'not-aligned.pdf')
-        client.patch(f"/api/pages/{page['id']}", json={'category': 'ch', 'source_text': '天\n地\n玄'})
+        client.patch(f"/api/pages/{page['id']}", json={'category': 'ch', 'ocr_granularity': 'phrase', 'boxes': [box('first', '天', 100)], 'source_text': '天\n地\n玄'})
         client.patch(f"/api/pages/{other_page['id']}", json={'category': 'ch', 'source_text': '宇'})
         rows = [
             {'id': 'complete', 'sentence_id': 'partial.001.1', 'source': '天', 'target': 'trời', 'reviewed': True},
@@ -234,15 +234,14 @@ def test_archive_exports_complete_pairs_without_requiring_a_finished_book(tmp_pa
         ]
         endpoint = f"/api/books/{book['id']}/alignments"
         assert client.put(endpoint, json={'rows': rows}).status_code == 200
+        assert client.post(endpoint+'/prepare').status_code == 200
         before = client.get(endpoint).json()
         # Individual full-book export keeps its existing validation.
         assert client.get(f"/api/books/{book['id']}/export?format=csv").status_code == 400
         response = client.get('/api/results/archive')
         assert response.status_code == 200, response.text
         with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
-            manifest = json.loads(archive.read('manifest.json'))
-            assert manifest['books'] == [{'book_id': book['id'], 'book': 'partial',
-                                          'exported_pairs': 1, 'skipped_pairs': 3}]
+            assert 'manifest.json' not in archive.namelist()
             text = archive.read('partial/partial.csv').decode('utf-8-sig')
             assert 'partial.001.1' in text
             assert 'partial.001.2' not in text and 'partial.001.3' not in text

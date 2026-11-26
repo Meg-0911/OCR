@@ -1,4 +1,3 @@
-import csv
 import json
 import math
 import os
@@ -18,8 +17,6 @@ import pymupdf
 from fastapi import BackgroundTasks, FastAPI, HTTPException, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
 from starlette.background import BackgroundTask
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill
 from pydantic import BaseModel, Field, field_validator, model_validator, model_serializer
 
 from .store import CATEGORIES, Store, box_text_lines, source_box_text_lines, label_groups, label_boxes
@@ -27,7 +24,7 @@ from .ocr import KHNConfig, KimHanNomOCR, OCRError, normalize_result
 from .han_ocr import HanFallbackConfig, PPOCRv5, HanOCRWithFallback
 from .sources import source_files
 from .dictionary import Dictionary
-from .alignment_review import export_text, paint, rich_text
+from .alignment_review import export_text
 from .ocr_jobs import OCRJobs
 
 
@@ -39,6 +36,10 @@ from .han_layout import jpeg_bytes
 from .region_ocr import crop_selection
 from .auto_alignment import index_pages, page_rows as automatic_page_rows, boxes_for_rows
 from .new_data import NewData
+from .alignment_links import attach_refs, ref_text
+from .alignment_output import prepared_rows, write_alignment
+from .export_labels import select_label_pages
+from .alignment_merge import merge_rows
 
 
 Category = Literal['ch', 'vi', 'both', 'intro', 'ref', 'toc', 'blank', 'misc']
@@ -331,6 +332,18 @@ class ReviewMark(BaseModel):
     kind: Literal['match', 'mismatch', 'unknown']
 
 
+class BoxReference(BaseModel):
+    box_id: str = Field(min_length=1, max_length=100)
+    start: int = Field(ge=0)
+    end: int = Field(gt=0)
+
+    @model_validator(mode='after')
+    def valid_range(self):
+        if self.end <= self.start:
+            raise ValueError('Phạm vi chữ trong box không hợp lệ.')
+        return self
+
+
 class AlignmentInput(BaseModel):
     alignment_version: int | None = None
     id: str = Field(min_length=1, max_length=100)
@@ -343,6 +356,8 @@ class AlignmentInput(BaseModel):
     source_line_index: int | None = Field(default=None,ge=0)
     target_page_id: str | None = None
     target_line_index: int | None = Field(default=None,ge=0)
+    source_refs: list[BoxReference] = Field(default_factory=list, max_length=5000)
+    target_refs: list[BoxReference] = Field(default_factory=list, max_length=5000)
     marks: list[ReviewMark] = Field(default_factory=list, max_length=1000)
 
     @model_validator(mode='after')
@@ -358,6 +373,7 @@ class AlignmentsInput(BaseModel):
     alignment_version: int | None = None
     rows: list[AlignmentInput] = Field(max_length=50000)
     input_revision: str | None = None
+    base_rows: list[AlignmentInput] | None = Field(default=None, max_length=50000)
 
 
 def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None, ocr_transport=None, vi_provider=None, han_fallback_provider=None):
@@ -772,7 +788,6 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 old = store.book_dir(page['book_id']) / page['category'] / f"{require_book(page['book_id'])['name']}.{page['number']:03d}.jpg"
                 old.unlink(missing_ok=True)
             store.propagate_placeholder_edits(page['book_id'],page['number'],page['source_text'],source_text)
-            store.invalidate_box_reviews(page, boxes)
             deleted = store.sync_deleted_source_boxes(page, require_page(page_id))
             store.sync_alignment_page_text(page,source_text if deleted else page['source_text'],page['target_text'],source_text,target_text)
             store.prepare_label_checkpoint(page['book_id'])
@@ -780,7 +795,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             return require_page(page_id)
 
     @app.patch('/api/pages/{page_id}')
-    def patch_page(page_id: str,data: PagePatch):
+    def patch_page(page_id: str,data: PagePatch, background_tasks: BackgroundTasks):
         # Field-level autosave permits editing one language while the other finishes OCR.
         with store.lock:
             page=require_page(page_id)
@@ -835,8 +850,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             if 'ocr_skip' in changes:
                 changes['ocr_skip']=int(changes['ocr_skip'])
             invalidates_review = any(key in changes for key in (
-                'source_text','target_text','boxes','vi_boxes','category','reading_direction',
-                'ocr_skip','ocr_languages','ocr_granularity','source_regions','target_regions','reading_direction_override',
+                'category','ocr_skip','ocr_languages','source_regions','target_regions',
             ))
             try:
                 with store.db() as db:
@@ -848,13 +862,14 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 store.propagate_placeholder_edits(page['book_id'],page['number'],page['source_text'],changes['source_text'])
             if data.boxes is not None:
                 current = require_page(page_id)
-                store.invalidate_box_reviews(page, current['boxes'])
                 deleted = store.sync_deleted_source_boxes(page, current)
             else:
                 deleted = False
             store.sync_alignment_page_text(page,changes.get('source_text',page['source_text']) if deleted else page['source_text'],page['target_text'],
                                            changes.get('source_text',page['source_text']),
                                            changes.get('target_text',page['target_text']))
+            store.prepare_label_checkpoint(page['book_id'])
+            background_tasks.add_task(store.sync_labels, page['book_id'], checkpoint=False)
             return require_page(page_id)
 
     @app.get('/api/books/{book_id}/session')
@@ -896,7 +911,6 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             except sqlite3.IntegrityError:
                 raise HTTPException(409,'Trang bị trùng trong nhóm; giữ bản ngôn ngữ chính trước khi đổi nhãn.') from None
             store.sync_labels(book_id)
-            store.sync_results(book_id,'save_page_plan')
         return store.pages(book_id)
 
     @app.put('/api/pages/{page_id}/links')
@@ -1222,9 +1236,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     def normalized_source(value):
                         return re.sub(r'\s+', '', value or '')
 
-                    # Preserve existing pair IDs and targets, but re-anchor them to
-                    # current OCR groups. Exact text matches handle inserted boxes;
-                    # the previous line index handles a corrected/replaced phrase.
+                    # Re-anchor by matching text; a legacy index alone cannot
+                    # distinguish corrected text from an inserted/reordered line.
                     unmatched = []
                     for row in (source_pairs if fresh else []):
                         expected = normalized_source(row['source'])
@@ -1243,18 +1256,10 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                         else:
                             unmatched.append(row)
 
-                    for row in unmatched:
-                        old_index = row.get('source_line_index')
-                        if not isinstance(old_index, int) or not 0 <= old_index < len(fresh) or old_index in used_indexes:
-                            continue
-                        current = fresh[old_index]
-                        row['source_line_index'] = old_index
-                        row['source_page_id'] = page['id']
-                        if row['source'] != current['source'] and not row.get('reviewed') and not row.get('marks'):
-                            row['source'] = current['source']
-                            row['reviewed'] = False
-                            row['marks'] = []
-                        used_indexes.add(old_index)
+                    if unmatched:
+                        # Preserve manual pairs and defer additions until the
+                        # ambiguous page has been linked explicitly.
+                        used_indexes.update(range(len(fresh)))
 
                     existing_sentence_ids = {row['sentence_id'] for row in rows}
                     next_sentence_number = max(
@@ -1361,7 +1366,6 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                                (book_id, json.dumps(rows, ensure_ascii=False)))
             if created or boxes_created or boxes_removed or boxes_renumbered or deleted or reconciled:
                 store.sync_labels(book_id)
-                store.sync_results(book_id, 'prepare_alignments')
         return {'rows': store.describe_alignments(book_id, rows), 'created': created, 'boxes_created': boxes_created,
                 'boxes_removed': boxes_removed, 'boxes_renumbered': boxes_renumbered}
 
@@ -1400,19 +1404,47 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 raise HTTPException(409, 'Dữ liệu sách đã thay đổi. Tải lại trước khi lưu căn chỉnh.')
             versions = {row.alignment_version for row in data.rows if row.alignment_version is not None}
             expected = data.alignment_version if data.alignment_version is not None else next(iter(versions), None)
-            if len(versions) > 1 or (expected is not None and expected != current['alignment_version']):
-                raise HTTPException(409, 'Các cụm đã thay đổi ở màn hình khác. Tải lại trước khi lưu để tránh ghi đè chữ/màu mới.')
             previous = store.alignment_rows(book_id)
+            if len(versions) > 1:
+                raise HTTPException(409, 'Các cặp không cùng phiên bản lưu.')
+            if expected is not None and expected != current['alignment_version']:
+                if data.base_rows is None:
+                    raise HTTPException(409, 'Các cụm đã thay đổi ở màn hình khác. Tải lại trước khi lưu để tránh ghi đè chữ/màu mới.')
+            if data.base_rows is not None:
+                normalize = lambda items: [AlignmentInput.model_validate(row).model_dump(exclude_none=True, exclude={'alignment_version'}) for row in items]
+                try:
+                    rows = merge_rows(normalize(data.base_rows), rows, normalize(previous))
+                except ValueError as error:
+                    raise HTTPException(409, str(error)) from error
+            book_pages = store.pages(book_id)
+            pages_by_id = {page['id']: page for page in book_pages}
+            previous = attach_refs(previous, book_pages)
             old_rows = {row['id']: row for row in previous}
+            supplied_fields = {row.id: row.model_fields_set for row in data.rows}
+            if len({row['id'] for row in rows}) != len(rows) or len({row['sentence_id'] for row in rows}) != len(rows):
+                raise HTTPException(409, 'Hai phiên đã tạo cặp với cùng ID. Giữ nguyên bản đã lưu để đối chiếu.')
             for row in rows:
                 old = old_rows.get(row['id'])
-                if old and old.get('reviewed') and any(row.get(key) != old.get(key) for key in ('source', 'target', 'marks')):
-                    row['reviewed'] = False
+                if old:
+                    for side in ('source', 'target'):
+                        if (side + '_refs' not in supplied_fields.get(row['id'], set()) and not row.get(side + '_refs') and
+                                row.get(side + '_page_id') == old.get(side + '_page_id') and
+                                row.get(side + '_line_index') == old.get(side + '_line_index')):
+                            row[side + '_refs'] = old.get(side + '_refs', [])
+                for side, boxes_key in (('source', 'boxes'), ('target', 'vi_boxes')):
+                    refs = row.get(side + '_refs', [])
+                    if not refs:
+                        continue
+                    if (old and refs == old.get(side + '_refs')
+                            and row.get(side + '_page_id') == old.get(side + '_page_id')):
+                        continue
+                    page = pages_by_id.get(row.get(side + '_page_id'))
+                    if not page or ref_text(refs, page[boxes_key]) != row[side]:
+                        raise HTTPException(422, f"{row['sentence_id']}: liên kết {side} không khớp nội dung và ID box.")
             with store.db() as db:
                 db.execute('INSERT INTO alignments VALUES (?,?) ON CONFLICT(book_id) DO UPDATE SET rows=excluded.rows',(book_id,json.dumps(rows,ensure_ascii=False)))
             store.sync_alignment_edits(book_id, previous, rows)
             store.sync_labels(book_id)
-            store.sync_results(book_id,'save_alignments')
             return store.describe_alignments(book_id)
 
     def download_response(path):
@@ -1443,26 +1475,10 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 selected = [row for row in get_alignments(book_id) if row.get('reviewed')
                             and not row.get('duplicate_of') and row['review_state'] != 'excluded'
                             and all(export_text(row[side], side)[0].strip() for side in ('source', 'target'))]
-                selected_ids = {row['id'] for row in selected}
-                filtered = []
-                for page in pages:
-                    sources = [row for row in selected if row.get('source_page_id') == page['id'] or (
-                        not row.get('source_page_id') and int(row['sentence_id'].rsplit('.', 2)[1]) == page['number'])]
-                    targets = [row for row in selected if row.get('target_page_id') == page['id'] or (
-                        not row.get('target_page_id') and row in sources)]
-                    if not sources and not targets:
-                        continue
-                    source_texts = {re.sub(r'\s+', '', row['source']) for row in sources}
-                    target_texts = {export_text(row['target'], 'target')[0].strip() for row in targets
-                                    if row.get('target_line_index') is None}
-                    target_indexes = {row.get('target_line_index') for row in targets if row.get('target_line_index') is not None}
-                    source_boxes = [box for box in page['export_boxes'] if box.get('alignment_id') in selected_ids or (
-                        not box.get('alignment_id') and re.sub(r'\s+', '', box['transcription']) in source_texts)]
-                    vi_boxes = [box for index, box in enumerate(label_boxes(page, 'vi'))
-                                if index in target_indexes or export_text(box['transcription'], 'target')[0].strip() in target_texts]
-                    filtered.append({**page, 'export_boxes': source_boxes, 'vi_boxes': vi_boxes,
-                                     'boxes': vi_boxes if page['category'] == 'vi' else source_boxes})
-                pages = filtered
+                try:
+                    pages = select_label_pages(pages, selected)
+                except ValueError as error:
+                    raise HTTPException(422, str(error)) from error
             if book['input_revision'] and not complete_only:
                 assigned = {box.get('alignment_id') for page in pages for box in page['export_boxes']}
                 missing = [row for row in get_alignments(book_id) if not row.get('duplicate_of')
@@ -1472,8 +1488,9 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
             path = folder / f"{book['name']}_{format}.zip"
             temporary = path.with_suffix('.zip.tmp')
             with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
+                archive.write(raw_folder / book['filename'], f"{book['name']}/{book['filename']}")
                 for category in CATEGORIES:
-                    if category == 'both':
+                    if category == 'both' or (category == 'vi' and not any(page['vi_boxes'] for page in pages)):
                         continue
                     archive.writestr(f"{book['name']}/{category}/", b'')
                     if category not in ('blank','misc','both'):
@@ -1482,11 +1499,11 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                             if reviewed_only:
                                 entries = []
                                 for page in pages:
-                                    if category not in label_groups(page):
+                                    if category not in label_groups(page) or (category == 'vi' and not page['vi_boxes']):
                                         continue
                                     image_name = f"{category}/{book['name']}.{page['number']:03d}.jpg"
                                     if name == 'fileState.txt':
-                                        entries.append(image_name + '\t1')
+                                        entries.append(image_name + '\t' + str(int(page.get('export_complete', False))))
                                     else:
                                         side = 'target' if category == 'vi' else 'source'
                                         boxes = [{'transcription': export_text(box['transcription'], side)[0], 'points': box['points']}
@@ -1499,6 +1516,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     original=rendered_image(page)
                     image_name=f"{book['name']}.{page['number']:03d}.jpg"
                     for category in label_groups(page):
+                        if category == 'vi' and not page['vi_boxes']:
+                            continue
                         archive.write(original,f"{book['name']}/{category}/{image_name}")
             os.replace(temporary,path)
         else:
@@ -1511,131 +1530,76 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                 raise HTTPException(400,'Chưa có cặp căn chỉnh. Hãy tạo và lưu các cặp trước khi xuất.')
             if any(not row['source'].strip() or not row['target'].strip() for row in rows):
                 raise HTTPException(400,'Còn cặp căn chỉnh thiếu một vế. Hãy sửa hoặc gộp cặp trước khi xuất.')
-            box_colors = store.source_box_colors(book_id, rows)
-            prepared = []
-            prepared_rows = []
-            for row in rows:
-                marks = row.get('marks', [])
-                source_colors = paint(row['source'], marks, 'source')
-                target_colors = paint(row['target'], marks, 'target')
-                source_marked = [False] * len(source_colors)
-                target_marked = [False] * len(target_colors)
-                for mark in marks:
-                    source_marked[mark['source_start']:mark['source_end']] = [True] * (
-                        mark['source_end'] - mark['source_start']
-                    )
-                    target_marked[mark['target_start']:mark['target_end']] = [True] * (
-                        mark['target_end'] - mark['target_start']
-                    )
-                for index, kind in enumerate(box_colors.get(row['id'], {}).get('source', [])):
-                    if kind is not None and not source_marked[index]:
-                        source_colors[index] = kind
-                for index, kind in enumerate(box_colors.get(row['id'], {}).get('target', [])):
-                    if kind is not None and not target_marked[index]:
-                        target_colors[index] = kind
-                source, source_colors = export_text(row['source'], 'source', source_colors)
-                target, target_colors = export_text(row['target'], 'target', target_colors)
-                if not source or not target:
-                    if complete_only:
-                        continue
-                    raise HTTPException(400, f"Cặp {row['sentence_id']} không còn văn bản sau khi bỏ dấu câu. Hãy sửa cặp trước khi xuất.")
-                prepared.append((source, source_colors, target, target_colors))
-                prepared_rows.append(row)
+            prepared = prepared_rows(rows)
             if not prepared:
-                raise HTTPException(400, 'Chưa có cặp đủ hai vế để xuất.')
-            values = [[row['sentence_id'].rsplit('.',1)[0]+'.jpg', row['sentence_id'], source, target]
-                      for row, (source, _, target, _) in zip(prepared_rows, prepared)]
+                raise HTTPException(400, 'Chưa có cặp đủ hai vế sau khi làm sạch để xuất.')
+            if not complete_only and len(prepared) != len(rows):
+                raise HTTPException(400, 'Có cặp không còn nội dung sau khi làm sạch. Kiểm tra trước khi xuất.')
             path = folder / f"{book['name']}.{format}"
-            if format == 'csv':
-                with path.open('w',encoding='utf-8-sig',newline='') as output:
-                    writer = csv.writer(output)
-                    writer.writerow(EXPORT_COLUMNS)
-                    writer.writerows(values)
-            else:
-                workbook = Workbook()
-                sheet = workbook.active
-                sheet.title = 'Alignment'
-                sheet.append(EXPORT_COLUMNS)
-                for cell in sheet[1]:
-                    cell.font = Font(bold=True,color='FFFFFF')
-                    cell.fill = PatternFill('solid',fgColor='234D42')
-                for values_row, (source, source_colors, target, target_colors) in zip(values, prepared):
-                    sheet.append(values_row)
-                    for cell in sheet[sheet.max_row]:
-                        # Export source text verbatim, never execute spreadsheet formulas.
-                        cell.data_type = 's'
-                    sheet[f'C{sheet.max_row}'].value = rich_text(source, source_colors)
-                    sheet[f'D{sheet.max_row}'].value = rich_text(target, target_colors)
-                for column,width in zip('ABCD',(45,48,65,85)):
-                    sheet.column_dimensions[column].width = width
-                sheet.freeze_panes = 'A2'
-                workbook.save(path)
+            if not reviewed_only:
+                folder = folder / 'working'
+                folder.mkdir(exist_ok=True)
+                path = folder / path.name
+            write_alignment(path, prepared)
         return path
 
     @app.get('/api/results/archive')
     def all_results_archive():
-        """Download only confirmed, complete pairs and their OCR labels."""
+        """Package immutable book snapshots; compression does not hold the editor lock."""
         candidates = [book for book in store.books() if not store.book(book['id'])['demo']]
         if not candidates:
-            raise HTTPException(404, 'Ch\u01b0a c\u00f3 s\u00e1ch \u0111\u1ec3 t\u1ea3i k\u1ebft qu\u1ea3.')
+            raise HTTPException(404, 'Chưa có sách để tải kết quả.')
         output = store.data / 'output_alignment'
-        path = output / 'tat-ca-ket-qua.zip'
-        temporary = output / 'tat-ca-ket-qua.zip.tmp'
-        with store.lock:
+        staging = store.local / 'downloads' / uuid4().hex
+        staging.mkdir(parents=True)
+        try:
             books = []
-            manifest = []
-            for book in candidates:
-                book_id = book['id']
-                store.sync_results(book_id)
-                for format in ('csv', 'xlsx'):
-                    try:
-                        build_export(book_id, format, complete_only=True, reviewed_only=True)
-                    except HTTPException as error:
-                        if error.status_code != 400:
-                            raise
-                        break
-                else:
+            with store.lock:
+                for book in candidates:
+                    book_id = book['id']
+                    rows = get_alignments(book_id)
+                    if not prepared_rows(rows, reviewed_only=True):
+                        continue
                     build_export(book_id, 'labels', complete_only=True, reviewed_only=True)
                     books.append(book)
-                    saved_rows = [row for row in get_alignments(book_id)
-                                  if not row.get('duplicate_of') and row['review_state'] != 'excluded']
-                    with (output / book_id / f"{book['name']}.csv").open(encoding='utf-8-sig', newline='') as stream:
-                        exported = sum(1 for _ in csv.reader(stream)) - 1
-                    manifest.append({'book_id': book_id, 'book': book['name'],
-                                     'exported_pairs': exported, 'skipped_pairs': len(saved_rows)-exported})
+                    destination = staging / book_id
+                    destination.mkdir()
+                    for name in (f"{book['name']}.csv", f"{book['name']}.xlsx", f"{book['name']}_labels.zip"):
+                        source = output / book_id / name
+                        try:
+                            os.link(source, destination / name)
+                        except OSError:
+                            shutil.copyfile(source, destination / name)
             if not books:
-                raise HTTPException(404, 'Chưa có cặp đã xác nhận và đủ hai vế để tải. Hãy xác nhận ít nhất một cặp trước.')
-            with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
-                archive.writestr('manifest.json', json.dumps({'books': manifest}, ensure_ascii=False, indent=2))
+                raise HTTPException(404, 'Chưa có cặp đã xác nhận và đủ hai vế để tải.')
+            path = staging / 'tat-ca-ket-qua.zip'
+            with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
                 for book in books:
-                    folder = output / book['id']
-                    labels_path = folder / f"{book['name']}_labels.zip"
-                    with zipfile.ZipFile(labels_path) as labels:
-                        for label_info in labels.infolist():
-                            parts = label_info.filename.split('/', 1)
-                            if len(parts) < 2 or not parts[1]:
-                                continue
-                            destination = f"{book['name']}/{parts[1]}"
-                            if label_info.is_dir():
-                                archive.writestr(destination, b'')
-                                continue
-                            with labels.open(label_info) as source, archive.open(destination, 'w') as target:
-                                shutil.copyfileobj(source, target)
-                    for format in ('csv', 'xlsx'):
-                        result = folder / f"{book['name']}.{format}"
+                    folder = staging / book['id']
+                    with zipfile.ZipFile(folder / f"{book['name']}_labels.zip") as labels:
+                        for info in labels.infolist():
+                            if info.is_dir():
+                                archive.writestr(info.filename, b'')
+                            else:
+                                with labels.open(info) as source, archive.open(info.filename, 'w') as target:
+                                    shutil.copyfileobj(source, target)
+                    for extension in ('csv', 'xlsx'):
+                        result = folder / f"{book['name']}.{extension}"
                         archive.write(result, f"{book['name']}/{result.name}")
-            os.replace(temporary, path)
-            response = download_response(path)
-        return response
+            # The download owns a separate snapshot even if another editor saves now.
+            return download_response(path)
+        finally:
+            if staging.resolve().is_relative_to((store.local / 'downloads').resolve()):
+                shutil.rmtree(staging)
 
     @app.get('/api/books/{book_id}/results/{filename}')
-    def result_file(book_id: str,filename: Literal['summary.json','pages.json','alignments.json','pairs.csv','events.jsonl']):
+    def result_file(book_id: str,filename: Literal['summary.json','pages.json','alignments.json','pairs.csv']):
         with store.lock:
             require_book(book_id)
             store.sync_results(book_id)
             path=store.data/'output_alignment'/book_id/filename
             if not path.is_file():
-                raise HTTPException(404,'Chưa có sự kiện để tải.')
+                raise HTTPException(404,'Chưa có tệp kết quả để tải.')
             return download_response(path)
 
     @app.get('/', include_in_schema=False)

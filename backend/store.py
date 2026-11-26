@@ -6,8 +6,10 @@ import sqlite3
 import threading
 import unicodedata
 from .alignment_review import comparison_key, export_text, score_boxes, source_glyph, paint
+from .alignment_links import attach_refs, ref_text, replace_ranges, advance_refs
+from .alignment_output import prepared_rows, write_alignment
+from .file_io import replace_file
 import csv
-import time
 from difflib import SequenceMatcher
 from datetime import datetime, timezone
 from contextlib import contextmanager
@@ -27,18 +29,6 @@ def alignment_word_count(text, field):
     if field == 'source':
         return sum(source_glyph(char) for char in text)
     return sum(bool(re.search(r'\w', word, re.UNICODE)) for word in text.split())
-
-
-def replace_file(temporary,target):
-    # Windows readers/antivirus can briefly hold a newly written snapshot open.
-    for attempt in range(6):
-        try:
-            os.replace(temporary,target)
-            return
-        except PermissionError:
-            if os.name!='nt' or attempt==5:
-                raise
-            time.sleep(.02*2**attempt)
 
 
 def character_box_groups(boxes, reading_direction):
@@ -387,6 +377,7 @@ class Store:
         if not rows:
             return []
         pages = self.pages(book_id, include_export_boxes=False)
+        rows = attach_refs(rows, pages)
         base = self.source_box_colors(book_id, rows, pages=pages)
         eligible_ids = {page['id'] for page in pages if not page['ocr_skip'] and page['category'] not in ('blank','misc') and 'han' in page['ocr_languages']}
         eligible_numbers = {page['number'] for page in pages if page['id'] in eligible_ids}
@@ -401,7 +392,7 @@ class Store:
                 colors[side] = [kind or 'match' for kind in values] if len(values) == len(row[side]) else ['match'] * len(row[side])
                 for mark in row.get('marks', []):
                     colors[side][mark[f'{side}_start']:mark[f'{side}_end']] = [mark['kind']] * (mark[f'{side}_end']-mark[f'{side}_start'])
-            complete = all(comparison_key(row[side]).strip() for side in ('source', 'target'))
+            complete = all(export_text(row[side], side)[0] for side in ('source', 'target'))
             eligible = (row['source_page_id'] in eligible_ids if row.get('source_page_id') else int(row['sentence_id'].rsplit('.',2)[1]) in eligible_numbers)
             errors = '□' in row['source'] or any(kind in ('mismatch', 'unknown') for values in colors.values() for kind in values)
             counted = bool(eligible and complete and row.get('reviewed'))
@@ -434,7 +425,7 @@ class Store:
             if row.get('review_state') == 'excluded':
                 excluded += 1
                 continue
-            source, target = comparison_key(row['source']).replace(' ', ''), comparison_key(row['target'])
+            source, target = export_text(row['source'], 'source')[0], export_text(row['target'], 'target')[0]
             if not source or not target:
                 incomplete += 1
                 continue
@@ -560,6 +551,7 @@ class Store:
                             values.append(kind)
                 return values
             stream = glyph_reviews(page['boxes'])
+            boxes_by_id = {box['id']: box for box in page['boxes']}
             text = None
             cursor = 0
             for row in sorted(page_rows, key=lambda row: int(row['sentence_id'].rsplit('.', 1)[1])):
@@ -568,10 +560,22 @@ class Store:
                 if not assigned and isinstance(line, int) and line >= 0:
                     if groups is None:
                         groups = source_groups(page)
-                    if line < len(groups):
+                    if line < len(groups) and ''.join(box['transcription'] for box in groups[line]).strip() == row['source'].strip():
                         assigned = groups[line]
                 size = sum(source_glyph(char) for char in row['source'])
-                if assigned:
+                refs = row.get('source_refs', [])
+                if refs and ref_text(refs, page['boxes']) == row['source']:
+                    glyphs = []
+                    for ref in refs:
+                        box = boxes_by_id[ref['box_id']]
+                        for index in range(ref['start'], ref['end']):
+                            if source_glyph(box['transcription'][index]):
+                                kind = box.get('review_kind') or 'match'
+                                for mark in box.get('review_marks', []):
+                                    if mark['start'] <= index < mark['end']:
+                                        kind = mark['kind']
+                                glyphs.append(kind)
+                elif assigned:
                     glyphs = glyph_reviews(assigned)
                 elif row.get('source_page_id'):
                     if text is None:
@@ -748,34 +752,6 @@ class Store:
             db.execute('INSERT INTO ui_sessions VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
                        (key,json.dumps(value,ensure_ascii=False)))
 
-    def invalidate_box_reviews(self, page, boxes):
-        def signature(box):
-            kinds = []
-            for index, _ in enumerate(box['transcription']):
-                kind = box.get('review_kind') or 'match'
-                for mark in box.get('review_marks', []):
-                    if mark['start'] <= index < mark['end']:
-                        kind = mark['kind']
-                kinds.append(kind)
-            return box['transcription'], kinds
-        previous = {box['id']: box for box in page['boxes']}
-        changed = [box for box in boxes if box['id'] not in previous or signature(box) != signature(previous[box['id']])]
-        removed = set(previous) - {box['id'] for box in boxes}
-        if not changed and not removed:
-            return
-        assigned = {box.get('alignment_id') for box in changed}
-        assigned.update(previous[box_id].get('alignment_id') for box_id in removed)
-        prefix = f"{self.book(page['book_id'])['name']}.{page['number']:03d}."
-        rows = self.alignment_rows(page['book_id'])
-        for row in rows:
-            if (removed and not changed and row.get('source_page_id') != page['id']
-                    and row.get('source_line_index') is None and row['id'] not in assigned):
-                continue
-            if row['sentence_id'].startswith(prefix) and (None in assigned or row['id'] in assigned):
-                row['reviewed'] = False
-        with self.db() as db:
-            db.execute('UPDATE alignments SET rows=? WHERE book_id=?', (json.dumps(rows, ensure_ascii=False), page['book_id']))
-
     def save_ocr_alignment_changes(self, page, rows, removed, replacements):
         """Keep derived sentence boxes attached to the OCR groups that survived."""
         exports = []
@@ -844,7 +820,7 @@ class Store:
                 row['source_line_index'] = next_index
                 changed = True
             if len(members) != len(assigned):
-                row.update(source=''.join(box['transcription'] for box in members), reviewed=False, marks=[])
+                row.update(source=''.join(box['transcription'] for box in members), marks=[])
                 replacements[row['id']] = (row['source'], members)
                 changed = True
         if changed:
@@ -913,8 +889,10 @@ class Store:
                 box = exports.get(row['id'])
                 if not box or row['id'] in anchored:
                     continue
-                if not row['source'].strip() and row['source_line_index'] >= len(groups):
+                if not row['source'].strip() and not row['target'].strip() and row['source_line_index'] >= len(groups):
                     removed.add(row['id'])
+                    continue
+                if row.get('reviewed') or row.get('source_refs'):
                     continue
                 if page['target_origin'] == 'new_data':
                     removed.add(row['id'])
@@ -1069,7 +1047,6 @@ class Store:
                 if ''.join(source)!=row['source']:
                     row['source']=''.join(source)
                     row['marks']=[]
-                    row['reviewed']=False
             if changed:
                 db.execute('UPDATE alignments SET rows=? WHERE book_id=?',(json.dumps(rows,ensure_ascii=False),book_id))
 
@@ -1080,9 +1057,7 @@ class Store:
         book = self.book(page['book_id'])
         prefix = f"{book['name']}.{page['number']:03d}."
         def lines(text):
-            if page.get('target_origin') == 'new_data':
-                return [line.strip() for line in text.split('\n')]
-            return [line.strip() for line in text.splitlines() if line.strip()]
+            return [line.strip() for line in text.split('\n')]
         changes = (
             ('source', 'source_page_id', 'source_line_index', lines(old_source), lines(new_source), old_source != new_source),
             ('target', 'target_page_id', 'target_line_index', lines(old_target), lines(new_target), old_target != new_target),
@@ -1100,11 +1075,16 @@ class Store:
         imported = page.get('target_origin') == 'new_data'
         previous_boxes = {box.get('alignment_id'): box for box in page.get('boxes', [])} if imported else {}
         current_boxes = {box.get('alignment_id'): box for box in self.page(page['id'])['boxes']} if imported and old_source != new_source else {}
+        current_page = None
+        if page.get('boxes') is not None and not imported:
+            current_page = self.page(page['id'])
         with self.db() as db:
             saved = db.execute('SELECT rows FROM alignments WHERE book_id=?', (page['book_id'],)).fetchone()
             if not saved:
                 return False
             rows = json.loads(saved['rows'])
+            if current_page:
+                rows = attach_refs(rows, [page])
             local_indices = {row['id']: index for index, row in enumerate(
                 row for row in rows if row['sentence_id'].startswith(prefix))} if imported else {}
             changed = False
@@ -1117,6 +1097,31 @@ class Store:
                         continue
                     if not explicit_page and not row['sentence_id'].startswith(prefix):
                         continue
+                    refs = row.get(field + '_refs', [])
+                    if refs and current_page:
+                        boxes_key = 'boxes' if field == 'source' else 'vi_boxes'
+                        before = page[boxes_key]
+                        after = current_page[boxes_key]
+                        indexed = {box['id']: box for box in after}
+                        offsets = {}
+                        for box in before:
+                            if box['id'] not in indexed:
+                                continue
+                            offsets[box['id']] = [(start, end, indexed[box['id']]['transcription'][new_start:new_end])
+                                for operation, start, end, new_start, new_end in SequenceMatcher(
+                                    None, box['transcription'], indexed[box['id']]['transcription'], autojunk=False).get_opcodes()
+                                if operation != 'equal']
+                        advanced = advance_refs(refs, offsets)
+                        replacement = ref_text(advanced, after) if advanced else None
+                        if ref_text(refs, before) == row[field] and replacement is not None:
+                            if row[field] != replacement:
+                                row[field] = replacement
+                                row['marks'] = []
+                                changed = True
+                            if advanced != refs:
+                                row[field + '_refs'] = advanced
+                                changed = True
+                        continue
                     index = row.get(index_key)
                     if imported:
                         index = local_indices.get(row['id'])
@@ -1127,7 +1132,6 @@ class Store:
                                 row['source'] = current_box['transcription']
                                 if previous_box['transcription'] != current_box['transcription']:
                                     row['marks'] = []
-                                    row['reviewed'] = False
                                     changed = True
                                 continue
                     if index is None:
@@ -1148,7 +1152,6 @@ class Store:
                         continue
                     row[field] = replacement
                     row['marks'] = []
-                    row['reviewed'] = False
                     changed = True
             if changed:
                 db.execute('UPDATE alignments SET rows=? WHERE book_id=?',
@@ -1165,9 +1168,6 @@ class Store:
             book = self.book(book_id)
             if not book['input_revision']:
                 return
-            active = {item['row_id'] for item in db.execute('SELECT r.row_id FROM new_data_rows r JOIN pages p ON p.id=r.page_id WHERE p.book_id=?', (book_id,))}
-            active_keys = {self.pair_identity(book_id, row): row['id'] for row in rows if row['id'] in active}
-            rows = [row for row in rows if self.pair_identity(book_id, row) not in active_keys or active_keys[self.pair_identity(book_id,row)] == row['id']]
             for raw in db.execute("SELECT * FROM pages WHERE book_id=? AND target_origin='new_data'", (book_id,)).fetchall():
                 prefix = f"{book['name']}.{raw['number']:03d}."
                 page_rows = [row for row in rows if row['sentence_id'].startswith(prefix)]
@@ -1179,18 +1179,21 @@ class Store:
                     if not previous:
                         continue  # A manually split/new row still needs real geometry.
                     box = dict(previous)
-                    if box['transcription'] != row['source']:
+                    refs = row.get('source_refs', [])
+                    partial = bool(refs and ref_text(refs, [previous]) == row['source'] and
+                                   row['source'] != previous['transcription'])
+                    if box['transcription'] != row['source'] and not partial:
                         box.update(transcription=row['source'], review_kind='unknown', review_marks=[])
                     if row.get('marks'):
                         box['review_marks'] = [{'start': mark['source_start'], 'end': mark['source_end'], 'kind': mark['kind']}
                                                for mark in row['marks']]
                     box.update(review_order=len(boxes)+1, export_order=len(boxes)+1)
                     boxes.append(box)
-                    exported = {**old_exports.get(row['id'], box), 'transcription': row['source'],
+                    exported = {**old_exports.get(row['id'], box), 'transcription': box['transcription'] if partial else row['source'],
                                 'export_order': len(exports)+1,
                                 'review_kind': box.get('review_kind', 'match'), 'review_marks': box.get('review_marks', [])}
                     exports.append(exported)
-                changes = {'source_text': '\n'.join(row['source'] for row in page_rows),
+                changes = {'source_text': '\n'.join(box['transcription'] for box in boxes) if any(row.get('source_refs') for row in page_rows) else '\n'.join(row['source'] for row in page_rows),
                            'target_text': '\n'.join(row['target'] for row in page_rows),
                            'boxes': json.dumps(boxes, ensure_ascii=False),
                            'export_boxes': json.dumps(exports, ensure_ascii=False)}
@@ -1200,89 +1203,55 @@ class Store:
                     if boxes != json.loads(raw['boxes']):
                         modified.add('boxes')
                     if modified:
-                        changes.update(status='pending', edited_fields=json.dumps(sorted(edited | modified)))
+                        changes.update(edited_fields=json.dumps(sorted(edited | modified)))
                     db.execute('UPDATE pages SET '+','.join(key+'=?' for key in changes)+',version=version+1 WHERE id=?',
                                (*changes.values(), raw['id']))
                     folder = self.data / 'output_alignment' / book_id
-                    for name in (f"{book['name']}.csv", f"{book['name']}.xlsx", f"{book['name']}_labels.zip"):
+                    for name in (f"{book['name']}_labels.zip",):
                         (folder / name).unlink(missing_ok=True)
                     (self.data / 'output_alignment' / 'tat-ca-ket-qua.zip').unlink(missing_ok=True)
 
     def sync_alignment_edits(self, book_id, previous, rows):
-        """Apply explicit sentence edits to the saved OCR text, preserving real geometry."""
-        if self.book(book_id)['input_revision']:
-            return  # Imported phrase pages use the same alignment IDs in sync_new_data_edits.
-        from .auto_alignment import source_groups
+        """Update only OCR ranges whose identity and old text both match."""
+        pages = self.pages(book_id)
+        previous = attach_refs(previous, pages)
         old = {row['id']: row for row in previous}
-        for page in self.pages(book_id):
-            if page['ocr_skip'] or 'han' not in page['ocr_languages']:
-                continue
-            prefix = f"{self.book(book_id)['name']}.{page['number']:03d}."
-            local = [row for row in rows if row['sentence_id'].startswith(prefix)]
-            before = [row for row in previous if row['sentence_id'].startswith(prefix)]
-            groups = source_groups(page)
-            changed_source = ''.join(row['source'] for row in local) != ''.join(row['source'] for row in before)
-            changed = False
-            for row in local:
-                original = old.get(row['id'])
-                if not original:
+        for page in pages:
+            updates = {}
+            for side, boxes_key, text_key in (('source', 'boxes', 'source_text'), ('target', 'vi_boxes', 'target_text')):
+                edits = []
+                for row in rows:
+                    original = old.get(row['id'])
+                    if not original or original[side] == row[side]:
+                        continue
+                    if original.get(side + '_page_id') != page['id']:
+                        continue
+                    if row.get(side + '_page_id') != original.get(side + '_page_id'):
+                        continue
+                    refs = original.get(side + '_refs', [])
+                    # Split/merged/reassigned pairs describe ranges, not an OCR replacement.
+                    if row.get(side + '_refs', []) != refs:
+                        continue
+                    if row.get(side + '_line_index') != original.get(side + '_line_index'):
+                        continue
+                    edits.append((refs, original[side], row[side]))
+                boxes, offsets = replace_ranges(page[boxes_key], edits)
+                if not offsets:
                     continue
-                index = original.get('source_line_index')
-                if changed_source and original['source'] != row['source']:
-                    candidates = [groups[index]] if isinstance(index, int) and index < len(groups) else [
-                        group for group in groups if ''.join(box['transcription'] for box in group) == original['source']]
-                    if len(candidates) == 1:
-                        group = candidates[0]
-                        value = ''.join(box['transcription'] for box in group)
-                        if value == original['source']:
-                            replacement = row['source']
-                            if len(group) == len(replacement) and all(len(box['transcription']) == 1 for box in group):
-                                for box, char in zip(group, replacement):
-                                    if box['transcription'] != char:
-                                        box.update(transcription=char, review_kind='unknown', review_marks=[])
-                            elif len(group) == 1:
-                                group[0].update(transcription=replacement, review_kind='unknown', review_marks=[])
-                            else:
-                                x0 = min(point[0] for box in group for point in box['points'])
-                                y0 = min(point[1] for box in group for point in box['points'])
-                                x1 = max(point[0] for box in group for point in box['points'])
-                                y1 = max(point[1] for box in group for point in box['points'])
-                                group[:] = [{**group[0], 'transcription': replacement, 'review_kind': 'unknown', 'review_marks': [],
-                                             'points': [[x0,y0],[x1,y0],[x1,y1],[x0,y1]]}]
-                            changed = True
-                if original['target'] != row['target']:
-                    if (original.get('target_page_id'), original.get('target_line_index')) != (
-                            row.get('target_page_id'), row.get('target_line_index')):
-                        continue  # Moving a translation changes the pair, not the OCR on its old page.
-                    target_id = original.get('target_page_id') or page['id']
-                    target_page = self.page(target_id)
-                    target_index = original.get('target_line_index')
-                    lines = target_page['target_text'].split('\n')
-                    if target_index is None:
-                        matches = [i for i, line in enumerate(lines) if line == original['target']]
-                        target_index = matches[0] if len(matches) == 1 else None
-                    if target_index is not None and target_index < len(lines):
-                        lines[target_index] = row['target']
-                        vi_boxes = target_page['vi_boxes']
-                        if target_index < len(vi_boxes):
-                            vi_boxes[target_index] = {**vi_boxes[target_index], 'transcription': row['target']}
-                        with self.db() as db:
-                            db.execute("UPDATE pages SET target_text=?,vi_boxes=?,status='pending',edited_fields=?,version=version+1 WHERE id=?",
-                                       ('\n'.join(lines), json.dumps(vi_boxes, ensure_ascii=False),
-                                        json.dumps(sorted(set(target_page['edited_fields']) | {'target_text'})), target_id))
-            if changed:
-                boxes = [box for group in groups for box in group]
-                for index, box in enumerate(boxes, 1):
-                    box['review_order'] = index
-                granularity = 'phrase' if any(len(box['transcription']) != 1 for box in boxes) else page['ocr_granularity']
+                updates[boxes_key] = json.dumps(boxes, ensure_ascii=False)
+                updates[text_key] = '\n'.join(source_box_text_lines(boxes, page['reading_direction'],
+                    (page['width'], page['height']), page['ocr_granularity']) if side == 'source' else
+                    box_text_lines(boxes, 2, 'vi', (page['width'], page['height'])))
+                for row in rows:
+                    if row.get(side + '_page_id') == page['id'] and row.get(side + '_refs'):
+                        row[side + '_refs'] = advance_refs(row[side + '_refs'], offsets)
+            if updates:
+                updates['edited_fields'] = json.dumps(sorted(set(page['edited_fields']) | set(updates)))
                 with self.db() as db:
-                    db.execute("UPDATE pages SET boxes=?,source_text=?,ocr_granularity=?,status='pending',edited_fields=?,version=version+1 WHERE id=?",
-                               (json.dumps(boxes, ensure_ascii=False), '\n'.join(''.join(box['transcription'] for box in group) for group in groups),
-                                granularity, json.dumps(sorted(set(page['edited_fields']) | {'source_text', 'boxes'})), page['id']))
-            elif not before and local and not page['source_text'].strip():
-                with self.db() as db:
-                    db.execute("UPDATE pages SET source_text=?,target_text=?,status='pending',edited_fields='[\"source_text\",\"target_text\"]',version=version+1 WHERE id=?",
-                               ('\n'.join(row['source'] for row in local), '\n'.join(row['target'] for row in local), page['id']))
+                    db.execute('UPDATE pages SET '+','.join(key+'=?' for key in updates)+',version=version+1 WHERE id=?',
+                               (*updates.values(), page['id']))
+        with self.db() as db:
+            db.execute('UPDATE alignments SET rows=? WHERE book_id=?', (json.dumps(rows, ensure_ascii=False), book_id))
 
     def reconcile_alignment_ocr(self, book_id):
         """Repair older pairs left at the original OCR after a saved box correction."""
@@ -1329,7 +1298,7 @@ class Store:
         return changed
 
     def sync_results(self,book_id,event=None, *, checkpoint=True):
-        """Recoverable result snapshots and a small operational audit, separate from OCR history."""
+        """Write recoverable working snapshots and the current confirmed output."""
         with self.lock:
             if checkpoint:
                 self.sync_new_data_edits(book_id)
@@ -1374,9 +1343,19 @@ class Store:
                                   for r in described if not r.get('duplicate_of') and r['review_state'] != 'excluded'])
             replace_file(tmp,csv_path)
             write_json(self.data/'output_alignment'/'summary.json',{'updated_at':now,**self.pair_stats()})
-            if event:
-                with (folder/'events.jsonl').open('a',encoding='utf-8') as stream:
-                    stream.write(json.dumps({'time':now,'event':event,'pairs':statistics['pairs'],'reviewed_pages':summary['reviewed_pages']},ensure_ascii=False)+'\n')
+            prepared = prepared_rows(described, reviewed_only=True)
+            signature = [(row['id'], row['sentence_id'], source, sc, target, tc)
+                         for row, source, sc, target, tc in prepared]
+            if not hasattr(self, '_output_signatures'):
+                self._output_signatures = {}
+            if self._output_signatures.get(book_id) != signature or any(
+                    not (folder / f"{book['name']}.{extension}").exists() for extension in ('csv', 'xlsx')):
+                for extension in ('csv', 'xlsx'):
+                    write_alignment(folder / f"{book['name']}.{extension}", prepared)
+                self._output_signatures[book_id] = signature
+            # ZIPs are assembled on demand from this saved revision, never served from an old cache.
+            (folder / f"{book['name']}_labels.zip").unlink(missing_ok=True)
+            (self.data / 'output_alignment' / 'tat-ca-ket-qua.zip').unlink(missing_ok=True)
 
     def prepare_label_checkpoint(self, book_id):
         """Finish checkpoint updates before returning a page version to an editor."""

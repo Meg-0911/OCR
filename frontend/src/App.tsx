@@ -1,3 +1,4 @@
+import { referencesForPart } from './components/alignmentReferences';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDownToLine,
@@ -226,7 +227,8 @@ export default function App() {
   const inputRevision = activeBook?.input_revision || '';
   const inputRevisions = useRef(new Map<string, string>());
   const alignmentVersions = useRef(new Map<string, number>());
-  const alignmentCommits = useRef(new Map<string, { base: number | undefined; version: number }>());
+  const alignmentBases = useRef(new Map<string, Alignment[]>());
+  const alignmentCommits = useRef(new Map<string, { base: number | undefined; version: number; snapshot: Alignment[] }>());
   const alignmentEpochs = useRef(new Map<string, number>());
   const alignmentSourcePage =
     alignmentPages.find((item) => item.id === alignmentPage) ||
@@ -368,20 +370,12 @@ export default function App() {
       const revision = inputRevisions.current.get(id);
       const next = await api.pages(id, view === 'alignment');
       if (currentBookRef.current !== id || inputRevisions.current.get(id) !== revision) return;
-      const current = pagesRef.current;
-      const changed =
-        next.length !== current.length ||
-        next.some((page) => {
-          const previous = current.find((item) => item.id === page.id);
-          return !previous || page.version > previous.version;
-        });
       setPages((previous) =>
         next.map((p) => {
           const old = previous.find((q) => q.id === p.id);
           return old && old.version > p.version ? old : p;
         }),
       );
-      if (changed) void loadWorkspace();
     } catch (error) {
       fail(error);
     } finally {
@@ -698,6 +692,7 @@ export default function App() {
         if (currentBookRef.current === updated.book_id && !rowsDirtyRef.current &&
           inputRevisions.current.get(updated.book_id) === (updated.input_revision || '')) {
           if (freshRows[0]?.alignment_version != null) alignmentVersions.current.set(updated.book_id, freshRows[0].alignment_version);
+          alignmentBases.current.set(updated.book_id, freshRows);
           setRows(freshRows);
           rowsRef.current = freshRows;
         }
@@ -767,10 +762,12 @@ export default function App() {
     const nextBook = result.books.find((book) => book.id === currentBookRef.current);
     if (previousBook && nextBook && previousBook.input_revision === nextBook.input_revision &&
       (previousBook.content_version !== nextBook.content_version || previousBook.alignment_version !== nextBook.alignment_version)) {
-      void refreshBookPages();
-      if (view === 'alignment' && !rowsDirtyRef.current) void api.alignments(nextBook.id).then((fresh) => {
+      if (previousBook.content_version !== nextBook.content_version) void refreshBookPages();
+      if (view === 'alignment' && !rowsDirtyRef.current && alignmentBases.current.get(nextBook.id)?.[0]?.alignment_version !== nextBook.alignment_version) void api.alignments(nextBook.id).then((fresh) => {
         if (currentBookRef.current === nextBook.id && !rowsDirtyRef.current &&
-          inputRevisions.current.get(nextBook.id) === (nextBook.input_revision || '')) { setRows(fresh); rowsRef.current = fresh; }
+          inputRevisions.current.get(nextBook.id) === (nextBook.input_revision || '')) {
+          alignmentBases.current.set(nextBook.id, fresh); setRows(fresh); rowsRef.current = fresh;
+        }
       }).catch(fail);
     }
   }
@@ -941,6 +938,7 @@ export default function App() {
         setReference(referenceText);
         if (freshPages) setPages(freshPages);
         setRows(result);
+        alignmentBases.current.set(bookId, result);
         if (result[0]?.alignment_version != null) alignmentVersions.current.set(bookId, result[0].alignment_version);
         setRowsDirty(!!cached);
         if (cached) queueRows(bookId, cached);
@@ -954,6 +952,7 @@ export default function App() {
     };
   }, [bookId, view, loadingPages, inputRevision]);
   function persistRows(id: string, snapshot: Alignment[], revision = inputRevisions.current.get(id), version = snapshot[0]?.alignment_version ?? alignmentVersions.current.get(id)) {
+    const base = alignmentBases.current.get(id);
     const epoch = alignmentEpochs.current.get(id) || 0;
     const previous = alignmentSaves.current.get(id) || Promise.resolve([]);
     const task = previous.catch(() => []).then(async () => {
@@ -961,7 +960,10 @@ export default function App() {
       const commit = alignmentCommits.current.get(id);
       const expected = commit && commit.base === version ? commit.version : version;
       let saved: Alignment[];
-      try { saved = await api.saveAlignments(id, snapshot, revision, expected); }
+      // Queued typing continues from the submitted draft, which may predate
+      // independent edits merged into the server response.
+      const submittedBase = commit && commit.base === version ? commit.snapshot : base;
+      try { saved = await api.saveAlignments(id, snapshot, revision, expected, submittedBase); }
       catch (error) {
         if (error instanceof ApiError && error.status === 409) {
           alignmentEpochs.current.set(id, epoch + 1);
@@ -969,6 +971,7 @@ export default function App() {
           rememberConflict(id, 'alignments', currentBookRef.current === id ? rowsRef.current : snapshot);
           try { localStorage.removeItem(`nom-alignment-${id}`); } catch { /* Keep current server data. */ }
           const [fresh, freshPages] = await Promise.all([api.alignments(id), api.pages(id, true)]);
+          alignmentBases.current.set(id, fresh);
           if (currentBookRef.current === id) {
             setRows(fresh); rowsRef.current = fresh; setRowsDirty(false); rowsDirtyRef.current = false; setPages(freshPages);
           }
@@ -976,8 +979,9 @@ export default function App() {
         throw error;
       }
       const actual = saved[0]?.alignment_version ?? (expected || 0) + 1;
-      alignmentCommits.current.set(id, { base: version, version: actual });
+      alignmentCommits.current.set(id, { base: version, version: actual, snapshot });
       alignmentVersions.current.set(id, actual);
+      alignmentBases.current.set(id, saved);
       return saved;
     });
     alignmentSaves.current.set(id, task);
@@ -993,9 +997,6 @@ export default function App() {
         /* saved on server */
       }
       void loadWorkspace();
-      void api.pages(id, true).then((fresh) => {
-        if (currentBookRef.current === id && inputRevisions.current.get(id) === revision) setPages(fresh);
-      }).catch(fail);
     });
   }
   function queueRows(id: string, snapshot: Alignment[]) {
@@ -1143,6 +1144,7 @@ export default function App() {
   function changeRows(next: Alignment[]) {
     setRows(next);
     rowsRef.current = next;
+    rowsDirtyRef.current = true;
     setRowsDirty(true);
     queueRows(bookId, next);
     try {
@@ -1239,6 +1241,7 @@ export default function App() {
         clearTimeout(alignmentTimers.current.get(bookId));
         await persistRows(bookId, rowsRef.current);
       }
+      await Promise.all([...savingDrafts.current.values(), ...alignmentSaves.current.values()]);
       const response = await fetch(api.allResultsUrl);
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
@@ -1252,7 +1255,7 @@ export default function App() {
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10000);
-      notify('Đã tải kết quả của tất cả sách. Bản sao được lưu trong backend/data/output_alignment/.');
+      notify('Đã tải các cặp đã xác nhận cùng nhãn OCR và tài liệu nguồn.');
     } catch (error) {
       fail(error);
     } finally {
@@ -1810,7 +1813,9 @@ export default function App() {
                                                     ...row,
                                                     source: row.source + nextEntry.row.source,
                                                     target: row.target + ' ' + nextEntry.row.target,
-                                                    reviewed: false,
+                                                    reviewed: row.reviewed && nextEntry.row.reviewed,
+                                                    source_refs: [...(row.source_refs || []), ...(nextEntry.row.source_refs || [])],
+                                                    target_refs: [],
                                                     page_linked: !!row.page_linked || !!nextEntry.row.page_linked,
                                                     source_line_index: null,
                                                     target_page_id: null,
@@ -1843,7 +1848,8 @@ export default function App() {
                                                     ...item,
                                                     source: source[0],
                                                     target: target[0],
-                                                    reviewed: false,
+                                                    source_refs: referencesForPart(item.source_refs, item.source, source[0]),
+                                                    target_refs: referencesForPart(item.target_refs, item.target, target[0]),
                                                     page_linked: !!item.page_linked,
                                                     marks: [],
                                                   },
@@ -1851,6 +1857,8 @@ export default function App() {
                                                     ...item,
                                                     id: crypto.randomUUID(),
                                                     source_line_index: null,
+                                                    source_refs: referencesForPart(item.source_refs, item.source, source[1], true),
+                                                    target_refs: referencesForPart(item.target_refs, item.target, target[1], true),
                                                     sentence_id: prefix + sequence,
                                                     source: source[1],
                                                     target: target[1],

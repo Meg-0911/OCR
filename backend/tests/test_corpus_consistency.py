@@ -118,7 +118,7 @@ def test_unequal_sides_can_be_imported_saved_confirmed_and_exported(tmp_path, so
         assert client.get(endpoint+'/export?format=xlsx').status_code == 200
 
 
-def test_snapshot_keeps_page_and_phrase_ids_and_rejects_old_page_draft(tmp_path):
+def test_additional_source_pages_keep_existing_page_and_phrase_ids(tmp_path):
     bundle(tmp_path)
     with TestClient(create_app(tmp_path, ocr_config=KHNConfig())) as client:
         book, = client.get('/api/workspace').json()['books']
@@ -127,9 +127,9 @@ def test_snapshot_keeps_page_and_phrase_ids_and_rejects_old_page_draft(tmp_path)
         bundle(tmp_path, page=4, records=[(0, '宇宙', 'vũ trụ', '11')])
         updated = client.post('/api/sources/sync').json()['books'][0]
         current = imported_page(client, updated)
-        assert current['id'] == page['id'] and current['version'] > page['version']
+        assert current['id'] == page['id'] and current['version'] == page['version']
         assert [row['id'] for row in client.get(f"/api/books/{book['id']}/alignments").json()[:2]] == [row['id'] for row in rows]
-        assert client.patch(f"/api/pages/{page['id']}", json={'source_text': 'stale', 'input_revision': book['input_revision']}).status_code == 409
+        assert client.patch(f"/api/pages/{page['id']}", json={'source_text': 'stale', 'input_revision': 'obsolete-revision'}).status_code == 409
         assert client.get(current['image_url']).status_code == 200
 
 
@@ -204,7 +204,7 @@ def test_incomplete_delivery_cannot_change_active_image_or_text(tmp_path):
         assert imported_page(client, book)['source_text'] == page['source_text']
 
 
-def test_old_page_version_and_changed_review_flags_cannot_reuse_confirmation(tmp_path):
+def test_old_page_version_is_rejected_but_color_edits_preserve_confirmation(tmp_path):
     bundle(tmp_path)
     with TestClient(create_app(tmp_path, ocr_config=KHNConfig())) as client:
         book, = client.get('/api/workspace').json()['books']
@@ -222,11 +222,11 @@ def test_old_page_version_and_changed_review_flags_cannot_reuse_confirmation(tmp
             'version': page['version'], 'target_text': 'stale', 'input_revision': book['input_revision']})
         assert stale.status_code == 409
         rows = client.get(endpoint+'/alignments').json()
-        assert rows[0]['reviewed'] is False and rows[0]['countable'] is False
+        assert rows[0]['reviewed'] is True and rows[0]['countable'] is True
         assert rows[0]['review_colors']['source'] == ['mismatch', 'unknown']
 
 
-def test_editing_imported_pair_reopens_page_and_keeps_all_outputs_on_saved_text(tmp_path):
+def test_editing_imported_pair_preserves_completion_and_updates_outputs(tmp_path):
     bundle(tmp_path)
     with TestClient(create_app(tmp_path, ocr_config=KHNConfig())) as client:
         book, = client.get('/api/workspace').json()['books']
@@ -243,13 +243,13 @@ def test_editing_imported_pair_reopens_page_and_keeps_all_outputs_on_saved_text(
         rows[0].update(source='天地人', target='trời', reviewed=True)
         saved = save(client, book, rows)
         current = imported_page(client, book)
-        assert saved[0]['reviewed'] is False
-        assert current['status'] == 'pending' and current['review_state'] == 'in_progress'
+        assert saved[0]['reviewed'] is True
+        assert current['status'] == 'done' and current['review_state'] == 'done'
         assert current['boxes'][0]['transcription'] == '天地人'
         assert current['export_boxes'][0]['transcription'] == '天地人'
         assert current['source_text'] == '天地人\n玄黃' and current['target_text'] == 'trời\nhuyền hoàng'
         assert 'trời' in client.get(endpoint+'/export?format=csv').content.decode('utf-8-sig')
-        assert client.get('/api/workspace').json()['books'][0]['done'] == 0
+        assert client.get('/api/workspace').json()['books'][0]['done'] == 1
 
 
 def test_raw_pair_edits_update_ocr_boxes_and_survive_restart(tmp_path):

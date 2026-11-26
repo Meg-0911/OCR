@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Alignment, Page } from '../types';
-import { linkedLines, reorderLinkedTargets, type Dragged } from './linkedAlignment';
+import { reorderLinkedTargets, type Dragged } from './linkedAlignment';
 import ReviewText from './ReviewText';
 import { reviewColorsForAlignmentRows, withReviewMarks } from '../reviewColors';
 
@@ -20,8 +20,9 @@ export default function LinkedAlignmentWorkspace({ page, pages, bookName, rows, 
   const linkedPages = useMemo(() => [page, ...pages.filter((item) => page.linked_page_ids.includes(item.id))]
     .filter((item) => !item.ocr_skip).sort((a, b) => a.number - b.number), [page, pages]);
   const targets = useMemo(() => linkedPages.filter((item) => item.ocr_languages.includes('vi'))
-    .flatMap((item) => linkedLines(item.target_text || item.vi_boxes.map((box) => box.transcription).join('\n'))
-      .map((text, lineIndex) => ({ text, pageId: item.id, lineIndex }))), [linkedPages]);
+    .flatMap((item) => (item.target_text || item.vi_boxes.map((box) => box.transcription).join('\n')).split('\n')
+      .map((text, lineIndex) => ({ text: text.trim(), pageId: item.id, lineIndex }))
+      .filter((target) => target.text)), [linkedPages]);
   const prefix = `${bookName}.${String(page.number).padStart(3, '0')}.`;
   const pageRows = rows.filter((row) => row.sentence_id.startsWith(prefix));
   const sourceColors = reviewColorsForAlignmentRows(pageRows, page.boxes, 'source', page.reading_direction);

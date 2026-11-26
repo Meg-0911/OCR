@@ -153,8 +153,8 @@ export const api = {
   reverseSearchDictionary: (query: string) =>
     request<DictionaryReverseMatch[]>(`/dictionary/reverse?q=${encodeURIComponent(query)}`),
   alignments: (book: string) => request<Alignment[]>(`/books/${book}/alignments`),
-  saveAlignments: (book: string, rows: Alignment[], input_revision?: string, alignment_version?: number) =>
-    request<Alignment[]>(`/books/${book}/alignments`, json('PUT', { rows, input_revision, alignment_version })),
+  saveAlignments: (book: string, rows: Alignment[], input_revision?: string, alignment_version?: number, base_rows?: Alignment[]) =>
+    request<Alignment[]>(`/books/${book}/alignments`, json('PUT', { rows, input_revision, alignment_version, base_rows })),
   prepareAlignments: (book: string) =>
     request<{ rows: Alignment[]; created: number; boxes_created: number }>(
       `/books/${book}/alignments/prepare`, { method: 'POST' }),
@@ -163,6 +163,6 @@ export const api = {
     `/api/books/${book}/export?format=${format}`,
   resultUrl: (
     book: string,
-    file: 'summary.json' | 'pages.json' | 'alignments.json' | 'pairs.csv' | 'events.jsonl',
+    file: 'summary.json' | 'pages.json' | 'alignments.json' | 'pairs.csv',
   ) => `/api/books/${book}/results/${file}`,
 };

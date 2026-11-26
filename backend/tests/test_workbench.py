@@ -251,14 +251,14 @@ def test_csv_and_xlsx_exact_schema_and_unicode(annotated):
     csv_response=client.get(f"/api/books/{book['id']}/export?format=csv")
     exported=list(csv.reader(io.StringIO(csv_response.content.decode('utf-8-sig'))))
     assert exported[0]==EXPORT_COLUMNS
-    assert exported[1]==[f"{book['name']}.001.jpg",f"{book['name']}.001.1",'漢字𠊛','=1+1']
+    assert exported[1]==[f"{book['name']}.001.jpg",f"{book['name']}.001.1",'漢字𠊛','=+']
     assert len(exported)==len(rows)+1
     workbook=load_workbook(io.BytesIO(client.get(f"/api/books/{book['id']}/export?format=xlsx").content),rich_text=True)
     sheet=workbook.active
     assert [c.value for c in sheet[1]]==EXPORT_COLUMNS
     assert sheet['D2'].data_type=='s'
     assert str(sheet['C2'].value)=='漢字𠊛'
-    assert str(sheet['D2'].value)=='=1+1'
+    assert str(sheet['D2'].value)=='=+'
     assert sheet['C2'].value[0].font.color.rgb=='FF000000'
 
 
@@ -390,7 +390,7 @@ def test_exports_clean_both_scripts_and_keep_xlsx_colors_aligned(annotated):
     assert [block.font.color.rgb for block in sheet['C2'].value]==['FF000000','FFCC0000']
 
 
-def test_exports_preserve_leading_and_trailing_quoc_ngu_spaces(annotated):
+def test_exports_remove_excess_quoc_ngu_spaces(annotated):
     client,_,_,book,_=annotated
     target='  THIÊN,   ĐỊA!  '
     row={'id':'spaces','sentence_id':f"{book['name']}.001.1",'source':'天地','target':target,'reviewed':False}
@@ -398,13 +398,13 @@ def test_exports_preserve_leading_and_trailing_quoc_ngu_spaces(annotated):
     csv_rows=list(csv.reader(io.StringIO(
         client.get(f"/api/books/{book['id']}/export?format=csv").content.decode('utf-8-sig')
     )))
-    assert csv_rows[1][3]=='  thiên   địa  '
+    assert csv_rows[1][3]=='thiên địa'
     xlsx_bytes=client.get(f"/api/books/{book['id']}/export?format=xlsx").content
     xlsx=load_workbook(io.BytesIO(xlsx_bytes),rich_text=True)
-    assert str(xlsx.active['D2'].value)=='  thiên   địa  '
+    assert str(xlsx.active['D2'].value)=='thiên địa'
     with zipfile.ZipFile(io.BytesIO(xlsx_bytes)) as workbook:
         xml=workbook.read('xl/worksheets/sheet1.xml').decode('utf-8')
-        assert 'xml:space="preserve">  thiên   địa  </t>' in xml
+        assert '>thiên địa</t>' in xml
 
 
 def test_correcting_placeholder_updates_saved_pairs_after_split_and_merge(workspace):
@@ -419,7 +419,7 @@ def test_correcting_placeholder_updates_saved_pairs_after_split_and_merge(worksp
     page=client.patch(f"/api/pages/{page['id']}",json={'source_text':'地天□'}).json()
     saved=client.get(f"/api/books/{book['id']}/alignments").json()
     assert [row['source'] for row in saved]==['地天','□']
-    assert [row['reviewed'] for row in saved]==[False,True]
+    assert [row['reviewed'] for row in saved]==[True,True]
     merged=[{**saved[0],'source':'地天□','target':'AB'}]
     assert client.put(f"/api/books/{book['id']}/alignments",json={'rows':merged}).status_code==200
     client.patch(f"/api/pages/{page['id']}",json={'source_text':'地天玄'})
@@ -501,7 +501,7 @@ def test_correcting_vietnamese_boxes_updates_ocr_text_and_existing_pairs(workspa
     assert corrected['target_text']=='Huyền hoàng đã sửa'
     saved=client.get(f"/api/books/{book['id']}/alignments").json()
     assert [row['target'] for row in saved]==['Thiên địa đã sửa','Huyền hoàng đã sửa','Bản dịch viết tay']
-    assert [row['reviewed'] for row in saved]==[False,False,True]
+    assert [row['reviewed'] for row in saved]==[True,True,True]
     assert [row['id'] for row in saved]==['same-page','linked-page','manual']
     downloaded=client.get(f"/api/books/{book['id']}/results/pairs.csv").content.decode('utf-8-sig')
     assert all(row['target'].lower() in downloaded for row in saved)
@@ -525,7 +525,7 @@ def test_loading_pairs_repairs_older_ocr_text_after_saved_correction(workspace, 
     endpoint = f"/api/books/{book['id']}/alignments"
     saved = client.post(endpoint+'/prepare').json()['rows'] if prepare else client.get(endpoint).json()
     assert saved[0]['target']=='Thiên địa đã sửa'
-    assert saved[0]['reviewed'] is False
+    assert saved[0]['reviewed'] is True
 
 
 def test_reopening_store_repairs_stale_vietnamese_page_text(workspace):
@@ -548,7 +548,7 @@ def test_reopening_store_repairs_stale_vietnamese_page_text(workspace):
     assert saved['target_text']=='Thiên địa đã sửa'
     assert saved['version']==page['version']+1
     assert pair['target']=='Thiên địa đã sửa'
-    assert pair['reviewed'] is False
+    assert pair['reviewed'] is True
 
 
 def test_label_archive_and_alignment_validation(annotated):

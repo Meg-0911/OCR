@@ -178,7 +178,7 @@ def test_session_and_pair_result_files_are_updated_without_manual_export(tmp_pat
     summary=json.loads((folder/'summary.json').read_text(encoding='utf-8'))
     assert summary['pairs']==1 and summary['reviewed_pairs']==1
     assert len(list(csv.reader((folder/'pairs.csv').read_text(encoding='utf-8-sig').splitlines())))==2
-    assert 'save_alignments' in (folder/'events.jsonl').read_text(encoding='utf-8')
+    assert not (folder/'events.jsonl').exists()
     app.state.ocr_jobs.close()
     with TestClient(create_app(tmp_path)) as reopened:
         assert reopened.get('/api/workspace').json()['resume']['page_id']==page['id']
@@ -270,7 +270,7 @@ def test_language_tags_are_independent_of_special_page_category(tmp_path):
     app.state.ocr_jobs.close()
 
 
-def test_autosave_needs_confirmation_and_edits_invalidate_confirmation(tmp_path):
+def test_autosave_needs_initial_confirmation_and_edits_preserve_it(tmp_path):
     app,client,book,pages,_,_,_=workspace(tmp_path,count=2)
     url=f"/api/pages/{pages[0]['id']}"
     draft=client.patch(url,json={'source_text':'天地'}).json()
@@ -278,7 +278,7 @@ def test_autosave_needs_confirmation_and_edits_invalidate_confirmation(tmp_path)
     saved=client.put(url,json={'version':draft['version'],'category':'ch','source_text':'天地','boxes':[HAN_BOX],'ocr_granularity':'phrase','done':True}).json()
     assert saved['status']=='done'
     changed=client.patch(url,json={'source_text':'天地玄黃'}).json()
-    assert changed['status']=='pending'
+    assert changed['status']=='done'
     skipped=client.patch(f"/api/pages/{pages[1]['id']}",json={'ocr_skip':True}).json()
     confirmed=client.put(f"/api/pages/{skipped['id']}",json={'version':skipped['version'],'category':'both','done':True})
     assert confirmed.status_code==200 and confirmed.json()['status']=='done'

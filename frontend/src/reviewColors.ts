@@ -35,6 +35,22 @@ function reviewGroups(boxes: Box[], direction: 1 | 2) {
     ? ordered.map((box) => [box]) : groupCharacterBoxes(ordered, direction);
 }
 
+function referencedBoxes(row: Alignment, boxes: Box[]): Box[] {
+  if (!row.source_refs?.length) return [];
+  const result: Box[] = [];
+  for (const ref of row.source_refs) {
+    const box = boxes.find((item) => item.id === ref.box_id);
+    if (!box || ref.start < 0 || ref.end > Array.from(box.transcription).length) return [];
+    result.push({ ...box, transcription: Array.from(box.transcription).slice(ref.start, ref.end).join(''),
+      review_marks: (box.review_marks || []).flatMap((mark) => {
+        const start = Math.max(mark.start, ref.start) - ref.start;
+        const end = Math.min(mark.end, ref.end) - ref.start;
+        return start < end ? [{ ...mark, start, end }] : [];
+      }) });
+  }
+  return result.map((box) => box.transcription).join('') === row.source ? result : [];
+}
+
 export function targetGlyphReviews(text: string, boxes: Box[], direction: 1 | 2 = 2, rows?: Alignment[]) {
   let groups: Box[][] | undefined;
   if (rows?.length && rows.map((row) => row.target).join('\n') === text) {
@@ -46,10 +62,12 @@ export function targetGlyphReviews(text: string, boxes: Box[], direction: 1 | 2 
       else assignedBoxes.set(box.alignment_id, [box]);
     }
     return rows.flatMap((row) => {
-      let assigned = assignedBoxes.get(row.id) || [];
+      let assigned = referencedBoxes(row, boxes);
+      if (!assigned.length) assigned = assignedBoxes.get(row.id) || [];
       if (!assigned.length && row.source && row.source_line_index != null) {
         groups ??= reviewGroups(boxes, direction);
-        assigned = groups[row.source_line_index] || [];
+        const candidate = groups[row.source_line_index] || [];
+        if (candidate.map((box) => box.transcription).join('').trim() === row.source.trim()) assigned = candidate;
       }
       const glyphs = sourceGlyphReviews(assigned);
       return (row.target.match(/\S+/gu) || []).filter((word) => /[\p{L}\p{N}]/u.test(word)).map((_, index) => glyphs[index]);
@@ -153,10 +171,12 @@ export function reviewColorsForAlignmentRows(
   let offset = 0;
   for (const row of orderedRows) {
     const length = Array.from(row.source).length;
-    let assigned = assignedBoxes.get(row.id) || [];
+    let assigned = referencedBoxes(row, boxes);
+    if (!assigned.length) assigned = assignedBoxes.get(row.id) || [];
     if (!assigned.length && row.source_line_index != null) {
       groups ??= reviewGroups(boxes, direction);
-      assigned = groups[row.source_line_index] || [];
+      const candidate = groups[row.source_line_index] || [];
+      if (candidate.map((box) => box.transcription).join('').trim() === row.source.trim()) assigned = candidate;
     }
     let colors: ReviewKind[];
     if (assigned.length) colors = reviewColorsForText(row.source, assigned, 'source');
