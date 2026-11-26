@@ -1,0 +1,224 @@
+% Compile with XeLaTeX (Overleaf: Menu > Compiler > XeLaTeX).
+% Keep the assets folder next to this file.
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=19mm,top=17mm,bottom=18mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{texgyretermes}[Extension=.otf,UprightFont=*-regular,
+  BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+\setsansfont{texgyreheros}[Extension=.otf,UprightFont=*-regular,
+  BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+\usepackage{graphicx,tabularx,booktabs,array}
+\usepackage[table]{xcolor}
+\usepackage{enumitem,titlesec,caption,fancyhdr}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage[unicode,hidelinks]{hyperref}
+\hypersetup{pdftitle={Xây dựng dữ liệu song song Hán Nôm và Quốc ngữ},pdfauthor={}}
+\graphicspath{{assets/}}
+\definecolor{ink}{HTML}{244F68}
+\definecolor{pale}{HTML}{EDF3F6}
+\definecolor{rulegray}{HTML}{CCD5DA}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\linespread{1.08}
+\setlist[itemize]{leftmargin=15pt,itemsep=3pt,topsep=4pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=18pt,itemsep=4pt,topsep=4pt,parsep=0pt}
+\titleformat{\section}{\large\bfseries}{\thesection}{.65em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{.65em}{}
+\titlespacing*{\section}{0pt}{7pt}{7pt}
+\titlespacing*{\subsection}{0pt}{7pt}{3pt}
+\captionsetup{hypcap=false,font=small,labelfont=bf,skip=5pt}
+\renewcommand{\figurename}{Hình}
+\renewcommand{\tablename}{Bảng}
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\small\thepage}
+\setlength{\headheight}{14pt}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\stage}[2]{\textbf{#1}\par #2\par}
+\tikzset{processbox/.style={draw=ink,rounded corners=2pt,fill=pale,align=center,
+  text width=35mm,minimum height=12mm,font=\small,inner sep=5pt},
+  flow/.style={-{Stealth[length=2mm]},thick,draw=ink}}
+
+\begin{document}
+\begin{center}
+  {\Large\bfseries XÂY DỰNG DỮ LIỆU SONG SONG\\[3pt]
+  HÁN NÔM VÀ QUỐC NGỮ}
+\end{center}
+\vspace{-5pt}
+\section{Giới thiệu}
+\subsection{Mục tiêu và bài toán}
+Đồ án xây dựng bộ dữ liệu song song giữa văn bản Hán Nôm và phần phiên âm hoặc dịch Quốc ngữ tương ứng. Từ PDF và OCR có sẵn, quy trình kết hợp nhận dạng tự động với đối chiếu trên ảnh để tạo các cặp câu hoặc cụm có quan hệ nội dung.
+
+Ba yêu cầu chính là \textbf{đúng chữ}, \textbf{đúng cặp} và \textbf{truy vết được về ảnh nguồn}. Mỗi cặp cần giữ định danh, vị trí trang và liên kết vùng chữ để có thể kiểm tra lại sau khi chỉnh sửa. Việc dóng hàng dựa trên nội dung, không chỉ dựa vào số dòng hoặc độ dài hai vế.
+
+\subsection{Phạm vi dữ liệu}
+Phạm vi xử lý gồm bốn tài liệu dưới đây. Các ảnh trích cho thấy sự khác nhau giữa bản viết tay có phiên âm xen dòng và bản Nôm in theo cột.
+
+\begin{center}
+\begin{minipage}[t]{.48\linewidth}\centering
+  \includegraphics[height=48mm,width=\linewidth,keepaspectratio]{ca-dao.jpg}\\[-1pt]
+  {\small\textbf{CA dao digcoll\_14470\_Y}\\Ảnh nguồn số 005}
+\end{minipage}\hfill
+\begin{minipage}[t]{.48\linewidth}\centering
+  \includegraphics[height=48mm,width=\linewidth,keepaspectratio]{ngan-ngu.jpg}\\[-1pt]
+  {\small\textbf{Ca Dao Ngạn Ngư Phương Ngôn, Nôm\_Y}\\Ảnh nguồn số 006}
+\end{minipage}
+\par\vspace{8pt}
+\begin{minipage}[t]{.48\linewidth}\centering
+  \includegraphics[height=48mm,width=\linewidth,keepaspectratio]{tien-pha.jpg}\\[-1pt]
+  {\small\textbf{Tiên Phả Dịch Lục, Nôm, 2 volumes\_Y}\\Ảnh nguồn số 008}
+\end{minipage}\hfill
+\begin{minipage}[t]{.48\linewidth}\centering
+  \includegraphics[height=48mm,width=\linewidth,keepaspectratio]{truyen-kieu.png}\\[-1pt]
+  {\small\textbf{Truyện Kiều}\\Trang 110 theo thứ tự PDF}
+\end{minipage}
+\captionof{figure}{Ảnh trích từ bốn tài liệu thuộc phạm vi xử lý.}
+\end{center}
+
+\subsection{Kết quả mong đợi}
+Bộ dữ liệu được tổ chức theo sách, gồm PDF nguồn, ảnh trang, nhãn OCR và bảng căn chỉnh CSV/XLSX. Văn bản, tọa độ và định danh phải thống nhất giữa dữ liệu đã kiểm tra trên giao diện và tệp xuất. Sản phẩm hướng đến phục vụ tra cứu và nghiên cứu xử lý ngôn ngữ Hán Nôm.
+
+\newpage
+\section{Dữ liệu và công cụ sử dụng}
+\subsection{Nguồn và cấu trúc dữ liệu đầu vào}
+Dữ liệu được bàn giao qua \href{https://drive.google.com/drive/folders/1Pr7seLVvka4jzIsRtrgNLLtrS88EjP6M?usp=drive_link}{\underline{thư mục Google Drive của đề tài}}, gồm tài liệu ban đầu và phần cập nhật trong thư mục con. PDF là căn cứ xác định thứ tự trang; ảnh và nhãn có sẵn được dùng để tiếp tục hiệu chỉnh.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}p{30mm}YY@{}}
+\toprule
+\textbf{Dữ liệu} & \textbf{Thành phần chính} & \textbf{Mục đích}\\\midrule
+PDF và ảnh & Trang sách, ảnh JPG & Đối chiếu chữ và vị trí trên tài liệu.\\
+Nhãn OCR & \texttt{Label.txt}: văn bản và bốn điểm của box & Xác định vùng chữ và thứ tự nhận dạng.\\
+Bảng XLSX & \texttt{Patch ID}, \texttt{Label}, \texttt{Vietnamese}, \texttt{Correctness} & Liên kết dòng Nôm, Quốc ngữ và dấu kiểm tra.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\texttt{Patch ID} chỉ ra sách, trang và dòng. Trang tính từ 1 theo PDF; dòng tính từ 0 theo thứ tự box trong nhãn. Khi Quốc ngữ chỉ có văn bản, phần này dùng để căn chỉnh; hệ thống không suy diễn tọa độ từ chữ.
+
+\subsection{Minh họa dữ liệu vùng chữ}
+\begin{center}
+\includegraphics[width=.83\linewidth]{ocr-boxes.jpg}
+\captionof{figure}{Ba box dòng có sẵn trong \texttt{Label.txt} của Tiên Phả Dịch Lục, ảnh 008. Khung xanh được vẽ theo tọa độ nguồn; chữ Quốc ngữ đỏ là phần có trên ảnh.}
+\end{center}
+
+\subsection{Công cụ và mô hình}
+\begin{center}
+\renewcommand{\arraystretch}{1.16}
+\begin{tabularx}{\linewidth}{@{}p{52mm}Y@{}}
+\toprule
+\textbf{Công cụ hoặc mô hình} & \textbf{Vai trò}\\\midrule
+Python, FastAPI, SQLite & Xử lý dữ liệu, cung cấp API và lưu trạng thái làm việc.\\
+React, TypeScript & Xem ảnh, chỉnh box, đối chiếu và xác nhận cặp.\\
+PyMuPDF, Pillow, NumPy & Đọc PDF, dựng ảnh, cắt vùng và xử lý ảnh.\\
+Kim Hán Nôm; PP-OCRv5 & OCR Hán Nôm; PP-OCRv5 là phương án dự phòng khi được cấu hình.\\
+VietOCR, ONNX Runtime CPU & Nhận dạng Quốc ngữ theo vùng dòng.\\
+Unicode Unihan & Hỗ trợ tra âm đọc và thông tin chữ.\\
+openpyxl, mô-đun CSV & Đọc bảng nguồn; xuất bảng và màu đánh dấu XLSX.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+Các mô hình có sẵn cung cấp kết quả ban đầu. Người thực hiện vẫn kiểm tra chữ trên ảnh và quan hệ nội dung giữa hai vế; quy trình không bao gồm huấn luyện mô hình OCR mới.
+
+\newpage
+\section{Quy trình thực hiện}
+\subsection{Tổng quan}
+PDF chưa nhận dạng đi qua bước OCR; dữ liệu có OCR được nạp trực tiếp vào bước kiểm tra. Cả hai nhánh dùng chung quy trình hiệu chỉnh, dóng hàng và xuất dữ liệu.
+
+\begin{center}
+\begin{tikzpicture}[node distance=9mm and 18mm]
+  \node[processbox] (pdf) {PDF và ảnh\\chưa có OCR};
+  \node[processbox,right=of pdf] (ocr) {Nhận dạng\\theo ngôn ngữ};
+  \node[processbox,below=of pdf] (ready) {Ảnh và OCR\\có sẵn};
+  \node[processbox,below=of ocr] (edit) {Kiểm tra chữ\\và vùng box};
+  \node[processbox,right=of edit] (align) {Dóng hàng\\Nôm và Quốc ngữ};
+  \node[processbox,below=of align] (review) {Đối chiếu\\và xác nhận};
+  \node[processbox,left=of review] (save) {Lưu dữ liệu\\đã kiểm tra};
+  \node[processbox,left=of save] (export) {Chuẩn hóa\\và xuất tệp};
+  \draw[flow] (pdf)--(ocr);
+  \draw[flow] (ocr)--(edit);
+  \draw[flow] (ready)--(edit);
+  \draw[flow] (edit)--(align);
+  \draw[flow] (align)--(review);
+  \draw[flow] (review)--(save);
+  \draw[flow] (save)--(export);
+\end{tikzpicture}
+\captionof{figure}{Hai nhánh đầu vào hội tụ vào một quy trình xử lý.}
+\end{center}
+
+\subsection{Tiếp nhận và phân loại trang}
+\begin{enumerate}
+  \item \textbf{Kiểm tra phạm vi:} xác định đúng sách, trang và sự tương ứng giữa bản Nôm với phần Quốc ngữ.
+  \item \textbf{Tổ chức ảnh:} đặt tên theo mẫu \texttt{<Tên sách>.<số trang>.jpg}; số trang có ít nhất ba chữ số và giữ thứ tự của PDF.
+  \item \textbf{Phân loại:} đưa trang vào nhóm Hán Nôm, Quốc ngữ, giới thiệu, chú thích, mục lục, trang trắng hoặc phần còn lại.
+  \item \textbf{Xác định chiều đọc:} Nôm dọc đọc theo cột; Nôm ngang và Quốc ngữ theo dòng. Ảnh chụp hai trang xử lý trang trái trước, trang phải sau.
+\end{enumerate}
+
+\subsection{Nhận dạng và hiệu chỉnh}
+Với trang chưa có OCR, chọn ngôn ngữ và vùng cần nhận dạng rồi chạy công cụ tương ứng. Với dữ liệu có sẵn, kiểm tra \texttt{Patch ID} và tọa độ trước khi nạp. Đồng bộ nguồn giữ nội dung đã chỉnh sửa và chỉ bổ sung phần chưa có dữ liệu làm việc.
+
+\begin{itemize}
+  \item Đối chiếu ký tự, dấu tiếng Việt và ranh giới box với ảnh gốc.
+  \item Loại vùng ngoài nội dung cần xử lý như số trang hoặc chú thích không thuộc phần chính.
+  \item Kiểm tra thứ tự dòng; đánh dấu vị trí khó đọc để tiếp tục đối chiếu.
+\end{itemize}
+
+\subsection{Dóng hàng theo nội dung}
+Tạo gợi ý ghép từ thứ tự đọc và liên kết trang, sau đó kiểm tra từng cặp. Có thể tách hoặc gộp để biểu diễn quan hệ một--một, một--nhiều hoặc nhiều--một. Câu bị ngắt qua dòng hoặc trang cần được đọc trong ngữ cảnh trước khi xác định ranh giới; dấu câu chỉ là gợi ý.
+
+\newpage
+\subsection{Giữ liên kết giữa ảnh và cặp văn bản}
+Mỗi cặp có ID riêng và \texttt{sentence\_id} theo mẫu \texttt{<Tên sách>.<trang>.<câu>}. Khi sửa nội dung, định danh được giữ; khi tách cặp, phần mới nhận ID mới. Liên kết sử dụng ID box và phạm vi ký tự, kết hợp kiểm tra nội dung để tránh lệch cặp khi thứ tự dòng thay đổi.
+
+\begin{center}
+\begin{tikzpicture}[node distance=8mm and 15mm]
+  \node[processbox,text width=39mm] (image) {Ảnh trang nguồn};
+  \node[processbox,right=of image,text width=39mm] (box) {Box OCR\\ID và tọa độ};
+  \node[processbox,right=of box,text width=39mm] (pair) {Cặp văn bản\\ID và phạm vi chữ};
+  \draw[flow] (image)--(box);
+  \draw[flow] (box)--(pair);
+\end{tikzpicture}
+\captionof{figure}{Chuỗi liên kết giúp truy vết cặp văn bản về vùng ảnh.}
+\end{center}
+
+\subsection{Đối chiếu và xác nhận}
+Tra cứu từ điển hỗ trợ kiểm tra âm đọc và thông tin chữ. Màu trong XLSX biểu thị quan hệ đối chiếu: \textbf{đen} cho phần tương ứng về nghĩa; \textcolor{red!70!black}{\textbf{đỏ}} cho phần khác nghĩa hoặc chưa xác định được. Màu đánh dấu, xác nhận cặp và hoàn thành trang là các trạng thái riêng.
+
+Cặp đã xác nhận giữ dấu khi tiếp tục hiệu chỉnh; nội dung mới được cập nhật vào kết quả sau khi lưu. Khi hai phiên sửa cùng trường theo hai cách khác nhau, cần đối chiếu để tránh ghi đè. Liên kết sai box hoặc hai cặp cùng chiếm một đoạn Quốc ngữ phải được xử lý trước khi xuất.
+
+\subsection{Chuẩn hóa văn bản và xuất tệp}
+\begin{itemize}
+  \item \textbf{Làm sạch:} bỏ số, dấu câu, ký tự điều khiển và khoảng trắng dư theo quy tắc của bộ dữ liệu.
+  \item \textbf{Định dạng:} Nôm không có khoảng trắng; Quốc ngữ viết thường, giữ một khoảng trắng giữa các từ. Màu đi theo ký tự sau làm sạch.
+  \item \textbf{Chọn dữ liệu:} bảng kết quả lấy các cặp đã xác nhận và còn đủ hai vế sau chuẩn hóa.
+\end{itemize}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\linewidth}{@{}p{43mm}Y@{}}
+\toprule
+\textbf{Cột CSV và XLSX} & \textbf{Ý nghĩa}\\\midrule
+\texttt{img\_id} & Tên ảnh nguồn, không kèm thư mục.\\
+\texttt{sentence\_id} & Định danh câu trên trang.\\
+\texttt{SinoNom\_Char} & Văn bản Hán Nôm đã chuẩn hóa.\\
+\texttt{ChuQN\_txt} & Văn bản Quốc ngữ tương ứng.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{center}
+\begin{tikzpicture}[node distance=7mm and 6mm]
+  \node[processbox,text width=40mm] (book) {Gói dữ liệu từng sách};
+  \node[processbox,below left=of book,text width=40mm] (pdf) {PDF nguồn\\và ảnh phân loại};
+  \node[processbox,below=of book,text width=40mm] (labels) {Nhãn OCR\\\texttt{Label.txt}, \texttt{fileState.txt}};
+  \node[processbox,below right=of book,text width=40mm] (csv) {Bảng căn chỉnh\\CSV và XLSX};
+  \draw[flow] (book.south)--(pdf.north);
+  \draw[flow] (book.south)--(labels.north);
+  \draw[flow] (book.south)--(csv.north);
+\end{tikzpicture}
+\captionof{figure}{Cấu trúc sản phẩm dữ liệu dự kiến của từng sách.}
+\end{center}
+
+Nhãn OCR lưu văn bản và bốn điểm của box theo PPOCRLabel. \texttt{fileState.txt} chỉ ghi hoàn thành khi nhãn bao phủ đủ nội dung cần xuất. Quốc ngữ thiếu tọa độ vẫn có trong bảng căn chỉnh nhưng không tạo box giả. Gói tải xuống được tạo từ dữ liệu đã lưu tại thời điểm xuất.
+\end{document}
