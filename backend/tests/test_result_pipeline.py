@@ -171,6 +171,24 @@ def test_cleanup_preserves_color_offsets_and_removes_all_numbers():
     assert all(color == 'mismatch' for char, color in zip(text, colors) if char.isalpha())
 
 
+def test_partial_phrase_edit_only_invalidates_changed_glyphs():
+    from backend.alignment_links import replace_ranges
+    original = {'id': 'phrase', 'transcription': '𠰺迻法宝即候師兄', 'review_kind': 'match',
+                'review_marks': [{'start': 1, 'end': 2, 'kind': 'mismatch'}]}
+    refs = [{'box_id': 'phrase', 'start': 0, 'end': 8}]
+    boxes, _ = replace_ranges([original], [(refs, original['transcription'], '𠰺迻法宝郎候師兄')])
+    def colors(box):
+        result = [box.get('review_kind', 'match')] * len(box['transcription'])
+        for mark in box['review_marks']:
+            result[mark['start']:mark['end']] = [mark['kind']] * (mark['end'] - mark['start'])
+        return result
+    assert colors(boxes[0]) == ['match', 'mismatch', 'match', 'match', 'unknown', 'match', 'match', 'match']
+    assert original['transcription'] == '𠰺迻法宝即候師兄'
+    partial = [{'box_id': 'phrase', 'start': 4, 'end': 5}]
+    inserted, _ = replace_ranges(boxes, [(partial, '郎', '𠬠𠇮')])
+    assert colors(inserted[0]) == ['match', 'mismatch', 'match', 'match', 'unknown', 'unknown', 'match', 'match', 'match']
+
+
 def test_imported_source_edits_advance_refs_and_preserve_split_ocr(tmp_path):
     bundle(tmp_path)
     with TestClient(create_app(tmp_path, ocr_config=KHNConfig())) as client:

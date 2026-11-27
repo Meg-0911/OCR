@@ -78,6 +78,58 @@ def test_codepoint_offsets_and_accents(tmp_path):
     assert dictionary(tmp_path).matches('𢆥', 'NA\u0306M')
 
 
+def test_empty_side_explains_missing_content_before_reference(tmp_path):
+    cards, _, _ = analyze_row(row('粥', ''), None, dictionary(tmp_path), kieu=True, page_number=250)
+    assert 'Thiếu Hán Nôm hoặc Quốc ngữ' in cards[0]['reason']
+
+
+@pytest.mark.parametrize('preserve', ['', 'target', 'marks', 'refs', 'manual', 'no_history'])
+def test_quick_queue_reconciles_confirmed_deleted_ocr_noise(tmp_path, preserve):
+    from backend.tests.test_new_data import raw_book
+    from backend.tests.test_ocr_box_deletion import setup_page
+    raw_book(tmp_path, count=1)
+    app = create_app(tmp_path, ocr_config=KHNConfig())
+    with TestClient(app) as client:
+        book, page, original = setup_page(client)
+        rows = deepcopy(original)
+        orphan = rows[1]
+        orphan.update(reviewed=True, target='', marks=[], page_linked=True)
+        orphan.pop('source_refs', None)
+        orphan.pop('target_refs', None)
+        if preserve == 'target':
+            orphan['target'] = 'huyền hoàng'
+        elif preserve == 'marks':
+            orphan['marks'] = [{'source_start': 0, 'source_end': 1, 'target_start': 0, 'target_end': 1, 'kind': 'match'}]
+        elif preserve == 'refs':
+            orphan['source_refs'] = [{'box_id': page['boxes'][1]['id'], 'start': 0, 'end': 2}]
+        elif preserve == 'manual':
+            orphan['page_linked'] = False
+        keep = [page['boxes'][0], page['boxes'][2]]
+        service = app.state.quick_review
+        with app.state.store.db() as db:
+            if preserve != 'no_history':
+                db.execute('INSERT INTO ocr_results VALUES (?,?,?,?,?,?)',
+                           ('original', page['id'], 1, '{}', json.dumps({'boxes': page['boxes']}), 'now'))
+            db.execute('UPDATE alignments SET rows=? WHERE book_id=?', (json.dumps(rows), book['id']))
+            db.execute('UPDATE pages SET boxes=?,source_text=?,version=version+1 WHERE id=?',
+                       (json.dumps(keep), '\n'.join(b['transcription'] for b in keep), page['id']))
+            for i, r in enumerate(rows):
+                card = {'row_id': r['id'], 'index': None, 'ranges': {'source': [0, len(r['source'])], 'target': [0, len(r['target'])]},
+                        'fingerprint': fingerprint(r), 'sentence_id': r['sentence_id']}
+                db.execute('INSERT INTO quick_cards VALUES (?,?,?,?,?)',
+                           (str(i), book['id'], r['id'], json.dumps(card), 'done' if i == 0 else 'pending'))
+        status = service.status(book['id'])
+        assert status['counts']['done'] == 1
+        assert status['counts']['pending'] == (2 if preserve else 1)
+        assert status['card']['row_id'] == (rows[1] if preserve else rows[2])['id']
+        saved = app.state.store.alignment_rows(book['id'])
+        assert [r['id'] for r in saved] == [r['id'] for r in (rows if preserve else [rows[0], rows[2]])]
+        current = client.get(f"/api/pages/{page['id']}").json()
+        assert current['boxes'] == keep
+        assert [r['source'] for r in current['review_rows']] == [r['source'] for r in saved]
+        assert service.status(book['id'])['card']['id'] == status['card']['id']
+
+
 def test_persistent_decisions_conflicts_and_geometry(tmp_path):
     bundle(tmp_path, records=[(0, '天地', 'thiên sai', '00'), (1, '天地', 'lệch sai', '00')])
     folder = tmp_path / 'backend/data/dictionaries'

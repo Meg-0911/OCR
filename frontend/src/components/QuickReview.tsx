@@ -126,7 +126,7 @@ export default function QuickReview({ bookId, onChanged, onOpenAlignment }: {
       <p>{status?.job.processed || 0} / {status?.job.total || '…'} dòng. Có thể rời màn hình; quét vẫn chạy trên backend.</p></div>
       : card ? <div className="quick-layout">
         <article className="quick-card" key={card.id}>
-          <header><span>TRANG {card.page_number} · {card.index === null ? 'CẢ DÒNG' : `CHỮ ${card.index + 1}`}</span><span>{card.reason}</span></header>
+          <header><span>TRANG {card.page_number} · {card.index === null ? (!card.source.trim() || !card.target.trim() ? 'DÒNG THIẾU NỘI DUNG' : 'CẢ DÒNG') : `CHỮ ${card.index + 1}`}</span><span>{card.reason}</span></header>
           {card.stale && <p role="alert" className="quick-error">Dòng đã được sửa ở nơi khác. Quét lại để cập nhật thẻ.</p>}
           <div className="quick-words">
             <label><span>HÁN NÔM HIỆN TẠI</span><textarea aria-label="Chữ Hán Nôm" className="han-text" value={source} onChange={e => setSource(e.target.value)} rows={card.index === null ? 2 : 1} />

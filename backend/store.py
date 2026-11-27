@@ -512,8 +512,7 @@ class Store:
         for page in pages:
             if page['review_state'] == 'unchecked' and page['id'] in checked:
                 page['review_state'] = 'in_progress'
-            if page['target_origin'] == 'new_data':
-                page['review_rows'] = rows_by_page.get(page['id'], [])
+            page['review_rows'] = attach_refs(rows_by_page.get(page['id'], []), [page])
         return pages
 
     def source_box_colors(self, book_id, rows, pages=None):
@@ -866,6 +865,24 @@ class Store:
                                          if text and joined(row['source']) == text] for row in local}
             covered = [indexes[0] for indexes in group_matches.values() if len(indexes) == 1]
             orphans = [row for row in local if not group_matches[row['id']]]
+            complete_cover = (sorted(covered) == list(range(len(groups)))
+                              and len(covered) + len(orphans) == len(local))
+            # Bulk confirmation used to protect even empty rows from deleted OCR
+            # noise. Only retire these when the original OCR proves the deletion
+            # and every surviving phrase already has its own saved pair.
+            if complete_cover:
+                result = self.latest_ocr(page['id']) or {}
+                live_ids = {box['id'] for box in page['boxes']}
+                deleted_boxes = [box for box in result.get('boxes', []) if box['id'] not in live_ids]
+                for row in orphans:
+                    exported = exports.get(row['id'])
+                    if (row.get('page_linked') and not row['target'].strip()
+                            and not row.get('marks') and not row.get('source_refs')
+                            and not row.get('target_refs') and exported
+                            and not any(joined(row['source']) in text for text in group_texts)
+                            and any(box['transcription'] == row['source'] == exported['transcription']
+                                    and box['points'] == exported['points'] for box in deleted_boxes)):
+                        removed.add(row['id'])
             obsolete_defaults = (
                 page['ocr_granularity'] == 'phrase' and bool(orphans)
                 and sorted(covered) == list(range(len(groups)))

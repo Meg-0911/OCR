@@ -126,7 +126,8 @@ def analyze_row(row, reference, dictionary, *, kieu, page_number):
     rs = tokens(reference['source'], 'source') if reference else []
     rt = tokens(reference['target'], 'target') if reference else []
     # A missing/ambiguous line or unequal counts requires the entire line, never shifted 1:1.
-    reason = ('Không xác định chắc dòng tham khảo' if kieu and not reference else
+    reason = ('Thiếu Hán Nôm hoặc Quốc ngữ; cần kiểm tra liên kết dòng' if not source or not target else
+              'Không xác định chắc dòng tham khảo' if kieu and not reference else
               'Số chữ khác nhau / nguồn có dị bản' if not source or not target or len(source) != len(target) or
               reference and (len(target) != len(rt) or rs and len(source) != len(rs)) else '')
     if reason:
@@ -213,6 +214,7 @@ class QuickReview:
     def scan(self, book_id):
         try:
             with self.store.lock:
+                self.store.reconcile_deleted_source_boxes(book_id)
                 book = self.store.book(book_id)
                 pages = self.store.pages(book_id)
                 original = attach_refs(self.store.alignment_rows(book_id), pages)
@@ -314,7 +316,14 @@ class QuickReview:
 
     def status(self, book_id, include_deferred=False):
         with self.store.lock:
+            if self.job(book_id).get('status') != 'running' and self.store.reconcile_deleted_source_boxes(book_id):
+                self.store.sync_labels(book_id)
+            rows = {row['id']: row for row in self.store.alignment_rows(book_id)}
             with self.store.db() as db:
+                # Deleted OCR rows must not leave an uneditable card at the front.
+                obsolete = [(record['id'],) for record in db.execute(
+                    'SELECT id,row_id FROM quick_cards WHERE book_id=?', (book_id,)) if record['row_id'] not in rows]
+                db.executemany('DELETE FROM quick_cards WHERE id=?', obsolete)
                 counts = dict(db.execute('SELECT state,count(*) FROM quick_cards WHERE book_id=? GROUP BY state', (book_id,)).fetchall())
                 can_undo = db.execute('SELECT 1 FROM quick_decisions WHERE book_id=? AND undone=0 LIMIT 1', (book_id,)).fetchone() is not None
                 states = ('pending', 'deferred') if include_deferred else ('pending',)
@@ -324,7 +333,7 @@ class QuickReview:
             if record:
                 card = json.loads(record['payload'])
                 card.update(id=record['id'], state=record['state'])
-                row = next((r for r in self.store.alignment_rows(book_id) if r['id'] == record['row_id']), None)
+                row = rows.get(record['row_id'])
                 if row:
                     card['row'] = row
                     card['stale'] = fingerprint(row) != card['fingerprint']

@@ -44,6 +44,8 @@ assert.ok(html.includes('Đúng · đen') && html.includes('Thiếu từ điển
 assert.ok(html.includes('quick-back-button') && html.includes('Hoàn tác lần bấm vừa rồi'));
 html = render({ ...status, card: { ...card, index: null, source: '𤾓𢆥', target: 'trăm năm nữa', expected_source: '𤾓𢆥', expected_target: 'trăm năm' } });
 assert.ok(html.includes('CẢ DÒNG') && html.includes('trăm năm nữa') && html.includes('Chọn chữ để tra:'));
+html = render({ ...status, card: { ...card, index: null, source: '粥', target: '' } });
+assert.ok(html.includes('DÒNG THIẾU NỘI DUNG') && !html.includes('CẢ DÒNG'));
 html = render({ ...status, card: { ...card, stale: true } });
 assert.ok(html.includes('Dòng đã được sửa ở nơi khác'));
 assert.ok((html.match(/disabled=""/g) || []).length >= 4);
