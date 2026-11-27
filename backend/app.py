@@ -40,9 +40,17 @@ from .alignment_links import attach_refs, ref_text
 from .alignment_output import prepared_rows, write_alignment
 from .export_labels import select_label_pages
 from .alignment_merge import merge_rows
+from .quick_review import QuickReview
 
 
 Category = Literal['ch', 'vi', 'both', 'intro', 'ref', 'toc', 'blank', 'misc']
+
+
+class QuickDecisionInput(BaseModel):
+    action: Literal['match', 'mismatch', 'unknown', 'defer']
+    fingerprint: str = Field(min_length=64, max_length=64)
+    source: str | None = Field(default=None, max_length=30000)
+    target: str | None = Field(default=None, max_length=30000)
 
 
 class BoxReviewRange(BaseModel):
@@ -245,7 +253,7 @@ class SessionInput(BaseModel):
     input_revision: str | None = None
     page_id: str | None = None
     alignment_page: str | None = None
-    view: Literal['overview','library','review','alignment','export'] = 'review'
+    view: Literal['overview','library','review','alignment','export','quick'] = 'review'
     workflow_step: Literal[1,2,3,4] = 1
 
 
@@ -384,6 +392,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     async def lifespan(app):
         yield
         await asyncio.to_thread(jobs.close)
+        await asyncio.to_thread(quick_review.close)
 
     app = FastAPI(title='Nôm · Local Corpus Workbench', version='0.1.0', lifespan=lifespan)
     app.state.store = store
@@ -394,6 +403,8 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     raw_folder = store.data / 'raw_data'
     source_errors = []
     dictionary = Dictionary(store.data / 'dictionaries')
+    quick_review = QuickReview(store)
+    app.state.quick_review = quick_review
     ocr_locks = {}
     ocr_lock_guard = threading.Lock()
 
@@ -558,6 +569,47 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
     @app.get('/api/dictionary/status')
     def dictionary_status():
         return dictionary.status()
+
+    @app.get('/api/nom-dictionary/search')
+    def nom_search(q: str = ''):
+        if len(q) > 100:
+            raise HTTPException(422, 'Từ khóa tối đa 100 ký tự.')
+        return quick_review.dictionary.search(q)
+
+    @app.get('/api/nom-dictionary/detail')
+    def nom_detail(character: str):
+        try:
+            return quick_review.dictionary.detail(character)
+        except Exception as error:
+            raise HTTPException(502, 'Chưa lấy được nghĩa đầy đủ từ Nôm Na Việt. Bạn vẫn có thể dùng bảng âm cục bộ hoặc mở trang nguồn.') from error
+
+    @app.get('/api/books/{book_id}/quick-review')
+    def quick_status(book_id: str, include_deferred: bool = False):
+        require_book(book_id)
+        return quick_review.status(book_id, include_deferred)
+
+    @app.post('/api/books/{book_id}/quick-review/scan')
+    def quick_scan(book_id: str):
+        require_book(book_id)
+        return quick_review.start(book_id)
+
+    @app.post('/api/books/{book_id}/quick-review/{card_id}/decide')
+    def quick_decide(book_id: str, card_id: str, data: QuickDecisionInput):
+        require_book(book_id)
+        try:
+            quick_review.decide(book_id, card_id, data.action, data.fingerprint, data.source, data.target)
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from error
+        return {'saved': True}
+
+    @app.post('/api/books/{book_id}/quick-review/undo')
+    def quick_undo(book_id: str):
+        require_book(book_id)
+        try:
+            quick_review.undo(book_id)
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from error
+        return {'saved': True}
 
     @app.get('/api/dictionary/lookup')
     def dictionary_lookup(character: str):

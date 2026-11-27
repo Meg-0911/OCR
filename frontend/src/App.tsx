@@ -37,6 +37,7 @@ import PairProgress from './components/PairProgress';
 import AlignmentSources from './components/AlignmentSources';
 import LinkedAlignmentWorkspace from './components/LinkedAlignmentWorkspace';
 import BookWorkbench from './components/BookWorkbench';
+import QuickReview from './components/QuickReview';
 import LibraryBookReader from './components/LibraryBookReader';
 import DictionaryPanel from './components/DictionaryPanel';
 import { draftPatch, patchDraft, afterAutomaticSave, reconcileInputRevisions, type Draft } from './drafts';
@@ -58,12 +59,13 @@ import type {
   OCRSettings,
 } from './types';
 
-type View = 'overview' | 'library' | 'review' | 'alignment' | 'export';
+type View = 'overview' | 'library' | 'review' | 'alignment' | 'export' | 'quick';
 const nav = [
   { id: 'overview', label: 'Tổng quan', icon: LayoutDashboard },
   { id: 'library', label: 'Tủ sách', icon: Library },
   { id: 'review', label: 'Gán nhãn OCR', icon: ScanLine },
   { id: 'alignment', label: 'Căn chỉnh song ngữ', icon: SplitSquareVertical },
+  { id: 'quick', label: 'Duyệt nhanh', icon: CheckCheck },
   { id: 'export', label: 'Xuất dữ liệu', icon: ArrowDownToLine },
 ] as const;
 
@@ -1132,6 +1134,16 @@ export default function App() {
     setView(nextView);
   }
   function navigateToView(nextView: View) {
+    if (nextView === 'quick') {
+      void (async () => {
+        try {
+          await saveBookDrafts();
+          if (rowsDirtyRef.current) await persistRows(bookId, rowsRef.current);
+          setView(nextView);
+        } catch (error) { fail(error); }
+      })();
+      return;
+    }
     if (nextView === 'alignment' && pageId) {
       const currentPage = pages.find((item) => item.id === pageId);
       const sourcePage = alignmentPages.find((item) => item.id === pageId) ||
@@ -1386,7 +1398,7 @@ export default function App() {
                 <div>
                   <div className="eyebrow">SỐ HÓA DI SẢN · KẾT NỐI NGÔN NGỮ</div>
                   <h1>
-                    {view === 'review'
+                    {view === 'quick' ? 'Mỗi lần, một chữ rõ hơn.' : view === 'review'
                       ? 'Đọc lại từng nét chữ.'
                       : view === 'alignment'
                         ? 'Nối những dòng tri thức.'
@@ -1397,7 +1409,7 @@ export default function App() {
                             : 'Tiếp nối những trang sách xưa.'}
                   </h1>
                   <p>
-                    {view === 'review'
+                    {view === 'quick' ? 'Đối chiếu bán tự động, tra cứu Hán Nôm và duyệt từng chỗ cần xem.' : view === 'review'
                       ? 'Đối chiếu bản gốc, Gán nhãn văn bản và hoàn thiện từng trang ngữ liệu.'
                       : view === 'alignment'
                         ? 'Đối chiếu Hán Nôm và Quốc ngữ theo từng đơn vị có ý nghĩa.'
@@ -1438,7 +1450,7 @@ export default function App() {
                   ))}
                 </div>
               )}
-              {view !== 'review' &&
+              {view !== 'review' && view !== 'quick' &&
                 (workspace.pair_stats ? (
                   <PairProgress stats={workspace.pair_stats} onImport={() => void openImport()} />
                 ) : (
@@ -1446,7 +1458,7 @@ export default function App() {
                     Khởi động lại backend để cập nhật bộ đếm cặp câu.
                   </p>
                 ))}
-              {(view === 'review' || view === 'alignment' || view === 'export') && (
+              {(view === 'review' || view === 'alignment' || view === 'export' || view === 'quick') && (
                 <>
                   <div className="book-context">
                     <div className="book-context-icon">
@@ -1491,6 +1503,10 @@ export default function App() {
                     </div>
                   </div>
                 </>
+              )}
+              {view === 'quick' && activeBook && (
+                <QuickReview key={bookId} bookId={bookId} onChanged={() => { void loadWorkspace(); }}
+                  onOpenAlignment={(id) => { if (id) setAlignmentPage(id); setView('alignment'); }} />
               )}
               {view === 'review' && activeBook && !loadingPages && pages.length > 0 && (
                 <BookWorkbench
