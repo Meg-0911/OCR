@@ -25,6 +25,24 @@ def ref_text(refs, boxes):
     return ''.join(parts)
 
 
+def is_merged_fragment(row, rows, boxes, original_boxes):
+    """Prove that an old standalone fragment was inserted into a surviving box."""
+    refs = row.get('source_refs', [])
+    if len(refs) != 1 or ref_text(refs, boxes) != row['source']:
+        return False
+    ref = refs[0]
+    current = next(box for box in boxes if box['id'] == ref['box_id'])
+    original = next((box for box in original_boxes if box['id'] == ref['box_id']), None)
+    if not original or current['transcription'][:ref['start']] + current['transcription'][ref['end']:] != original['transcription']:
+        return False
+    return any(owner['id'] != row['id'] and owner['target'].strip()
+               and len(owner['source']) > len(row['source'])
+               and ref_text(owner.get('source_refs', []), boxes) == owner['source']
+               and any(part['box_id'] == ref['box_id'] and part['start'] <= ref['start']
+                       and part['end'] >= ref['end'] for part in owner.get('source_refs', []))
+               for owner in rows)
+
+
 def locate(text, boxes, preferred=None):
     """Use a legacy index only when its text agrees; never guess an ambiguous match."""
     if not text:

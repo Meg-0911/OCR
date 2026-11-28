@@ -136,6 +136,40 @@ def test_quick_queue_reconciles_confirmed_deleted_ocr_noise(tmp_path, preserve, 
         assert service.status(book['id'])['card']['id'] == status['card']['id']
 
 
+@pytest.mark.parametrize('preserve', ['', 'target', 'marks', 'not_inserted', 'uncovered', 'invalid_ref'])
+def test_merged_ocr_fragment_retires_only_proven_empty_duplicate(tmp_path, preserve):
+    from backend.tests.test_new_data import raw_book
+    from backend.tests.test_ocr_box_deletion import setup_page
+    raw_book(tmp_path, count=1)
+    app = create_app(tmp_path, ocr_config=KHNConfig())
+    with TestClient(app) as client:
+        book, page, original = setup_page(client)
+        rows = deepcopy(original)
+        rows[0].update(source='天地玄黃', source_refs=[{'box_id': page['boxes'][0]['id'], 'start': 0, 'end': 4}],
+                       marks=[{'source_start': 0, 'source_end': 1, 'target_start': 0, 'target_end': 4, 'kind': 'mismatch'}])
+        rows[1].update(target='', target_refs=[], reviewed=True, page_linked=True,
+                       source_refs=[{'box_id': page['boxes'][0]['id'], 'start': 2, 'end': 4}])
+        current = [{**page['boxes'][0], 'transcription': '天地玄黃'}, page['boxes'][2]]
+        historical = deepcopy(page['boxes'])
+        if preserve == 'target': rows[1]['target'] = 'huyền hoàng'
+        if preserve == 'marks': rows[1]['marks'] = [{'kind': 'match'}]
+        if preserve == 'not_inserted': historical[0]['transcription'] = '天地玄黃'
+        if preserve == 'uncovered': rows[0]['source_refs'] = []
+        if preserve == 'invalid_ref': rows[1]['source_refs'][0]['start'] = 1
+        store = app.state.store
+        with store.db() as db:
+            db.execute('INSERT INTO ocr_results VALUES (?,?,?,?,?,?)',
+                       ('historical', page['id'], 1, '{}', json.dumps({'boxes': historical}), 'now'))
+            db.execute('UPDATE alignments SET rows=? WHERE book_id=?', (json.dumps(rows), book['id']))
+            db.execute('UPDATE pages SET boxes=?,source_text=?,version=version+1 WHERE id=?',
+                       (json.dumps(current), '天地玄黃\n宇宙', page['id']))
+        assert store.reconcile_deleted_source_boxes(book['id']) == (not preserve)
+        saved = store.alignment_rows(book['id'])
+        assert [r['id'] for r in saved] == [r['id'] for r in (rows if preserve else [rows[0], rows[2]])]
+        assert saved[0] == rows[0]
+        assert store.page(page['id'])['boxes'] == current
+
+
 def test_persistent_decisions_conflicts_and_geometry(tmp_path):
     bundle(tmp_path, records=[(0, '天地', 'thiên sai', '00'), (1, '天地', 'lệch sai', '00')])
     folder = tmp_path / 'backend/data/dictionaries'

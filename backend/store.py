@@ -6,7 +6,7 @@ import sqlite3
 import threading
 import unicodedata
 from .alignment_review import comparison_key, export_text, score_boxes, source_glyph, paint
-from .alignment_links import attach_refs, ref_text, replace_ranges, advance_refs, matches_export_frame
+from .alignment_links import attach_refs, ref_text, replace_ranges, advance_refs, matches_export_frame, is_merged_fragment
 from .alignment_output import prepared_rows, write_alignment
 from .file_io import replace_file
 import csv
@@ -876,10 +876,14 @@ class Store:
                 deleted_boxes = [box for box in result.get('boxes', []) if box['id'] not in live_ids]
                 for row in orphans:
                     exported = exports.get(row['id'])
+                    # A merged glyph can acquire a valid substring ref while its
+                    # obsolete standalone pair remains. Prove the insertion and
+                    # coverage by a complete pair before retiring that duplicate.
+                    merged = is_merged_fragment(row, local, page['boxes'], result.get('boxes', []))
                     if (row.get('page_linked') and not row['target'].strip()
-                            and not row.get('marks') and not row.get('source_refs')
+                            and not row.get('marks') and (not row.get('source_refs') or merged)
                             and not row.get('target_refs') and exported
-                            and not any(joined(row['source']) in text for text in group_texts)
+                            and (merged or not any(joined(row['source']) in text for text in group_texts))
                             and any(box['transcription'] == row['source'] == exported['transcription']
                                     and matches_export_frame(box['points'], exported['points']) for box in deleted_boxes)):
                         removed.add(row['id'])
