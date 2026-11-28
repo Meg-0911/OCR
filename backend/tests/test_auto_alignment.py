@@ -299,6 +299,41 @@ def test_unequal_line_counts_leave_extra_source_line_separate():
     assert [row['source_line_index'] for row in rows] == [0, 1, 2]
 
 
+def test_results_image_and_label_sets_exclude_unreviewed_and_unocr_pages(tmp_path):
+    from backend.tests.test_new_data import raw_book
+    raw_book(tmp_path, count=3)
+    with TestClient(create_app(tmp_path)) as client:
+        book, = client.get('/api/workspace').json()['books']
+        pages = client.get(f"/api/books/{book['id']}/pages").json()
+        for index, page in enumerate(pages[:2]):
+            response = client.patch(f"/api/pages/{page['id']}", json={
+                'category': 'both', 'ocr_granularity': 'phrase',
+                'boxes': [box(f'han-{index}', '天地', 120)],
+                'vi_boxes': [box(f'vi-{index}', 'trời đất', 30)]})
+            assert response.status_code == 200, response.text
+        endpoint = f"/api/books/{book['id']}/alignments"
+        rows = client.post(endpoint+'/prepare').json()['rows']
+        rows[0]['reviewed'] = True
+        assert client.put(endpoint, json={'rows': rows}).status_code == 200
+        response = client.get('/api/results/archive')
+        assert response.status_code == 200, response.text
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            for language in ('ch', 'vi'):
+                prefix = f"{book['name']}/{language}/"
+                labels = archive.read(prefix+'Label.txt').decode().splitlines()
+                states = archive.read(prefix+'fileState.txt').decode().splitlines()
+                assert len(labels) == len(states) == 1
+                name, payload = labels[0].split('\t', 1)
+                assert json.loads(payload) and '.001.jpg' in name
+                images = {n for n in archive.namelist() if n.startswith(prefix) and n.endswith('.jpg')}
+                assert images == {f"{book['name']}/{name}"}
+        assert client.get(endpoint).json()[1]['reviewed'] is False
+        # A working label bundle still carries pages that need OCR/review.
+        response = client.get(f"/api/books/{book['id']}/export?format=labels")
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            assert f"{book['name']}/ch/{book['name']}.003.jpg" in archive.namelist()
+
+
 def test_surplus_ocr_glyph_does_not_shift_long_translations():
     source = ['天地玄黃宇宙', '洪荒日月盈昃', '湖', '辰宿列張寒來', '暑往秋收冬藏']
     target = ['trời đất huyền hoàng vũ trụ', 'hồng hoang nhật nguyệt doanh trắc',

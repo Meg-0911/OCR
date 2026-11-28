@@ -156,9 +156,11 @@ def test_new_zip_contains_pdf_and_no_synthetic_vietnamese_labels(tmp_path):
             assert 'Book_Y/Book_Y.pdf' in names
             assert 'Book_Y/Book_Y.csv' in names and 'Book_Y/Book_Y.xlsx' in names
             assert not any(name.startswith('Book_Y/vi/') for name in names)
+            assert [name for name in names if name.startswith('Book_Y/ch/') and name.endswith('.jpg')] == ['Book_Y/ch/Book_Y.003.jpg']
             assert 'manifest.json' not in names
             states = archive.read('Book_Y/ch/fileState.txt').decode()
             assert 'Book_Y.003.jpg\t0' in states
+            assert len(states.splitlines()) == 1
             labels = archive.read('Book_Y/ch/Label.txt').decode()
             page_line = next(line for line in labels.splitlines() if '.003.jpg\t' in line)
             assert len(json.loads(page_line.split('\t')[1])) == 1

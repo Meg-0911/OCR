@@ -1531,6 +1531,13 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                     pages = select_label_pages(pages, selected)
                 except ValueError as error:
                     raise HTTPException(422, str(error)) from error
+            # Reviewed result folders contain only images with exported labels.
+            # The editable full-book label export still includes pending pages.
+            page_groups = {page['id']: tuple(category for category in label_groups(page)
+                if not (category == 'vi' and not page['vi_boxes'])
+                and not (reviewed_only and category in ('ch', 'vi') and not any(
+                    export_text(box['transcription'], 'target' if category == 'vi' else 'source')[0].strip()
+                    for box in label_boxes(page, category)))) for page in pages}
             if book['input_revision'] and not complete_only:
                 assigned = {box.get('alignment_id') for page in pages for box in page['export_boxes']}
                 missing = [row for row in get_alignments(book_id) if not row.get('duplicate_of')
@@ -1551,7 +1558,7 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                             if reviewed_only:
                                 entries = []
                                 for page in pages:
-                                    if category not in label_groups(page) or (category == 'vi' and not page['vi_boxes']):
+                                    if category not in page_groups[page['id']]:
                                         continue
                                     image_name = f"{category}/{book['name']}.{page['number']:03d}.jpg"
                                     if name == 'fileState.txt':
@@ -1565,11 +1572,11 @@ def create_app(root: Path | None = None, *, ocr_config: KHNConfig | None = None,
                             else:
                                 archive.write(store.book_dir(book_id)/category/name, destination)
                 for page in pages:
+                    if not page_groups[page['id']]:
+                        continue
                     original=rendered_image(page)
                     image_name=f"{book['name']}.{page['number']:03d}.jpg"
-                    for category in label_groups(page):
-                        if category == 'vi' and not page['vi_boxes']:
-                            continue
+                    for category in page_groups[page['id']]:
                         archive.write(original,f"{book['name']}/{category}/{image_name}")
             os.replace(temporary,path)
         else:
