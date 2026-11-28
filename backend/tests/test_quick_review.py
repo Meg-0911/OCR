@@ -83,8 +83,9 @@ def test_empty_side_explains_missing_content_before_reference(tmp_path):
     assert 'Thiếu Hán Nôm hoặc Quốc ngữ' in cards[0]['reason']
 
 
-@pytest.mark.parametrize('preserve', ['', 'target', 'marks', 'refs', 'manual', 'no_history'])
-def test_quick_queue_reconciles_confirmed_deleted_ocr_noise(tmp_path, preserve):
+@pytest.mark.parametrize('preserve', ['', 'target', 'marks', 'refs', 'manual', 'no_history', 'different_frame'])
+@pytest.mark.parametrize('rotated', [False, True])
+def test_quick_queue_reconciles_confirmed_deleted_ocr_noise(tmp_path, preserve, rotated):
     from backend.tests.test_new_data import raw_book
     from backend.tests.test_ocr_box_deletion import setup_page
     raw_book(tmp_path, count=1)
@@ -105,11 +106,16 @@ def test_quick_queue_reconciles_confirmed_deleted_ocr_noise(tmp_path, preserve):
         elif preserve == 'manual':
             orphan['page_linked'] = False
         keep = [page['boxes'][0], page['boxes'][2]]
+        ocr_boxes = deepcopy(page['boxes'])
+        if rotated:
+            ocr_boxes[1]['points'] = [[10,80],[80,70],[90,85],[20,95]]
+        if preserve == 'different_frame':
+            ocr_boxes[1]['points'] = [[x+5,y+5] for x,y in ocr_boxes[1]['points']]
         service = app.state.quick_review
         with app.state.store.db() as db:
             if preserve != 'no_history':
                 db.execute('INSERT INTO ocr_results VALUES (?,?,?,?,?,?)',
-                           ('original', page['id'], 1, '{}', json.dumps({'boxes': page['boxes']}), 'now'))
+                           ('original', page['id'], 1, '{}', json.dumps({'boxes': ocr_boxes}), 'now'))
             db.execute('UPDATE alignments SET rows=? WHERE book_id=?', (json.dumps(rows), book['id']))
             db.execute('UPDATE pages SET boxes=?,source_text=?,version=version+1 WHERE id=?',
                        (json.dumps(keep), '\n'.join(b['transcription'] for b in keep), page['id']))

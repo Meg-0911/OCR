@@ -3,6 +3,17 @@ from copy import deepcopy
 from difflib import SequenceMatcher
 
 
+def matches_export_frame(points, exported):
+    """Sentence exports enclose rotated OCR polygons in an axis-aligned frame."""
+    if points == exported:
+        return True
+    if not points:
+        return False
+    xs, ys = zip(*points)
+    return exported == [[min(xs), min(ys)], [max(xs), min(ys)],
+                        [max(xs), max(ys)], [min(xs), max(ys)]]
+
+
 def ref_text(refs, boxes):
     indexed = {box['id']: box for box in boxes}
     parts = []

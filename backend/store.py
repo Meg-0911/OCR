@@ -6,7 +6,7 @@ import sqlite3
 import threading
 import unicodedata
 from .alignment_review import comparison_key, export_text, score_boxes, source_glyph, paint
-from .alignment_links import attach_refs, ref_text, replace_ranges, advance_refs
+from .alignment_links import attach_refs, ref_text, replace_ranges, advance_refs, matches_export_frame
 from .alignment_output import prepared_rows, write_alignment
 from .file_io import replace_file
 import csv
@@ -881,7 +881,7 @@ class Store:
                             and not row.get('target_refs') and exported
                             and not any(joined(row['source']) in text for text in group_texts)
                             and any(box['transcription'] == row['source'] == exported['transcription']
-                                    and box['points'] == exported['points'] for box in deleted_boxes)):
+                                    and matches_export_frame(box['points'], exported['points']) for box in deleted_boxes)):
                         removed.add(row['id'])
             obsolete_defaults = (
                 page['ocr_granularity'] == 'phrase' and bool(orphans)
