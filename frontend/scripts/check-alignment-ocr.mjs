@@ -7,6 +7,21 @@ import { reconcileInputRevisions, patchDraft, draftPatch } from '../src/drafts.t
 import { pageStatusLabel } from '../src/pageStatus.ts';
 import { cleanAlignmentText } from '../src/alignmentText.ts';
 
+// Raw OCR can retain an old whole-box unknown state after a quick-review edit.
+// Saved character judgments win, even when a stale row makes the line lists differ.
+const correctedBox = { id: 'corrected', transcription: '𠰺迻法宝郎候師兄', review_kind: 'unknown', review_marks: [] };
+const correctedRow = { id: 'reviewed', source: correctedBox.transcription, target: 'dạy đưa pháp bửu sang hầu sư huynh',
+  source_page_id: 'p', source_refs: [{ box_id: 'corrected', start: 0, end: 8 }],
+  marks: [{ source_start: 0, source_end: 8, target_start: 0, target_end: 37, kind: 'match' },
+    { source_start: 4, source_end: 5, target_start: 18, target_end: 22, kind: 'mismatch' }] };
+const correctedColors = ['match', 'match', 'match', 'match', 'mismatch', 'match', 'match', 'match'];
+assert.deepEqual(reviewColorsForText(correctedBox.transcription, [correctedBox], 'source', 2, [correctedRow]), correctedColors);
+assert.deepEqual(reviewColorsForText(correctedBox.transcription, [correctedBox], 'source', 2,
+  [{ id: 'stale', source: '粥', target: '' }, correctedRow]), correctedColors);
+assert.deepEqual(reviewColorsForText(correctedBox.transcription, [correctedBox], 'source', 2,
+  [{ ...correctedRow, source: '不符' }]), Array(8).fill('unknown'));
+assert.deepEqual(correctedBox.review_marks, [], 'Rendering must not bake alignment overlays into editable OCR data');
+
 function box(id, transcription, order, x, y) {
   return {
     id, transcription, review_order: order,

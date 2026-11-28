@@ -1,0 +1,3259 @@
+Thứ tự	Số dòng gốc	Chữ Nôm	Quốc ngữ	Ghi chú
+1	1	𤾓𢆥𥪝𡎝𠊛些	Trăm năm trong cõi người ta,	
+2	2	𡦂才𡦂色窖󰑼󰡒僥	Chữ tài chữ sắc khéo là cợt nhau.	
+3	3	󰠵戈蔑局波橷	Trải qua một cuộc bể dâu,	
+4	4	仍調𬂙𧡊㐌𤴬疸𢚸	Những điều trông thấy đã đau đớn lòng.	
+5	5	𨔍之彼嗇斯豊	Lạ gì bỉ sắc tư phong,	
+6	6	𡗶撑涓貝𦟐紅打悭	Trời xanh quen với má hồng đánh ghen.	
+7	7	稿𦹳吝捕畧畑	Cảo thơm lần giở trước đèn,	
+8	8	風情固錄群傳史撑	Phong tình có lục còn truyền sử xanh.	
+9	9	浪𢆥嘉靖朝明	Rằng: năm Gia Tĩnh triều Minh,	
+10	10	𦊚方滂𣼽𠄩京凭鐄	Bốn phương phẳng lặng hai Kinh vững vàng	
+11	11	固茹員外户王	Có nhà viên ngoại họ Vương,	
+12	12	家資𢪀拱常常堛中	Gia tư nghĩ cũng thường thường bực trung.	
+13	13	𠬠󰜩𡥵次卒𢚸	Một trai con thứ rốt lòng,	
+14	14	王󰞹󰑼𡦂綏𣳔儒家	Vương Quan là chữ nối dòng nho gia.	
+15	15	頭𢚸𠄩妸素娥	Đầu lòng hai ả tố nga,	
+16	16	翠翹󰑼姉㛪󰑼翠雲	Thuý Kiều là chị em là Thuý Vân.	
+17	17	梅骨格雪精神	Mai cốt cách tuyết tinh thần,	
+18	18	󰓳𠊚󰓳𨤔𨒒分院𨒒	Một người một vẻ mười phân vẹn mười.	
+19	19	雲𫀅莊重恪潙	Vân xem trang trọng khác vời,	
+20	20	姿丰苔𬊤湿𧍋𦬑囔	Tư phong đầy đặn nét ngài nở nang.	
+21	21	花唭玉説端莊	Hoa cười ngọc thốt đoan trang,	
+22	22	𩄲誇渃󰖥雪讓牟𦝄	Mây khoe nước tóc tuyết nhường màu da.	
+23	23	翹𫀅色稍漫麻	Kiều xem sắc sảo mặn mà,	
+24	24	芻皮才色吏󰑼分欣	So bề tài sắc lại là phần hơn.	
+25	25	香秋水疸春山	Hương thu thuỷ vết xuân sơn,	
+26	26	花性輸審柳𪬡劍撑	Hoa ghen thua thắm liễu hờn kém xanh.	
+27	27	𠬠𠄩迎渃迎城	Một hai nghiêng nước nghiêng thành,	
+28	28	色停隊󰓳才停和𠄩	Sắc đành trọi một tài đành hoạ hai.	
+29	29	聰明本産資𡗶	Thông minh vốn sẵn tư trời,	
+30	30	披芸書𪽗覩味󰞻吟	Pha nghề thư hoạ đủ mùi ca ngâm.	
+31	31	宫商漏堛𠄼音	Cung thương làu bậc năm âm,	
+32	32	芸𥢆咹󰡖胡琴𠬠張	Nghề riêng ăn đứt hồ cầm một trương.	
+33	33	曲茹𢬣𢫘𢧚腔	Khúc nhà tay lựa nên xoang,	
+34	34	𠬠篇薄𠇮吏強󰞽人	Một thiên bạc mệnh lại càng não nhân.	
+35	35	󰘩流窒墨紅裙	Phong lưu rất mực hồng quần,	
+36	36	春撑执齿𨖲旬及筓	Xuân xanh xấp xỉ lên tuần cập kê.	
+37	37	淹𧛋帳𢷀幔𩂏	Êm nềm trướng rủ màn che,	
+38	38	墻東蜂𧊉𠫾𧗱默埃	Tường đông ong bướm đi về mặc ai.	
+39	39	𣈜春昆燕迻梭	Ngày xuân con én đưa thoi,	
+40	40	韶光九󰁬㐌外𦒹𨑮	Thiều quang chín chục đã ngoài sáu mươi.	
+41	41	𦹵𡽫撑羡蹎𡗶	Cỏ non xanh tạn chân trời,	
+42	42	挭梨𤽸點𠬠𠄽󰊎花	Cành lê trắng điểm một vài bông hoa.	
+43	43	清明𡧲節𣈜𠀧	Thanh minh giữa tiết ngày ba,	
+44	44	礼󰑼掃墓噲󰑼踏晴	Lễ là tảo mộ gọi là đạp thanh.	
+45	45	𧵆賒奴󱋨燕鶧	Gần xa nô nức yến anh,	
+46	46	姉㛪懺所步行制春	Chị em sắm sửa bộ hành chơi xuân.	
+47	47	習耀才子佳人	Dập dìu tài tử giai nhân,	
+48	48	馭車如渃襖裙如𢬧	Ngựa xe như nước áo quần như nen.	
+49	49	衮昂坵埬撟𨖲	Ngổn ngang gò đống kéo lên,	
+50	50	梭鐄𥿠𫽘烣残紙悲	Thoi vàng vó rắc tro tàn giấy bay.	
+51			Tà tà bóng ngã về tây,	Nguồn Nôm lỗi NAME?; không suy đoán chữ.
+52	52	姉㛪他引󰇶𢬣𦋦𧗱	Chị em thơ thẩn dan tay ra về.	
+53	53	𨀈寅蹺𦰟小溪	Bước dần theo ngọn tiểu khê,	
+54	54	吝𫀅󰘩景固皮清清	Lần xem phong cảnh có bề thanh thanh.	
+55	55	󰅉󰅉𣳔渃捥觥	Nao nao dòng nước uốn quanh,	
+56	56	揲桥𡮈𡮈𡳳京北昂	Nhịp cầu nhỏ nhỏ cuối ghềnh bắc ngang.	
+57	57	除除埝坦边塘	Trờ trờ nấm đất bên đường,	
+58	58	油油𦰟𦹵姅鐄姅撑	Rầu rầu ngọn cỏ nửa vàng nửa xanh.	
+59	59	浪牢𥪝節清明	"Rằng: ""Sao trong tiết thanh minh,"	
+60	60	麻低香𤐜永醒势麻	Mà đây hương khói vắng tanh thế mà?	
+61	61	払王買引𧵆賒	Chàng Vương mới dẫn gần xa:	
+62	62	淡仙娘意初󰑼󰞻兒	Đạm Tiên nàng ấy xưa là ca nhi.	
+63			Nổi danh tài sắc một thì,	Nguồn Nôm lỗi NAME?; không suy đoán chữ.
+64	64	訕觥外𫔳儉之燕鶧	Sán quanh ngoài cửa kém gì yến anh.	
+65	65	刼紅顔固蒙萌	Kiếp hồng nhan có mong manh,	
+66	66	姅澄春説技梗天香	Nửa chừng xuân thoắt gãy cành thiên hương.	
+67	67	固𠊚客扵遠方	Có người khách ở viễn phương,	
+68	68	賒𦖑拱復㗂娘尋制	“Xa nghe cũng phục tiếng nàng tìm chơi.	
+69	69	船情皮󰠼旦尼	“Thuyền tình vừa ghé đến nơi,	
+70	70	時㐌簪技󰜍淶包徐	Thì đà trâm gãy bình rơi bao giờ!	
+71	71	󱑹空冷𡴯如詞	“Buồng không lạnh ngắt như tờ,	
+72	72	𨁪車馭㐌󰷳瀘𣻕撑	Dấu xe ngựa đã rêu lờ mờ xanh.	
+73	73	哭嘆坤掣事情	Khóc than khôn xiết sự tình,	
+74	74	窖󰟁緣闭󰑼𠇮貝些	Khéo vô duyên bấy là mình với ta!	
+75	75	㐌空縁畧庄時	“Đã không duyên trước chăng là,	
+76	76	時之𡭧約噲󰑼縁娄	“Thì chi chút đích gọi là duyên sau.	
+77	77	懺笙摄紙車珠	“Sắm xanh nếp chỉ xe châu,	
+78	78	䏽農𠬠埝默油𦹵花	Vùi nông một nấm mặc dầu cỏ hoa.	
+79	79	󰠵包兎吝鵶斜	Trải bao thỏ lặn ác tà,	
+80	80	𧘇墓󰟁主埃麻咏𠽄	Ấy mồ vô chủ ai mà viếng thăm!	
+81	81	𢚸󰠲産󰍹傷心	Lòng đâu sẵn mòn thương tâm,	
+82	82	説𦖑翹捝潭潭珠沙	Thoạt nghe kiều thoắt đầm đầm châu sa:	
+83	83	𤴬疸台分弹󰜏	Đau đớn thay phận đàn bà!	
+84	84	𠳒浪泊𠇮拱󰑼𠳒終	Lời rằng bạc mệnh cũng là lời chung.	
+85	85	負旁之闭化工	Phũ phàng chi bấy hoá công!	
+86	86	𣈜撑󰍹痗𦟐紅配坡	Ngày xanh mòn mỏi má hồng phôi pha.	
+87	87	𤯨爫𡞕泣𠊛些	Sống làm vợ khắp người ta,	
+88	88	窖台𦣰𫴋󰑼魔空𫯳	“Hại thay nằm xuống là ma không chồng!	
+89	89	󰅹㝵鳯乍鸾終	Nào người phượng chạ loan chung,	
+90	90	󰅹㝵惜綠貪紅󰑼埃	Nào người tiếc lục tham hồng là ai?	
+91	91	㐌空几兑㝵𢙇	Đã không kẻ đoái người hoài,	
+92	92	産低些劎𠬠𠄽𥘀香	“Sẵn đây ta cắm một vài nén hương.	
+93	93	噲󰑼﨤𫽻𡧲塘	Gọi là gặp gỡ giữa đường,	
+94	94	和󰑼㝵󰡎𤂬鐄别朱	Hoạ là người dưới suối vàng biết cho.	
+95	95	林滛󰂴拜𡮈蘇	Lầm rầm khấn vái nhỏ to,	
+96	96	立𡎢𬏓诰畧墓𨀈󰑾	Sụp ngồi và cáo trước mồ bước ra.	
+97	97	𠬠󰟀𦹵爱䏾斜	Một vùng cỏ áy bóng tà,	
+98	98	𩙌囂囂𠺙𠬠𬏓𦰟𦰤	Gió hiu hiu thổi một vài ngọn lau.	
+99	99	𢯰簪産㩫𠃅頭	Rút trâm sẵn giắt mái đầu,	
+100	100	拍䏧核咏𦊚句𠀧韻	Vạch da cây vịnh bốn câu ba vần.	
+101	101	吏強迷買心神	Lại càng mê mải tâm thần,	
+102	102	吏強𨅸朗秦艰󰝸𦋦	Lại càng đứng lặng tần ngần chẳng ra.	
+103	103	吏強塢突󰞺花	Lại càng ủ dột nét hoa,	
+104	104	愁𣻆𢯟綏珠沙𥐆𨱽	Sầu tuôn đứt nối châu sa vắn dài.	
+105	105	雲浪姉拱󱋨唭	"Vân rằng: ""Chị cũng nực cười,"	
+106	106	拱餘渃眜哭㝵𠁀初	Cũng dư nước mắt khóc người đời xưa!	
+107	107	浪紅顔自課初	"Rằng: ""Hồng nhan tự thủa sơ,"	
+108	108	丐調泊𠇮固除埃󰠲	Cái điều bạc mệnh có chừa ai đâu.	
+109	109	浽念想旦麻𤴬	Nỗi niềm tưởng đến mà đau,	
+110	110	体㝵𦣰帝别娄󰟨󰅹	“Thấy người nằm đấy biết sau thế nào?”	
+111	111	覌浪姉呐咍牢	"Quan rằng: ""Chị nói hay sao?"	
+112	112	𠬠調󰑼𠬠運𠓨苦𦖑	Một điều là một vận vào khó nghe!	
+113	113	扵低陰氣𥘀伲	Ở đây âm khí nặng nề.	
+114	114	䏾朝㐌我埮𧗱群賒	Bóng chiều đã ngả dặm về còn xa.	
+115	115	翹浪仍等才花	"Kiều rằng: ""Những đấng tài hoa,"	
+116	116	托󰑼体魄群󰑼精󰠰	Thác là thể phách còn là tinh anh.	
+117	117	易台情吏及情	Dễ hay tình lại gặp tình.	
+118	118	徐𫀅乙体顕灵碑除	Chờ xem ắt thấy hiển linh bây giờ!	
+119	119	𠬠𠳒呐渚吸䜹	Một lời nói chửa kịp thưa,	
+120	120	丿󰠲陣𩙌捲旗旦𣦍	Phút đâu trận gió cuốn cờ đến ngay.	
+121	121	泑泑𩙌祿拸核	Ào ào gió lốc rung cây,	
+122	122	扵𥪝󰟯固香𠖤𠃣堯	Ở trong dường có hương bay ít nhiều.	
+123	123	提澄𦰟𩙌吝蹺	Đè chừng ngọn gió lần theo,	
+124	124	𤵖𩌂曾𨀈印尞伶伶	Vết giày từng bước in rêu rành rành.	
+125	125	󰘚𥚆埃乃調󰟹	Mặt nhìn ai nấy đều kinh,	
+126	126	娘浪尼实精誠󰝸賒	"Nàng rằng: ""Này thực tinh thành chẳng xa."	
+127	127	有情些吏別些	“Hữu tình ta lại biết ta,	
+128	128	󰝸泥󰁏顕買󰑼姉㛪	“Chẳng nề u hiển mới là chị em.”	
+129	129	㐌𢚸顕現朱𫀅	Đã lòng hiển hiện cho xem,	
+130	130	謝𢚸娘吏𨁡添𬏓𠳒	Tạ lòng nàng lại nối thêm và lời.	
+131	131	𢚸䜹来朗徘徊	Lòng thơ lai láng bồi hồi,	
+132	132	㭲核吏拍𠬠排古詩	Gốc cây lại vạch một bài cổ thi.	
+133	133	𣳔孕𢷣於𢷣𧗱	Dùng dằng dở ở dở về,	
+134	134	樂鐄󰠲㐌㗂𦖑𧵆𧵆	Nhạc vàng đâu đã tiếng nghe gần gần.	
+135	135	𬂙澄体𠬠文人	Trông chừng thấy một văn nhân,	
+136	136	弄𢭾𢬣叩𨀈吝埮氷	Lỏng buông tay khấu bước lần dặm băng.	
+137	137	提𢹂𦝄󰠞𩙌𦝄	Đề huề lưng túi gió trăng,	
+138	138	𨍦蹎蹺𠬠𠄽繩昆昆	Sau chân theo một vài thằng con con.	
+139	139	雪印色馭󰙃𤶐	Tuyết in sắc ngựa câu giòn,	
+140	140	𦹵坡味襖染𡽫䏧𡗶	Cỏ pha mùi áo nhuộm non da trời.	
+141	141	裊賒買𤑟󰘚㝵	Nẻo xa mới rõ mặt người,	
+142	142	客㐌𫴋馭細尼敘情	Khách đà xuống ngựa tới nơi tự tình.	
+143	143	佳人吝𨀈埮撑	Giai nhân lần bước dặm xanh,	
+144	144	𠬠𡓄如体核瓊梗瑤	Một vùng như thể cây quỳnh cành dao.	
+145	145	払玉捐󰘚𦋦嘲	Chàng vương quen mặt ra chào,	
+146	146	𠄩翹依󰘚納𠓨󰡎花	Hai e mặt mặt nép vào dưới hoa.	
+147	147	原𠊛觥橘󰠲車	Nguyên người quanh quất đâu xa,	
+148	148	户金𠸜重本茹簪纓	Họ Kim tên Trọng vốn nhà trâm anh.	
+149	149	𪤍富厚堛才名	Nền phú hậu bực tài danh,	
+150	150	文章揑坦通明性𡗶	Văn chương nết đất thông minh tính trời.	
+151	151	天資才貌捽為	Thiên tư tài mạo tót vời,	
+152	152	𠓨𥪝󰘩雅𦋦外豪󰡛	Vào trong thanh nhã ra ngoài hào hoa.	
+153	153	冬觥刎坦渃茹	Chung quanh vẫn đất nước nhà,	
+154	154	貝王󰞹畧刎󰑼同親	Với Vương Quan trước vẫn là đồng thân.	
+155	155	刎𦖑𦹳󱋨鄕隣	Vẫn nghe thơm nức hương lân,	
+156	156	𠬠𪤍銅雀鎖春𠄩娇	Một nền đồng tước khoá xuân hai kiều.	
+157	157	渃𡽫隔󰋇󰟀絩	Nước non cách mấy buồng thêu,	
+158	158	仍󰑼濫唒忱腰祝蒙	Những là trộm dấu thầm yêu chốc mòng.	
+159	159	枚台邂逅相逢	May thay giải cấu tương phùng,	
+160	160	及旬妬𦲿妥𢚸尋花	Gặp tuần đố lá thoả lòng tìm hoa.	
+161	161	䏾紅落体裊賒	Bóng hồng nhác thấy nẻo xa,	
+162	162	春香秋菊曼麻奇𠄩	Xuân hương thu cúc mặn mà cả hai.	
+163	163	㝵国色几天才	Người quốc sắc kẻ thiên tài,	
+164	164	情𥪝如㐌󰘚外群依	Tình trong như đã mặt ngoài còn e.	
+165	165	执廛干醒干迷	Chập chờn cơn tỉnh cơn mê,	
+166	166	󰟱𡎢󰝸便𢴑𧗱㐱坤	Rốn ngồi chẳng tiện dứt về chỉn khôn.	
+167	167	䏾斜如󰖢干盆	Bóng tà như giục cơn buồn,	
+168	168	客㐌𨖲馭㝵群𥊘蹺	Khách đà lên ngựa người còn nghé theo.	
+169	169	󰡎梂帶渃𤄯󰌄	Dưới cầu dải nước trong veo,	
+170	170	边梂絲柳䏾朝他𦋦	Bên cầu tơ liễu bóng chiều tha la.	
+171	171	翹自𧿨𨃴帳花	Kiều từ trở gót trướng hoa,	
+172	172	󰘚𡗶吝𡶀鉦㐌收空	Mặt trời lặn núi chiêng đà thu không.	
+173	173	𦎛娥永永苔蔥	Gương nga vạnh vạnh đầy song,	
+174	174	廣招痕渃核篭䏾𡑝	Vàng gieo ngấn nước cây lồng bóng sân.	
+175	175	海棠扡𦰟東鄰	Hải đường lã ngọn đông lân,	
+176	176	湥霜撩𥘀梗春󰑼陀	Giọt sương treo nặng cành xuân la đà.	
+177	177	󰝡󰝡朗𥋴󰞵花	Đăm đăm lặng ngắm bóng hoa,	
+178	178	吨唐𧵆貝挼賒排排	Rộn đường gần với nỗi xa bời bời:	
+179	179	㝵麻旦󰟨時催	Người mà đến thế thì thôi,	
+180	180	𠁀繁花拱󰑼𠁀補𠫾	Đời phồn hoa cũng là đời bỏ đi!	
+181	181	𠊛󰠲扱𫽻爫之	Người đâu gặp gỡ làm chi,	
+182	182	𤾓𠄼別固緣之咍空	"Trăm năm biết có duyên gì hay không?"""	
+183	183	衮昂𤾓䋦边𢚸	Ngổn ngang trăm mối bên lòng,	
+184	184	𢧚勾絶妙寓𥪝性情	Nên câu tuyệt diệu ngụ trong tính tình.	
+185	185	征征䏾月熾萌	Chênh chênh bóng nguyệt xế mành,	
+186	186	𢭸鸾边篆𠬠𠇮燒燒	Tựa loan bên triện một mình thiu thiu.	
+187	187	率󰠲体𠬠小娇	Thoắt đâu thấy một tiểu kiều,	
+188	188	固朝󰘩韻固朝清新	Có chiều phong vận có chiều thanh tân.	
+189	189	霜印󰘚雪坡身	Sương in mặt tuyết pha thân,	
+190	190	蓮鐄朗蕩如𧵆如賒	Sen vàng lãng đãng như gần như xa.	
+191	191	嘲𢜏噋𠳨𠻀󰑼	Chào mừng đon hỏi dò la:	
+192	192	源桃落𫮇󰠲麻旦低	“Nguồn đào lạc lối đâu mà đến đây?”	
+193	193	䜹浪聲氣初󰅒	"Thưa rằng: ""Thanh khí xưa nay,"	
+194	194	買拱饒󰡜班𣈜㐌涓	“Mới cùng nhau lúc ban ngày đã quên?	
+195	195	寒家扵𠃅西阡	Hàn gia ở mé tây thiên,	
+196	196	󰡎𣳔渃沚边𨕭固桥	Dưới dòng nước chảy bên trên có cầu.	
+197	197	󰋇𢚸下顧旦饒	Mấy lòng hạ cố đến nhau,	
+198	198	󰋇𠳒下賜捻珠招鐄	Mấy lời hạ tứ ném châu gieo vàng.	
+199	199	󰂅呈會主𫀅詳	Vâng trình hội chủ xem tường,	
+200	200	麻𫀅𥪝𢼂断膓固𠸜	Mà xem trong sổ đoạn trường có tên.	
+201	201	欧停果刼因綠	Âu đành quả kiếp nhân duyên,	
+202	202	共㝵𠬠會𠬠船󰠲車	Cũng người một hội một thuyền đâu xa!	
+203	203	尼𨑮排買買𫥨	Này mười bài mới mới ra,	
+204	204	勾神吏慢笔花󰖽潙	Câu thần lại mượn bút hoa vẽ vời.	
+205	205	翹󰂅領意題排	Kiều vâng lĩnh ý đề bài,	
+206	206	𢬣仙𠬠󰖽𨇜𨑮曲吟	Tay tiên một vẫy đủ mười khúc ngâm.	
+207	207	袩䜹󰂴󰟄𠸦󰠐	Xem thơ thắc thỏm khen thầm:	
+208	208	價停繡口錦心恪常	Giá đành tú khẩu cẩm tâm khác thường!	
+209	209	󰂇󰝂𠓨集断膓	Ví đem vào tập đoạn trường.	
+210	210	時撩帶一之讓朱埃	Thì treo giải nhất chi nhường cho ai!	
+211	211	㙴花客㐌𧿨鞋	Thềm hoa khách đã trở hài,	
+212	212	娘群扲吏𠬠𠄩斜情	Nàng còn cầm lại một hai tự tình.	
+213	213	𩙌󰠲鄭幅甍甍	Gió đâu sịch bức mành mành	
+214	214	醒𦋦買別浪𠇮占包	Tỉnh ra mới biết là mình chiêm bao.	
+215	215	𬂙蹺󰅹体󰠲󰅹	Trông theo nào thấy đâu nào,	
+216	216	香乘讓唉󱈮𠓨󰠲低	Hương thừa nhường hãy ra vào đâu đây.	
+217	217	𠬠𠇮󰡝慮更迡	Một mình lưỡng lự canh chầy,	
+218	218	塘賒𢪀挼娄尼麻󰟹	Đường xa nghĩ nỗi sau này mà kinh.	
+219	219	花㵢䕯󰟅㐌停	Hoa trôi bèo dạt đã đành,	
+220	220	别󰠲𠇮别分𠇮󰟨傕	Biết đâu mình biết phận mình thế thôi.	
+221	221	浽𥢆笠笠㳥𣼭	Nỗi riêng lớp lớp sóng dồi,	
+222	222	𢪀隊干吏湥涞隊干	Nghĩ đòi cơn lại sụt sùi đòi cơn.	
+223	223	喠娇𡃚󰁹帳鵉	Giọng kiều rền rĩ trướng loan,	
+224	224	茹萱秩醒𠳨干㨿之	Nhà huyên chợt tỉnh hỏi cơn cớ gì.	
+225	225	㨿之陳濁更𣅘	“cớ chi trằn trọc canh khuya,	
+226	226	牟花󰣀唉滛提湥湄	Màu hoa lê hãy dầm dề giọt mưa?	
+227	227	踈浪𡭧分𬏝踈	"Thưa rằng: ""Chút phận ngây thơ,"	
+228	228	養生堆女󰖥絲渚填	Dưỡng sinh đôi nợ tóc tơ chưa đền.	
+229	229	𣈜𣈜󱉁𡏢淡仙	Ngày ngày chơi mả đạm tiên,	
+230	230	𥃱𠫾率体應連占包	Nhắp đi thoắt thấy ứng liền chiêm bao.	
+231	231	断膓󰑼𢼂󰡫󰅹	Đoạn trường là số thế nào,	
+232	232	排𦋦󰡫意咏𠓨󰡫箕	Bài ra thế ấy vịnh vào thế kia.	
+233	233	㨿𥪝夢兆麻推	Cứ trong mộng triệu mà suy,	
+234	234	分昆傕固𦋦之枚娄	Phận con thôi có ra gì mai sau!	
+235	235	𠰺浪夢兆據󰠲	"Dạy rằng: ""Mộng triệu cứ đâu,"	
+236	236	俸空謨󰞽聀愁𢪀󰅹	Bỗng không mua não chuốc sầu nghĩ nao!	
+237	237	󰂅𠳒勸觧湿高	Vâng lời khuyên giải thấp cao.	
+238	238	渚衝調󰀩㐌滛眜湘	Chưa xong điều nghĩ đã dào mạch tương.	
+239	239	外窻兎矢莺鐄	Ngoài song thỏ thẻ oanh vàng,	
+240	240	腋墻󱖮柳𨀈𨖅昂溋	Nách tường bông liễu bước sang ngang duềnh.	
+241	241	軒斜擱䏾鉦鉦	Hiên tà gác bóng chênh chênh,	
+242	242	唉𥢆𥢆鄭𡬷貞𠬠𠇮	Hãy riêng riêng trạnh tấc riêng một mình.	
+243	243	朱台󰑼退有情	Cho hay là thói hữu tình,	
+244	244	妬埃𢴑䋦絲萌朱衝	Đố ai dứt mối tơ mành cho xong!	
+245	245	払金自吏書窻	Chàng kim từ lại thư song,	
+246	246	浽娘更更边𢚸更亏	Nỗi nàng cánh cánh bên lòng biếng khuây.	
+247	247	愁冬強刻強苔	Sầu đong càng khắc càng đầy,	
+248	248	𠀧秋論吏𠬠𣈜𨱽稽	Ba thu giọn lại một ngày dài ghê!	
+249	249	𫡮秦鎖謹窻𦂛	Mây tần khoá kín song the,	
+250	250	𦹷紅料裊𠫾𧗱占包	Bụi hồng liệu nẻo đi về chiêm bao.	
+251	251	旬𦝄鈌𥒦油滈	Tuần trăng khuyết đĩa dầu hao,	
+252	252	󰘚𢠩想󰘚𢚸嗷喭𢚸	Mặt mơ tưởng mặt lòng ngao ngán lòng.	
+253	253	󰟀文唏這如銅	Buồng văn hơi giá như đồng,	
+254	254	竹痴󰇽兎絲𣳔泛鸾	Trúc se ngón thỏ tơ chùng phím loan.	
+255	255	甍相拂拂𩙋弹	Mành tương phất phất gió đàn,	
+256	256	香𦀊味女茶乾喠情	Hương dây mùi nhớ trà khan giọng tình.	
+257	257	󰂇庄綠女𠀧生	Ví chăng duyên nợ ba sinh,	
+258	258	爫之眈󰡬碩城撩𤽗	Làm chi đem thói khuynh thành trêu ngươi?	
+259	259	氷傾𢖵景𢖵𠊛	Bâng khuâng nhớ cảnh nhớ người,	
+260	260	女尼奇遇倍移蹎𠫾	Nhớ nơi kỳ ngộ vội dời chân đi.	
+261	261	𠬠𣳔𦹵木撑荑	Một dòng cỏ mọc xanh rì,	
+262	262	渃吟𥪝勿体之女󰠲	Nước ngâm trong vắt thấy gì nữa đâu!	
+263	263	𩙋𣋂如逐干愁	Gió chiều như giục cơn sầu,	
+264	264	葦𦰤囂乙如牟𢭮撩	Vi lau hiu hắt như màu cới trêu.	
+265	265	藝𫁅𢖵𠃣想𡗊	Nghề riêng nhớ ít tưởng nhiều,	
+266	266	侵侵提裊篮橋吝𨖅	Xăm xăm đè nẻo lam- kiều lần sang.	
+267	267	審嚴謹槓高墙	Thẳm nghiêm kín cống cao tường,	
+268	268	𣴓𣳔𦲿審𢴑塘𫚳撑	Cạn dòng lá thắm dứt đường chim xanh.	
+269	269	閭舒絲柳󱖮萌	Lơ thơ tơ liễu buông mành,	
+270	270	昆莺斈呐𨕭梗𠸍枚	Con oanh học nói trên cành mỉa mai.	
+271	271	󰋇吝󰠮埬杄掑	Mấy lần cửa đóng then cài,	
+272	272	𣲆㙴花𠰩别㝵於󰠲	Dẫy thềm hoa rụng biết người ở đâu?	
+273	273	秦銀𨅸椊除𥹰	Tần ngần đứng suốt giờ lâu,	
+274	274	妙觥秩体𠃅娄固茹	Diễu quanh chợt thấy mé sau có nhà.	
+275	275	󰑼茹吳越商家	Là nhà ngô việt thương gia,	
+276	276	󰟀空底妬㝵賒渚米	Buồng không để đó người xa chưa về.	
+277	277	𥙩調遊斈𠳨税	Lấy điều du học hỏi thuê,	
+278	278	襊弹扱册提𢹂扽𨖅	Túi đàn cặp sách đề huề dọn sang.	
+279	279	固核固𥒥産床	Có cây có đá sẵn sàng,	
+280	280	固軒𬄦翠󰞺鐄渚派	Có hiên lãm thuý nét vàng chưa phai.	
+281	281	𢜠󰠐准意𡦂排	Mừng thầm chốn ấy chữ bài,	
+282	282	𠀧生欧罕綠𡗶之低	Ba sinh âu hẳn duyên trời chi đây!	
+283	283	窻糊姅怯𦑃𫡮	Song hồ nửa khép cánh mây,	
+284	284	墻東𥊘眜𣈜𣈜恒𬂙	Tường đông ghé mắt ngày ngày hằng trông.	
+285	285	𡬷𡬼銅鎖源封	Tấc gang động khoá nguồn phong,	
+286	286	絶𩂟󰅹体䏾紅𠓨𦋦	Tuyệt mù nào thấy bóng hồng vào ra.	
+287	287	忍自舘阁隣󰑼	Nhẫn từ quán các lân la,	
+288	288	旬𦝄審卒𫢩它𧷺𠄩	Tuần trăng thấm thoát nay đà tròn hai.	
+289	289	隔墻沛𣇜淹𡗶	Cách tường phải buổi im trời,	
+290	290	󰡎桃羕固䏾㝵切他	Dưới đào dường có bóng người thướt tha.	
+291	291	𢭾琴促襖倍𦋦	Buông cầm xốc áo vội ra,	
+292	292	香群𠯪𠶗㝵它永醒	Hương còn ngát sực người đà vắng tanh.	
+293	293	吝蹺墝錦𨄹觥	Lần theo tường gấm dạo quanh,	
+294	294	𨕭桃落体𠬠挭金釵	Trên đào nhác thấy một cành kim thoa.	
+295	295	𫼰𢬣𢭲𥙩𧗱茹	Giơ tay với lấy về nhà,	
+296	296	尼𥪝闺阁󰠲麻旦低	Này trong khuê các đâu mà đến đây?	
+297	297	𡄎歐㝵意宝尼	Gẫm âu người ấy, báu này,	
+298	298	庄緣渚易𠓨𢬣埃扲	Chẳng duyên chưa dễ vào tay ai cầm!	
+299	299	連𢬣𥋴𥊘𠴠𢆥	Liền tay ngắm nghía biếng nằm,	
+300	300	唉群倘倘香󰠐渚派	Hãy còn thoang thoảng hương thầm chưa phai.	
+301	301	散霜㐌体䏾㝵	Tan sương đã thấy bóng người,	
+302	302	觥墻𦋦意尋摧󰡢𩵜	Quanh tường ra ý tìm tòi ngẩn ngơ.	
+303	303	生它󰡏意待徐	Sinh đà có ý đợi chờ,	
+304	304	隔墻蓮㗂賒迻厭𢚸	Cách tường lên tiếng xa đưa ướm lòng:	
+305	305	釵󰠲扒特虚空	“Thoa đâu bắt được hư không,	
+306	306	別󰠲合浦麻蒙珠𧗱	Biết đâu Hợp Phố mà mong châu về?	
+307	307	㗂娇𦖑律边箕	Tiếng Kiều nghe lọt bên kia:	
+308	308	恩𢚸君子詫之𧵑淶	Ơn lòng quân tử sá gì của rơi.	
+309	309	隻釵󰅹𧵑󰋇𨑮	“Chiếc thoa nào của mấy mươi,	
+310	310	麻𢚸仗󰒂輕財掣包	“Mà lòng trượng nghĩa khinh tài xiết bao!”	
+311	311	生浪隣里𦋦𠓨	"Sinh rằng: ""Lân lý ra vào,"	
+312	312	𧵆低󰅹沛㝵󰅹賒吹	Gần đây nào phải người nào xa xôi.	
+313	313	特𣈙侞𡭧唏淶	“Được rày nhờ chút hơi rơi,	
+314	314	計它少󰞽𢚸㝵闭󰅒	Kể đà thiểu não lòng người bấy nay!	
+315	315	闭𥹰買特𠬠𣈜	Bấy lâu mới được một ngày,	
+316	316	亭󰖄伴𡭧念西𨆝󰑼	Dừng chân gạn chút niềm tây gọi là.”	
+317	317	倍𠓨添𥙩𧵑茹	Vội vào thêm lấy của nhà,	
+318	318	釧鐄𠄩隻巾󰑔𠬠󰉓	Xuyến vàng hai chiếc khăn là một vuông.	
+319	319	援𫡮𨂚𨀈𦰟墻	Vin mây rón bước ngọn tường,	
+320	320	沛㝵腤怒𤑟𤉜庄而	Phải người hôm nọ rõ ràng chẳng nhe?	
+321	321	𠶤𠼾󰇾意突提	Sượng sùng giữ ý rụt rè,	
+322	322	几𥚆𤑟󰘚㝵𠵱𨆝頭	Kẻ nhìn rõ mặt người e cúi đầu.	
+323	323	浪自偶尔扱饒	"Rằng: ""Từ ngẫu nhĩ gặp nhau,"	
+324	324	耽𬂙濫女碑𥹰㐌𤶐	“Đắm trông trộm nhớ bây lâu đã chồn.	
+325	325	昌枚併㐌輸󰍹	“Xương mai tính đã ròn mòn,	
+326	326	吝𩢬埃別吏群暗󰅒	“Lần lừa ai biết lại còn hôm nay.	
+327	327	𠄼𧷺如改宫𫡮	“Năm tròn như gởi cung mây,	
+328	328	陳陳𠬠分挹核㐌料	Trần trần một phận ấp cây đã liều.	
+329	329	便抵嗔𠬠𠄩調	Tiện đây xin một hai điều,	
+330	330	臺𦎛𤐝旦𨁪䕯朱庄	Đài gương soi đến dấu bèo cho chăng?	
+331	331	銀馭娘買䜹浪	Ngần ngừ nàng mới thưa rằng:	
+332	332	𫗁茹氷雪質恒菲葑	Thói nhà băng tuyết chất hằng phỉ phong.	
+333	333	油欺𦲿審𥿗紅	Dầu khi lá thắm chỉ hồng,	
+334	334	𢧚庒時拱在𢚸媄吒	Nên chăng thì cũng tại lòng mẹ cha.	
+335	335	𥘀𢚸㤕柳爲花	Nặng lòng xót liễu vì hoa,	
+336	336	𥘷昆㐌別󰠲麻敢䜹	“Trẻ con đã biết đâu mà dám thưa!”	
+337	337	生浪𣈙󰊄枚湄	"Sinh rằng: ""Rày gió mai mưa,"	
+338	338	𣈜春㐌易情期󰋇欺	Ngày xuân đã dễ tình cờ mấy khi.	
+339	339	油庄察𬌓情痴	Dầu chăng xét tấm tình si,	
+340	340	舌低麻固益之旦埃	Thiệt đây mà có ích gì đến ai?	
+341	341	𡭧之𠴍咘𠬠𠄩	“Chút chi nhắn bó một hai,	
+342	342	朱停耒仕料排䋦萌	Cho đành rồi sẽ liệu bài mối manh.	
+343	343	悃𤍌油負𡬷誠	Khuôn thiêng dầu phụ tấc thành,	
+344	344	拱料補过春撑𠬠𠁀	Cũng liều bỏ quá xuân xanh một đời.	
+345	345	量春油决狹囘	Lượng xuân dầu quyết hẹp hòi,	
+346	346	功刁󰕴庄舌催禀由	Công đeo đuổi chẳng thiệt thòi lắm ru!	
+347	347	朗𦖑𠳒呐如油	Lặng nghe lời nói như ru,	
+348	348	朝春易遣󰞺秋𪿒顒	Chiều xuân dễ khiến nét thu ngại ngùng.	
+349	349	浪欺𣇜買𨔍𨓡	Rằng: “khi buổi mới lạ lùng,	
+350	350	𠰚𢚸固󰠋扲𢚸朱登	Nể lòng có lẽ cầm lòng cho đang.	
+351	351	㐌𢚸君子多恾	Đã lòng quân tử đa mang,	
+352	352	𠬠𠳒󰂅󰗘𥒥鐄始終	Một lời vâng tạc đá vàng thuỷ chung.	
+353	353	特𠳒如𪭯𬌓𢚸	Được lời như cổi tấm lòng,	
+354	354	󰇾金珠買巾紅𢭂𢬣	Giở kim châu với khăn hồng trao tay.	
+355	355	浪𤾓𠄼拱自低	"Rằng: ""Trăm năm cũng từ đây,"	
+356	356	𧵑信噲𠬠𪨀尼爫𥱬	Của tin gọi một chút này làm ghi.	
+357	357	産𢬣把撅花葵	Sẵn ta bả quạt hoa quì,	
+358	358	貝梗釵意即時𢬭𢭂	Với cành thoa ấy tức thì đổi trao.	
+359	359	𠬠𠳒皮哏漆膠	Một lời vừa gắn tất giao,	
+360	360	𠃅娄羕固𠮿嗃㗂㝵	Mé sau dường có xôn xao tiếng người.	
+361	361	倍傍𦲿𣳔花淶	Vội vàng lá rụng hoa rơi,	
+362	362	払󰡲书院娘移楼粧	Chàng về thư viện nàng rời lầu trang.	
+363	363	自畨𥒥别歲鐄	Từ phen đá biết tuổi vàng,	
+364	364	情強滲𤀏𢚸強謹魚	Tình càng thấm thía lòng càng ngẩn ngơ.	
+365	365	滝湘𠬠𦄂農𣻄	Sông tương một dải nông sờ,	
+366	366	边𬂙頭怒边除𡳳其	Bên trông đầu nọ bên chờ cuối kia.	
+367	367	𠬠墻雪渚霜𩂏	Một tường tuyết chở sương che,	
+368	368	信春󰠲易𠫾󰡲朱能	Tin xuân đâu dễ đi về cho năng.	
+369	369	吝吝𣈜󰊄店𦝄	Lần lần ngày gió đêm trăng,	
+370	370	䜹紅葚錄㐌澄春戈	Thưa hồng rậm lục đã chừng xuân qua.	
+371	371	𣈜皮生日外家	Ngày vừa sinh nhật ngoại gia,	
+372	372	𨕭𠄩堂󰡎女󰑼𠄩㛪	Trên hai đường dưới nữa là hai em.	
+373	373	熷𤇊懺襖所襜	Tưng bừng sắm áo sửa xiêm,	
+374	374	卞𤼸𠬠礼賒󰠐𡬷誠	Biện dâng một lễ xa đem tấc thành.	
+375	375	茹香清永𠬠𠇮	Nhà hương thanh vắng một mình,	
+376	376	𡄎机会遇㐌停固尼	Gẫm cơ hội ngộ đã dành có nay.	
+377	377	時珍式式産排	Thì trân thức thức sẵn bày,	
+378	378	𨃴蓮率率𬧖𣦍𠃅墙	Gót sen thoắt thoắt dạo ngay mé tường.	
+379	379	隔花仕𠱆㗂鐄	Cách hoa sẽ dặng tiếng vàng,	
+380	380	󰡎花体㐌固払𨅸𬂙	Dưới hoa thấy đã có chàng đứng trông.	
+381	381	責𢚸哬𠾿闭𢚸	“Trách lòng hờ hững bấy lòng,	
+382	382	󰌕香祝底冷𫥌闭𥹰	“Lửa hương chốc để lạnh lùng bấy lâu.	
+383	383	仍󰑼㙮汝対愁	Những là đắp nhớ đổi sầu,	
+384	384	雪霜染姅買頭花森	“Tuyết sương nhuốm nửa mái đầu hoa râm.”	
+385	385	娘浪󰊄扒湄扲	"Nàng rằng: ""Gió bắt mưa cầm,"	
+386	386	㐌甘弊貝知音闭迡	đã cam tệ với tri âm bấy chầy.	
+387	387	永茹特𣇜歆󰅒	Vắng nhà được buổi hôm nay,	
+388	388	𥙩𢚸哙𡭧𫥨尼謝𢚸	“lấy lòng gọi chat ra nơi tạ lòng!”	
+389	389	吝蹺𡶀假𠫾妄	Lần theo núi giả đi vòng,	
+390	390	𡳳墻羕固裊通買摷	Cuối tường dường có nẻo thông mới rào.	
+391	391	趂昂𨷑󰘚洞桃	Xắn ngang mở mặt động đào,	
+392	392	枝𫡮𬂙𤑟󰏀𠓨天台	Rẽ mây trông rõ lối vào thiên- thai.	
+393	393	󰘚認󰘚強添鮮	Mặt nhìn mặt càng thêm tươi,	
+394	394	边𠳒萬福边𡗶寒喧	Bên lời vạn phúc bên lời hàn huyên.	
+395	395	聘󰒺𧗱准書軒	Sánh vai về chốn thư hiên,	
+396	396	吟𠳒風月𥘀願𡽫滝	Ngâm lời phong nguyệt nặng nguyền non sông.	
+397	397	𨕭案笔架待筒	Trên yên bút giá thi đồng,	
+398	398	湥情𠬠幅幀松撩蓮	Đạm thanh một bức tranh tùng treo trên.	
+399	399	󰘩霜特𨤔天然	Phong sương được vẻ thiên nhiên,	
+400	400	󰣝𠸦湿笔強𥚆強鮮	Phục khen nét bút càng nhìn càng tươi.	
+401	401	生浪扑畫買耒	Sinh rằng: “phác hoạ mới rồi,	
+402	402	品題嗔𠬠𠄽𠳒添花	Phẩm đề xin một vài lời thêm hoa.	
+403	403	𢬣仙󰊄匝湄沙	Tay tiên gió táp mưa sa,	
+404	404	壙𨕭停笔草𬏓𦊚勾	Khoảng trên dừng bút thảo và bốn câu.	
+405	405	𠸦才吔玉噴珠	"Khen: ""Tài nhả ngọc phun châu,"	
+406	406	娘班妸謝拱󰠲世尼	Nàng Ban ả Tạ cũng đâu thế này.	
+407	407	刼修初󰂇渚𠫅	“Kiếp tu xưa ví chửa dày,	
+408	408	福󰅹𢬭時價尼朱昂	“Phúc nào đổi được giá này cho ngang!”	
+409	409	娘浪滥𥉬容光	"Nàng rằng: ""Trộm liếc dung quang,"	
+410	410	𫽄𡑝玉佩時坊金门	Chẳng sân ngọc bội thì phường kim môn.	
+411	411	𢪀𠇮分蒙𦑃𧋃	Nghĩ mình phận mỏng cánh chuồn,	
+412	412	囷撑別固󰉓𧷺麻咍	Khuôn xanh biết có vuông tròn mà hay?	
+413	413	𢖵自𫷜唉䜹𬏝	Nhớ từ năm hãy thơ ngây,	
+414	414	固𠊛相士断𣦍𠬠𠳒	Có người tướng sĩ đoán ngay một lời:	
+415	415	󰠰󰡛發泄𦋦外	Anh hoa phát tiết ra ngoài,	
+416	416	𠦳秋溥𠇮𠬠𠁀才󰡛	Nghìn thu bạc mệnh một đời tài hoa.	
+417	417	𬂙㝵吏𥋴𠓨些	“Trông người lại ngắm vào ta,	
+418	418	𠬠𠫅𠬠蒙別󰑼固𢧚	Một dày một mỏng biết là có nên?	
+419	419	生浪邂逅󰑼緣	"Sinh rằng: ""Giải cấu là duyên,"	
+420	420	初󰅒人定勝天拱𡗉	Xưa nay nhân định thắng thiên cũng nhiều.	
+421	421	󰂇油觧結旦調	“Ví dù giải kết đến điều,	
+422	422	時󰠐鐄𥒥麻料貝身	“Thì đem vàng đá mà liều với thân!”	
+423	423	䚂調衷曲慇懃	Đủ điều trung khúc ân cần,	
+424	424	𢚸春派藏󱋓春藏派	Lòng xuân phới phới chén xuân tàng tàng.	
+425	425	𣈜盃𥐆𫽄𠫅𡱸	Ngày vui vắn chẳng đầy gang,	
+426	426	𬂙𦋦鵶㐌吟𦎛𡽫兑	Trông ra ác đã ngậm gương non đoài.	
+427	427	昹茹󰝸便𡎢佳	Vắng nhà chẳng tiện ngồi dai,	
+428	428	啫払娘買急移蔥紗	Giã chàng, nàng mới kíp dời song sa.	
+429	429	旦茹皮体信茹	Đến nhà vừa thấy tin nhà,	
+430	430	𠄩親群󰇥席花渚𧗱	Hai thân còn dở tiệc hoa chưa về.	
+431	431	𫔳外倍𢷀𦆆絁	Cửa ngoài vội rủ rèm the,	
+432	432	侵侵氷󰖁園𣅘𠬠𠇮	Xăm xăm băng lối vườn khuya một mình.	
+433	433	日䜹𦎛桧頭梗	Nhặt thưa gương giọi đầu cành,	
+434	434	𦰟畑󰛎卒帳萤吃囂	Ngọn đèn trông suốt trướng huỳnh hắt hiu.	
+435	435	生皮𢭸案燒燒	Sinh vừa tựa án thiu thiu.	
+436	436	󰇥朝如醒󰇥朝如迷	Giở chiều như tỉnh giở chiều như mê.	
+437	437	㗂蓮仕動聀槐	Tiếng sen sẽ động giấc hoè,	
+438	438	䏾𦝄㐌𧿨花棃吏𧵆	Bóng trăng đã trở hoa lê lại gần.	
+439	439	氷傾嵿莢𡽫神	Bâng khuâng đỉnh giáp non thần,	
+440	440	群𢪀聀梦店春𢠩恾	Còn ngờ giấc mộng đêm xuân mơ màng.	
+441	441	娘浪曠永店長	"Nàng rằng: ""Khoảng vắng đêm trường,"	
+442	442	爲花朱沛杜塘尋花	“Vì hoa cho phải dò đường tìm hoa.	
+443	443	悲除訴󰘚堆些	“Bây giờ tỏ mặt đôi ta,	
+444	444	別󰠲耒女庄󰑼占包	Biết đâu rồi nữa chẳng là chiêm bao?	
+445	445	倍𢜠爫礼逴𠓨	Vội mừng làm lễ rước vào,	
+446	446	臺蓮浽蠟蔥桃添香	Đài sen nối sáp song đào thêm hương.	
+447	447	箋誓拱律𠬠章	Tiên thề cùng trót một chương,	
+448	448	𩯀𫡮𠬠們刀鐄𠬠堆	Tóc mây một món dao vàng một đôi.	
+449	449	暈𦝄𠒬𠒬𡧲𡗶	Vầng trăng vặc vặc giữa trời,	
+450	450	丁寧𠄩󰘚𠬠𠳒双双	Đinh ninh hai mặt một lời song song.	
+451	451	󰖥絲根紊𡬷𢚸	Tóc tơ căn vặn tấc lòng,	
+452	452	𤾓𢆥󰗘𠬠𡦂同藏昌	Trăm năm tạc một chữ đồng tàng xương.	
+453	453	󱋓霞聘喠瓊漿	Chén hà sánh giọng quỳnh tương,	
+454	454	𦄂𬗢香論屏𦎛䏾篭	Giải là hương lộn bình gương bóng lồng.	
+455	455	生浪󰊄沫𦝄𥪝	"Sinh rằng: ""Gió mát trăng trong,"	
+456	456	闭𥹰󰅒𠬠𡭧𢚸渚甘	Bấy lâu nay một chút lòng chưa cam.	
+457	457	𨃉霜渚𪤍梂藍	Chày sương chưa nện cầu lam,	
+458	458	𢜝吝巾過𦋦讒所庄	Sợ lần khân quá ra sàm sỡ chăng?	
+459	459	娘浪紅葉赤绳	"Nàng rằng: ""Hồng diệp xích thằng,"	
+460	460	𠬠𠳒拱㐌㗂浪相知	Một lời cũng đã tiếng rằng tương tri.	
+461	461	停調月怒花箕	Đừng điều nguyệt nọ hoa kia,	
+462	462	外𦋦埃吏惜之貝埃	Ngoài ra ai lại tiếc gì với ai.	
+463	463	払浪𦖑浽琴臺	"Rằng: ""Nghe nổi tiếng cầm đài,"	
+464	464	渃𡽫隴仍𠻴𦖻鍾期	Nước non luống những lắng tai chung kỳ.	
+465	465	䜹浪󰟼技詫之	"Thưa rằng: ""Tiện kỹ sá chi!"	
+466	466	㐌𢚸𠰺旦𠰺時沛󰂅	Đã lòng dạy đến dạy thì phải vâng.	
+467	467	軒娄撩産琴𦝄	Hiên sau treo sẵn cầm trăng,	
+468	468	倍傍生㐌𢬣㨢昂眉	Vội vàng sinh đã tay nâng ngang mày.	
+469	469	娘浪芸𡮮𥢆西	Nàng rằng: “nghề mọn riêng tây,	
+470	470	爫之朱𥘀𢚸㝵凜申	“Làm chi cho nặng lòng người lắm thăn?”	
+471	471	𢫘寅𦀊武𦀊文	So dần dây võ dây văn,	
+472	472	𦊚𦀊蘇𡮈蹺韻宫商	Bốn dây to nhỏ theo vần cung thương.	
+473	473	曲󰠲楚漢戰場	Khúc đâu sở hán chiến trường,	
+474	474	𦖑𦋦㗂鉄㗂鐄扦僥	Nghe ra tiếng sắt tiếng vàng chen nhau.	
+475	475	曲󰠲司馬凰求	Khúc đâu Tư Mã hoàng cầu,	
+476	476	𦖑𦋦如怨如愁沛庄	Nghe ra như oán như sầu phải chăng?	
+477	477	稽康尼曲廣陵	Kê Khang này khúc Quảng Lăng,	
+478	478	𠬠浪流水𠄩浪行雲	Một rằng lưu Thuỷ hai rằng hành vân.	
+479	479	過𬮦尼曲昭君	Quá quan này khúc Chiêu Quân,	
+480	480	姅分戀主姅分思家	Nửa phần luyến chúa nửa phần tư gia.	
+481	481	𥪝娘㗂䳽𠖤戈	Trong như tiếng hạc bay qua,	
+482	482	濁如㗂󰋞買沙姅潙	Đục như tiếng suối mới sa nửa vời.	
+483	483	㗂寬如𫗄倘外	Tiếng khoan như gió thoảng ngoài,	
+484	484	㗂㕰立立如𡗶覩湄	Tiếng mau sầm sập như trời đổ mưa.	
+485	485	𦰟畑欺𤏣欺𤎎	Ngọn đèn khi tỏ khi mờ,	
+486	486	遣㝵𡎢帝拱魚菫愁	Khiến người ngồi đấy cũng ngơ ngẩn sầu.	
+487	487	欺𢭸𨆝欺儈頭	Khi tựa gối khi cúi đầu,	
+488	488	欺紆𠃩曲欺珠堆眉	Khi vò chín khúc khi chau đôi mày.	
+489	489	浪咍時实󰑼咍	"Rằng: ""Hay thì thật là hay,"	
+490	490	𦖑𦋦吟䔲𠽆𠹽世󰅹	Nghe ra ngậm đắng nuốt cay thế nào!	
+491	491	搊之仍堛簫騷	“Lựa chi những bực tiêu tao?	
+492	492	实𢚸𠇮拱󰅉󰅉𢚸㝵	“Thiệt lòng mình cũng nao nao lòng người?”	
+493	493	浪悁秩湿𠫾耒	"Rằng: ""Quen mất nết đi rồi,"	
+494	494	粃盃催拱性𡗶别牢	Tẻ vui thôi cũng tính trời biết sao.	
+495	495	𠳒鐄󰂅領意高	Lời vàng vâng lĩnh ý cao,	
+496	496	和寅寅扒𡭧󰅹特空	Hoạ dần dần bớt chút nào được không.	
+497	497	花香強訴式紅	Hoa hương càng tỏ thức hồng,	
+498	498	頭󰜣𡳃󰘚強濃𬌓腰	Đầu mày cuối mặt càng nồng tấm yêu.	
+499	499	㳥情𫀅㐌漂漂	Sóng tình xem đã xiêu xiêu,	
+500	500	𫀅𥪝欧厌固朝𣳮淶	Xem trong âu yếm có chiều lả lơi.	
+501	501	䜹浪停𥙩爫制	"Thưa rằng: ""đừng lấy làm chơi,"	
+502	502	𠖰朱䜹歇𠬠𠳒㐌󰅉	Dẽ cho thưa hết một lời đã nao!	
+503	503	尾之𠬠朶夭桃	“Vĩ chi một đoá yêu đào,	
+504	504	園紅之敢垠巢𪀄撑	Vườn hồng chi dám ngăn rào chim xanh.	
+505	505	㐌朱𠓨堛布荆	Đã cho vào bực bố kinh,	
+506	506	道從夫𥙩𡦂貞爫頭	Đạo tòng phu lấy chữ trinh làm đầu.	
+507	507	𦋦從𨕭𥾾𥪝𣘛	Ra tuồng trên bộc trong dâu,	
+508	508	時昆㝵意埃求爫之	Thì con người ấy ai cầu làm chi!	
+509	509	沛調咹𠾕於時	Phải điều ăn xổi ở thì,	
+510	510	節𤾓𢆥女補𠫾𠬠𣈜	Tiết trăm năm nỡ bỏ đi một ngày!	
+511	511	𡄎綠奇遇初𫢩	“Gẫm duyên kỳ ngộ xưa nay,	
+512	512	侶堆埃吏𫅠󰟴催張	Lứa đôi ai lại đẹp tày thôi trương.	
+513	513	𫡮湄打覩𥒥鐄	Mây mưa đánh đổ đá vàng,	
+514	514	過朝𢧚㐌󱋓呈燕鶧	Quá chiều nên đã chán chường yến anh.	
+515	515	𥪝欺排𦑃蓮梗	“Trong khi bày cánh liền cành,	
+516	516	麻𢚸𥜤󰕪㐌呈𠬠边	“Mà lòng rẻ rúng đã dành một bên.	
+517	517	𠃅西底冷香願	Mái tây để lạnh hương nguyền,	
+518	518	朱綠潭審𦋦緣彼傍	Cho duyên đằm thắm ra duyên bẽ bàng.	
+519	519	招梭畧𫽄𡦂床	“Gieo thoi trước chẳng giữ giàng,	
+520	520	底娄𢧚𢢆拱払𪽝埃	Để sau nên thẹn cùng chàng bởi ai?	
+521	521	倍之柳押花奈	Vội chi liễu ép hoa nài,	
+522	522	群身群𠬠填培固欺	“Còn thân còn một đền bồi có khi!”	
+523	523	体𠳒端正易𦖑	Thấy lời đoan chính dễ nghe,	
+524	524	払強添𠰚添爲𨑮分	Chàng càng thêm nể thêm vì mười phân.	
+525	525	䏾艚皮𤁕𨤔𡑝	Bóng tàu vừa lạt vẻ sân.	
+526	526	信󰠲㐌旦𫔳垠哙𠓨	Tin đâu đã đến cửa ngăn gọi vào.	
+527	527	娘時倍𧿨󰟀桃	Nàng thì vội trở buồng thêu,	
+528	528	生時𨄹𨀈𡑝桃倍𦋦	Sinh thì dạo bước sân đào vội ra.	
+529	529	󰘂柴皮𡉦杄花	Cửa sài vừa ngỏ then hoa,	
+530	530	家童𠓨𠳚書茹買郎	Gia đồng vào gửi thư nhà mới sang.	
+531	531	󰠐信叔父辞堂	Đem tin thúc phụ từ đường,	
+532	532	巴爲旅󰊽他鄕提携	Bơ vơ lữ thấn tha hương đề huề.	
+533	533	遼陽隔阻山溪	Liêu Dương cách trở sơn khê,	
+534	534	椿堂急哙生𧗱𧦈䘮	Xuân đường kíp gọi sinh về hộ tang.	
+535	535	𠻵信掣浽󰟹惶	Mắng tin xiết nỗi kinh hoàng,	
+536	536	氷𠇮輦畧臺粧叙情	Băng mình lén trước đài trang tự tình.	
+537	537	𨃴頭每浽叮咛	Gót đầu mọi nỗi đinh ninh,	
+538	538	浽茹䘮󰖥浽𠇮車吹	Nỗi nhà tang tóc nỗi mình xa xôi:	
+539	539	事󰠲渚及堆囘	Sự đâu chưa kịp đôi hồi,	
+540	540	綠󰠲渚及𠬠𠳒𢭂絲	Duyên đâu chưa kịp một lời trao tơ.	
+541	541	𦝄㙴群妬㧅㧅	“Trăng thềm còn đó trơ trơ,	
+542	542	敢賒吹󰘚麻䜹撻𢚸	Dám xa xôi mặt mà thưa thớt lòng.	
+543	543	外𠦳埮祝𠀧冬	Ngoài nghìn dặm chốc ba đông,	
+544	544	䋦愁欺󰣞渚衝群迡	“Mối sầu khi gỡ chưa xong còn chầy.	
+545	545	纏鐄𡦂玉朱台	Gìn vàng giữ ngọc cho hay,	
+546	546	朱停𢚸几蹎𫡮󱖺𡗶	Cho đành lòng kẻ chân mây cuối trời!	
+547	547	𦖻𦖑𫆧󰑚排排	Tai nghe ruột rối bời bời,	
+548	548	忍𪟽娘買𤋵𠳒畧娄	Nhịn ngừng nàng mới giải lời trước sau:	
+549	549	翁絲結補之僥	Ông tơ ghét bỏ chi nhau,	
+550	550	渚盃森合㐌愁支配	Chưa vui sum họp đã sầu chia phôi.	
+551	551	拱饒卒㐌𥘀𠳒	“Cùng nhau trót đã nặng lời,	
+552	552	酉台𠃅󰖥敢移𢚸絲	Dẫu thay mái tóc dám dời lòng tơ.	
+553	553	管包𣎃待𢆥徐	Quản bao tháng đợi năm chờ,	
+554	554	󰆹㝵咹𫗄𦣰湄㤕󰠐	Nghĩ người ăn gió nằm mưa xót thầm.	
+555	555	㐌願堆𡦂同心	“Đã nguyền đôi chữ đồng tâm	
+556	556	𤾓𢆥誓󰝸揞琴船埃	Trăm năm thề chẳng ôm cầm thuyền ai.	
+557	557	群𡽫群渃群𨱽	Còn non còn nước còn dài,	
+558	558	群𧗱群女旦㝵暗𫢩	Còn về còn nhớ đến người hôm nay!	
+559	559	𣳔孕渚女移𢬣	Dùng dằng chưa nỡ dời tay,	
+560	560	暈東𬂙㐌鄧𣦍耨茹	Vừng đông trông đã đứng ngay nóc nhà.	
+561	561	𪿒銀𠬠𨀈𠬠賒	Ngại ngần một bước một xa,	
+562	562	𠬠𠳒珍重珠沙󰋇行	Một lời trân trọng châu sa mấy hàng.	
+563	563	𥾾鞍𢮿挭倍傍	Buộc yên quảy gánh vội vàng.	
+564	564	䋦愁仕姅𨀈塘𢺺𠄩	Mối sầu sẻ nửa bước đường chia hai.	
+565	565	忿内󰘩景闺㝵	Buồn noi phong cảnh quê người,	
+566	566	㗂核鵑日󰞵𡗶鴈䜹	Tiếng cây quyên nhặt bóng trời nhạn thưa.	
+567	567	󰞽㝵𦖑󰊄浪湄	Não người nghe gió, rằng mưa,	
+568	568	𠬠𣈜𥘀挭相思𠬠𣈜	Một ngày nặng gánh tương tư một ngày.	
+569	569	娘時𨅸癒軒西	Nàng thì đứng rũ hiên tây,	
+570	570	𠃩囬問曰如圍䋦絲	Chín hồi vấn vít như vầy mối tơ.	
+571	571	𬂙澄𤌋𡴯窻䜹	Trông chừng khói ngất song thưa,	
+572	572	花㵢卓審柳賖壳鐄	Hoa trôi trác thắm liễu xơ xác vàng.	
+573	573	秦艮󰉥𨃴楼粧	Tần ngần dạo gót lầu trang,	
+574	574	𠬠团𢜠壽外鄕買𧗱	Một đoàn mừng thọ ngoại hương mới về.	
+575	575	寒喧渚及瀉提	Hàn huyên chưa kịp dã dề,	
+576	576	差衙俸𧡊𦊚皮𠮿嗃	Sai nha bỗng thấy bốn bề xôn xao.	
+577	577	𠊛𦟱𡱩几𢬣刀	Người nách thước kẻ tay đao,	
+578	578	頭𬌥󰘚馭呦呦如㵢	Đầu trâu mặt ngựa ào ào như sôi.	
+579	579	撝𢬂𠬠老𠬠󰛐	Vơ chằng một lão một trai,	
+580	580	𠬠𦀊󰟁賴𥾾𠄩深情	Một dây vô lại buộc hai thâm tình.	
+581	581	苔茹󰠓㗂𧋆撑	Đầy nhà vang tiếng ruồi xanh,	
+582	582	𣳔涞空𦂾散情絵埋	Rụng rời khung dệt tan tành gói may.	
+583	583	圖細軟𧵑𥢆西	Đồ tế nhuyễn của riêng tây,	
+584	584	泟𥑥生撅朱苔襊貪	Sạch sành sanh quét cho đầy túi tham.	
+585	585	調󰠲𠖤卜埃爫	Điều đâu bay buộc ai làm?	
+586	586	尼埃单泣秩緘俸仍	Này ai đan rập giật giàm bỗng dưng?	
+587	587	𠳨𦋦娄買别浪	Hỏi ra sau mới biết rằng:	
+588	588	沛𠸜称出󰑼尙半絲	Phải tên xưng xuất là thằng bán tơ.	
+589	589	𠬠茹恍惚󰡢魚	Một nhà hoảng hốt ngẩn ngơ,	
+590	590	㗂寃𠰺坦案𪟽󰌋𫡮	Tiếng oan dậy đất án ngờ rựng mây.	
+591	591	下辞𠹚㗑卒𣈗	Hạ từ van vái suốt ngày,	
+592	592	的𦖻𡑝恤負𢬣摧殘	Điếc tai lân tuất phũ tay tồi tàn.	
+593	593	樑高𢫫虐𦀊寃	Rường cao rút ngược dây oan,	
+594	594	酉㝵𥒥拱湿肝路㝵	Dẫu người đá cũng nát gan lọ người!	
+595	595	󰘚𬂙𤴬疸𣳔涞	Mặt trông đau đớn rụng rời,	
+596	596	冤尼群𠬠呌𡗶仍賒	Oan này còn một kêu trời nhưng xa.	
+597	597	𠬠𣈜𨔍退差衙	Một ngày lạ thói sai nha,	
+598	598	爫朱酷害󰝸戈爲钱	Làm cho khốc hại chẳng qua vì tiền.	
+599	599	牢朱骨肉院全	Sao cho cốt nhục vẹn tuyền.	
+600	600	𥪝欺遇变從權别牢	Trong khi ngộ biến tòng quyền biết sao?	
+601	601	綠会遇󰆙劬劳	Duyên hội ngộ đức cù lao.	
+602	602	𡦂情𡦂孝边󰅹𥘀欣	Chữ tình chữ hiếu bên nào nặng hơn?	
+603	603	底𠳒誓海盟山	Để lời thệ hải minh sơn,	
+604	604	爫昆畧沛填恩生成	Làm con trước phải đền ơn sinh thành.	
+605	605	決情娘買下情	Quyết tình nàng mới hạ tình:	
+606	606	𠖰朱底妾半命贖吒	“Dẽ cho để thiếp bán mình chuộc cha!”	
+607	607	户終固几吏𫅷	Họ chung có kẻ lại già,	
+608	608	拱𥪝衙役吏󰑼慈心	Cũng trong nha dịch lại là từ tâm.	
+609	609	体娘孝重情深	Thấy nàng hiếu trọng tình thâm,	
+610	610	爲娘𢪀拱傷󰠐㤕爲	Vì nàng nghĩ cũng thương thầm xót vay.	
+611	611	併排律妬論低	Tính bài lót đó luồn đây,	
+612	612	固𠀧𤾓两役尼買吹	Có ba trăm lạng việc này mới xuôi.	
+613	613	唉求暫付㩜外	Hãy cầu tạm phó giam ngoài,	
+614	614	𠸕娘規料𥪝堆𠀧𣈜	Dặn nàng qui liệu trong đôi ba ngày.	
+615	615	傷娘昆𥘷䜹𬏝	Thương nàng con trẻ thơ ngây,	
+616	616	扱干禍𫗄灾悲不期	Gặp cơn vạ gió tai bay bất kỳ.	
+617	617	𤴬𢚸死别生離	Đau lòng tử biệt sinh ly,	
+618	618	身群渚惜惜之旦綠	Thân còn chả tiếc tiếc gì đến duyên!	
+619	619	曷清咤𪿒分𢤞	Hạt mưa sá ngại phận hèn,	
+620	620	料󰝡𡬷𦹵决填𠀧春	Liệu đem tấc cỏ quyết đền ba xuân.	
+621	621	事𢚸吘貝水人	Sự lòng ngỏ với băng nhân,	
+622	622	信霜吨𠰺賒𧵆𠮿敲	Tin sương đồn đại xa gần xôn xao.	
+623	623	𧵆沔固𠬠媒󰅹	Gần miền có một mụ nào,	
+624	624	迻𠊛遠客尋𠓨問名	Đưa người viễn khách tìm vào vấn danh.	
+625	625	𠳨𠸜浪馬監生	Hỏi tên rằng Mã giám sinh,	
+626	626	𠳨囯浪縣臨清散𧵆	Hỏi quê rằng huyện Lâm Thanh tán gần”.	
+627	627	過年擢外𦊚旬	Quá niên trạc ngoại bốn tuần,	
+628	628	󰙐𪵟忍隊襖裙丙包	Râu mày nhẵn nhụi áo quần bảnh bao.	
+629	629	畧柴娄伵牢敲	Trước thầy sau tớ lao xao,	
+630	630	茹氷迻䋦逴𠓨楼粧	Nhà băng đưa mối rước vào lầu trang.	
+631	632	㨳𨕭𡎢卒産床	Ghế trên ngồi tót sắn sàng,	
+632	633	󰟀𥪝䋦㐌迻娘急𦋦	Buồng trong mối đã đưa nàng kíp ra.	
+633	634	㙴花𠬠𨀈湥花󰋇行	Thềm hoa một bước giọt hoa mấy hàng.	
+634	635	𪿒顒赧󰊄𠲖霜	Ngại ngùng nản gió e sương,	
+635	636	󰡤花䏾𢢆𬂙𦎛󰘚𠫅	Ngừng hoa bóng thẹn trông gương mặt dày.	
+636	637	䋦強𢵼󰖥扒𢬣	Mối càng vuốt tóc bắt tay,	
+637	638	湿忿如菊調𤷍如梅	Nét buồn như cúc điệu gầy như mai.	
+638	639	旦都斤色斤才	Đắn đo cân sắc cân tài,	
+639	640	押宫琴月此牌撅䜹	Ép cung cầm nguyệt thử bài quạt thơ.	
+640	641	曼燶𠬠𨤔𠬠扵	Mặn nồng một vẻ một ưa,	
+641	642	平𢚸客買隨机迭迢	Bằng lòng khách mới tuỳ cơ dặt dìu.	
+642	643	浪摸玉旦藍橋	"Rằng: ""Mua ngọc đến Lam Kiều"	
+643	644	聘󰀩嗔𠰺包僥帝呈	“Sính nghi xin dạy bao nhiêu đấy chiềng”	
+644	645	䋦浪登價𠦳鐄	Mối rằng: “đáng giá nghìn vàng,	
+645	646	﨤茹侞量㝵傷敢奈	“Giớp nhà nhờ lượng người thương dám nài.”	
+646	647	𪂲掑扒𠬠添𠄩	Cò kè bớt một thêm hai,	
+647	648	徐𥹰我價󰂅外𦊚𤾓	Giờ lâu ngã giá vâng ngoài bốn trăm.	
+648	649	𠬠𠳒船㐌淹潭	Một lời thuyền đã êm giầm,	
+649	650	矣迻𦑃帖畧扲爫𥱬	Hãy đưa canh thiếp trước cầm làm ghi.	
+650	651	定時納釆于歸	Định thời nạp thái vu qui.	
+651	652	钱𦝄㐌𧡊役之庄衝	Tiền lưng đã thấy việc gì chẳng xong!	
+652	653	𠬠𠳒𢚁貝終公	Một lời cậy với chung công,	
+653	654	乞詞暫領王𪪳𧗱茹	Khất từ tạm lĩnh vương ông về nhà.	
+654	655	傷娘昆𥘷吒󰒌	Thương nàng con trẻ cha già,	
+655	656	𥆾娘𪪳㐌𧖱沙𦛌油	Nhìn nàng ông đã máu sa ruột rầu.	
+656	657	餒昆仍約𧗱娄	Nuôi con những ước về sau,	
+657	658	𢭂絲沛侶招梂登尼	Trao tơ phải lứa gieo cầu đáng nơi.	
+658	659	𡗶爫之極闭𡗶	Trời làm chi cực bấy trời!	
+659	660	尼埃誣託朱𠊛合散	Này ai vu thác cho người hợp tan.	
+660	661	斧刀包管身殘	“Búa đao bao quản thân tàn,	
+661	662	女苔墮𥘷強寃酷𫅷	Nỡ đày đoạ trẻ càng oan khốc già.	
+662	663	𠬠𠳒𨍦𫏾拱𦋦	“Một lời sau trước cũng ra,	
+663	664	催時󰘚屈𫽄時𢚸𤴬	“Thôi thì mặt khuất chẳng thà lòng đau.”	
+664	665	蹺𠳒如沚𣳔珠	Theo lời như chảy dòng châu,	
+665	666	料𠇮𪪳㐌招頭墙𪿙	Liều mình ông đã gieo đầu tường vôi.	
+666	667	倍傍几𡨹㝵嵬	Vội vàng kẻ giữ người coi,	
+667	668	𡮈蘇娘吏尋𠳒勸干	Nhỏ to nàng lại tìm lời khuyên can:	
+668	669	尾之󰓳𤗖紅顔	Vĩ chi một mảnh hồng nhan,	
+669	670	󰖥絲渚𡭧填恩生成	Tóc tơ chưa chút đền ơn sinh thành.	
+670	671	𤼸書㐌𢢆娘鶯	Dâng thư đã thẹn nàng Oanh,	
+671	672	吏輸妸李半𠇮咍年	Lại thua ả Lý bán mình hay sao?	
+672	673	棟椿歲鶴強高	“Đống xuân tuổi hạc càng cao,	
+673	674	𠬠核梗搏别包饒梗	“Một cây gánh vác biết bao nhiêu cành.	
+674	675	𢚸絲油庄𢴑情	“lòng tơ dù chẳng dứt tình,	
+675	676	󰊄𫡮欧罕散情渃󰝶	“Gió mây âu hẳn tan tành nước non.	
+676	677	時浪料𠬠身昆	“Thà rằng liều một thân con,	
+677	678	花油㐌𦑃𦲿群撑核	Hoa dù rã cánh là còn xanh cây.	
+678	679	分牢停丕拱丕	Phận sao đành vậy cũng vầy,	
+679	680	扲如󰝸杜仍𣈜群撑	Cầm như chẳng đỗ những ngày còn xanh.	
+680	681	拱停併窘算觥	“Cũng đừng tính quẩn tính quanh,	
+681	682	散茹󰑼𠬠舌𠇮󰑼𠄩	Tan nhà là một thiệt mình là hai.	
+682	683	沛𠳒翁拱淹𦖻	Phải lời ông cũng êm tai,	
+683	684	認僥湥𥐆湥𨱽滚昂	Nhìn nhau giọt vắn giọt dài ngổn ngang.	
+684	685	𠃅外户馬皮𨖅	Mé ngoài họ Mã vừa sang,	
+685	686	詞花㐌記斤鐄買𢭂	Tờ hoa đã ký cân vàng mới trao.	
+686	687	𦝄󰒌独地爫牢	Trăng già độc địa làm sao?	
+687	688	扲𦀊庄攎𥾾𠓨自然	Cầm dây chẳng lựa buộc vào tự nhiên!	
+688	689	沖𢬣㐌産銅钱	Trong tay đã sẵn đồng tiền,	
+689	690	油𢚸対𤽸台顛苦之	Dầu lòng đổi trắng thay đen khó gì!	
+690	691	户終𦋦饬𢩾爲	Họ chung ra sức giúp vì,	
+691	692	礼心㐌達訟期拱衝	Lễ tâm đã đặt tụng kỳ cũng xong.	
+692	693	󰟳茹㐌暫從容	Việc nhà đã tạm thong dong,	
+693	694	星期促者㐌蒙度𧗱	Tinh kỳ giục giã đã mong độ về.	
+694	695	𠬠命娘𦰟畑𣅘	Một mình nàng ngọn đèn khuya,	
+695	696	𬡢滛湥碎󰖥車䋦愁	Áo dầm giọt tủi tóc xe mối sầu.	
+696	697	分油油丕拱油	Phận rầu dầu vậy cũng dầu,	
+697	698	㤕𢚸刀等闭𥹰𠬠𠳒	Xót lòng đeo đẳng bấy lâu một lời.	
+698	699	功程計别󰋇𨑮	Công trình kể biết mấy mươi.	
+699	700	爲些𠻞喫朱㝵󰇾揚	Vì ta khăng khít cho người dở dang.	
+700	701	誓𢚸渚燥𡃹鐄	“Thề lòng chưa ráo chén vàng,	
+701	702	󰏀誓催㐌負傍貝花	Lỗi thề thôi đã phụ phàng với hoa!	
+702	703	𡗶遼𡽫渃包賒	Trời liêu non nước bao xa,	
+703	704	𢪀󰠲𢩵󰘂支茹自碎	Nghĩ đâu rẽ cửa chia nhà tự tôi!	
+704	705	别包綠女誓倍	Biết bao duyên nợ thề bồi,	
+705	706	劫尼催󰡫時催群之	Kiếp này thôi thế thì thôi còn gì!	
+706	707	再生渚𢴑香誓	Tái sinh chưa dứt hương thề,	
+707	708	爫身𬌥馭填󰒂竹梅	Làm thân trâu ngựa đền nghì trúc mai	
+708	709	女情渚者朱埃	“Nợ tình chưa trả cho ai,	
+709	710	塊情芒𫴋泉臺渚散	"Khối tình mang xuống tuyền đài chưa tan."""	
+710	711	念貞貞仍盘恒	Nỗi riêng riêng những bàn hoàn,	
+711	712	油炵𤽸𥐨湥阕瀋巾	Dầu chong trắng đĩa giọt tràn thấm khăn.	
+712	713	翠雲秩醒聀春	Thuý Vân chợt tỉnh giấc xuân,	
+713	714	󰡎畑𥊘旦慇懃𠳨𠻃	Dưới đèn ghé đến ân cần hỏi han:	
+714	715	柯𡗶橷𣷭多端	“Cơ trời dâu bể đa đoan,	
+715	716	𠬠茹底姉𥢆寃𠬠𠇮	Một nhà để chị riêng oan một mình.	
+716	717	𠬠𠇮𡎢忍更殘	“Một mình ngồi nhẫn tàn canh”	
+717	718	浽貞群默買情之低	“Nỗi riêng còn mắc mưới tình chi đây?”	
+718	719	浪𢚸登忖式苔	"Rằng: ""Lòng đương thổn thức đầy,"	
+719	720	昆絲群王䋦尼渚衝	“Con tơ còn vướng mối này chưa xong.	
+720	721	許枚𦋦拱𢢆𢠅	“Hở môi ra cũng thẹn thùng,	
+721	722	抵𢚸時負𬌓𢚸貝埃	Để lòng thì phụ tấm lòng với ai.	
+722	723	𢚁㛪㛪固𠹾𠳒	Cậy em em có chịu lời,	
+723	724	𡎢𨕭朱姉𥛉耒仕䜹	Ngồi lên cho chị lạy rồi sẽ thưa.	
+724	725	𫡉塘坦挭相思	Giữa đường đứt gánh tương tư,	
+725	726	膠鸞执䋦絲乘默㛪	Keo loan chắp mối tơ thừa mặc em.	
+726	727	計自欺及払金	Kể từ khi gặp chàng kim,	
+727	728	欺𣈜撅約欺店󱋓誓	Khi ngày quạt ước khi đêm chén thề.	
+728	729	事󰠲㳥󰊄不期	Sự đâu sóng gió bất kỳ,	
+729	730	孝情固󰠋𠄩皮院𠄩	“hiếu tình có nhẽ hai bề vẹn hai.	
+730	731	𣈜春㛪唉群𨱽	Ngày xuân em hãy còn dài,	
+731	732	㤕情𧖱湈台𠳒渃𡽫	Xót tình máu mủ thay lời nước non.	
+732	733	姉油𬚸󰞺昌病	Chị dù thịt nát xương mòn,	
+733	734	唅唭𠃩󰏀拱群𦹳涞	Ngậm cười chín suối cũng còn thơm lây.	
+734	735	隻㮠貝幅詞𫡮	Chiếc vành với bức tờ mây,	
+735	736	綠尼時𡨹物尼𧵑終	Duyên này thì giữ vật này của chung.	
+736	737	油㛪𢧚𡞕𢧚𫯳	Dầu em nên vợ nên chồng,	
+737	738	㤕㝵𠇮泊乙𢚸庄涓	Xót người mệnh bạc ắt lòng chẳng quên.	
+738	739	秩㝵哙出𧵑信	“Mất người gọi chút của tin,	
+739	740	泛弹貝𤗖香願𣈗初	Phím đàn với mảnh hương nguyền ngày xưa.	
+740	741	枚𡢐油固包徐	Mai sau dầu có bao giờ,	
+741	742	焠󰌎香意攄𦀊泛尼	“Đốt lò hương ấy so tơ phím này.	
+742	743	𬂙𦋦𦰟𦹵𦲿核	Trông ra ngọn cỏ lá cây,	
+743	744	体囂囂愈時台姉𧗱	Thấy hiu hiu gió thì hay chị về.	
+744	745	魂群芒𥘀𠳒誓	Hồn còn mang nặng lời thề,	
+745	746	󰞺身蒲柳群𡹠竹枚	“Nát thân bồ liễu còn nghì trúc mai.	
+746	747	夜臺隔󰘚屈𠳒	Dạ đài cách mặt khuất lời,	
+747	748	洒嗔湥渃朱𠊛托寃	“Rưới xin giọt nước cho người thác oan.	
+748	749	悲𣇞簪技𦎛散	Bây giờ trâm gãy gương tan,	
+749	750	計爫牢掣𬮙萬愛恩	Kể làm sao xiết muôn vàn ái ân!	
+750	751	𤾓𠦳𠳚𥛉情君	“Trăm nghìn gởi lạy tình quân,	
+751	752	󰖥絲𥐆尾固銀意催	“Tóc tơ vắn vỏi có ngần ấy thôi.	
+752	753	分牢分泊如𪿙	Phận sao phận bạc như vôi!	
+753	754	㐌停渃沚䕯㵢𣳮羕	“Đã đành nước chảy bèo trôi lỡ dường.	
+754	755	喂金郎唉金郎	Ối Kim lang! Hỡi Kim lang!	
+755	756	催催妾㐌負払自尼	“Thôi thôi thiếp đã phụ chàng từ nay!”	
+756	757	𣴓𠳒魂𠞹𧖱醝	Cạn lời hồn dứt máu say,	
+757	758	𠬠唏啷󰔺堆𢬣冷銅	Một hơi lặng ngắt đôi tay lạnh đồng.	
+758	759	椿萱秩醒聀燶	Xuân huyên chợt tỉnh giấc nồng,	
+759	760	𠬠茹匝納几沖㝵外	Một nhà tấp nập kẻ trong người ngoài.	
+760	761	几湯㝵𬟥排排	Kẻ thang người thuốc bời bời,	
+761	762	買油千彙渚泒湥紅	Mới dầu cơn vựng chưa phai giọt hồng.	
+762	763	𠳨牢𦋦事𨔍𨓡	Hỏi sao ra sự lạ lùng.	
+763	764	翹強慝𦬑𩦓空𦋦𠳒	Kiều càng nức nở mở không ra lời.	
+764	765	挼娘雲買󰁹𦖻	Nỗi nàng vân mới rỉ tai:	
+765	766	隻㮠低貝詞掊扵低	Chiếc vành đây với tờ bồi ở đây.	
+766	767	𪽝吒爫󰏀綠眉	Bởi cha làm lỗi duyên mày	
+767	768	催時挼󰀎娄尼㐌㛪	“Thôi thì nỗi ấy sau này đã em.	
+768	769	爲埃𣳔改淶金	Vì ai rụng cải rơi kim?	
+769	770	底昆䕯浽𫡮沉爲埃	Để con bèo nổi mây chìm vì ai?	
+770	771	𠳒昆𠸕吏𠬠𠄩	Lời con dặn lại một hai,	
+771	772	油𤷱銀𥒥敢差𡬷鐄	“Dẫu mòn ngấn đá dám sai tấc vàng.”	
+772	773	𥛉催娘吏鍊呈	Lạy thôi nàng lại rén chiềng:	
+773	774	𢘾吒者特󰒂払朱吹	“Nhờ cha giả được nghĩa chàng cho xuôi.	
+774	775	説之身分碎隊	Thốt chi thân phận tôi đòi,	
+775	776	酉浪昌𤽸闺㝵爱兜	“Dẫu rằng xương trắng quê người quản đâu!”	
+776	777	掣兜𥪝浽󰌺愁	Xiết đâu trong nỗi thảm sầu!	
+777	778	刻更㐌𠽖南楼󰋇囘	Khắc canh lại giục nam lâu mấy hồi.	
+778	779	轎花󰠲㐌旦外	Kiệu hoa đâu đã đến ngoài,	
+779	780	管絃󰠲㐌𠽖𣈜生漓	Quản huyền đâu đã giục người sinh ly.	
+780	781	𤴬𢚸几扵𠊛𠫾	Đau lòng kẻ ở người đi,	
+781	782	湥涞滲𥒥𫡮支愈蚕	Giọt rơi thấm đá tơ chia rũ tằm.	
+782	783	𡗶歆𩄲矯最𨂘	Trời hôm mây kéo tối rầm,	
+783	784	油油𦰟𤐜潭潭梗霜	Rầu rầu ngọn khói đầm đầm cành sương.	
+784	785	逴妯󰡲旦駐坊	Rước dâu về đến trú phường,	
+785	786	𦊚皮春鎖𠬠娘扵𥪝	Bốn bề xuân khoá một nàng ở trong.	
+786	787	及󰡤𠼶綠𠲖紅	Ngập ngừng thẹn lục e hồng,	
+787	788	議𢚸吏㤕車𢚸隊番	Nghĩ lòng lại xót xa lòng đòi phen.	
+788	789	品仙課旦𢬣𪬡	Phẩm tiên thuở đến tay hèn,	
+789	790	𢙇功𬋟𡦂湄廛貝埃	Hoài công nắng giữ mưa gìn với ai!	
+790	791	别身旦𨀈落𩑛	Biết thân đến bước lạc loài,	
+791	792	蘂桃時𢬦𢬣㝵情連	Nhị đào thè lấy tay người tình chung.	
+792	793	爲些垠󰠣𫗄東	Vì ta ngăn đón gió đông.	
+793	794	舌𢚸欺扵𤴬𢚸欺𠫾	Thiệt lòng khi ở đau lòng khi đi.	
+794	795	重逢油禍固欺	Trùng phùng dù hoạ có khi,	
+795	796	身尼催固群之麻蒙	Thân này thôi có còn gì mà mong.	
+796	797	㐌生𦋦𢼂竜冬	Đã sinh ra số long đong,	
+797	798	群揞𥙩刼𦟐紅特牢	Còn ôm lấy kiếp má hồng được sao?	
+798	799	𨕭案落体青刀	Trên yên nhác thấy thanh dao,	
+799	800	𨁪扲娘㐌𪭯𠓨湥巾	Giấu cầm nàng đã gói vào rọt khăn.	
+800	801	防欺渃㐌旦蹎	Phòng khi nước đã đến chân,	
+801	802	刀尼時料貝身分尼	Dao này thì liệu với thân phận này.	
+802	803	點愁𠬠刻𠬠迡	Điểm sầu một khắc một chầy,	
+803	804	氷傾如醒如醝𠬠𠇮	Bâng khuâng như tỉnh như say một mình.	
+804	805	𫽄󰑼妸馬監生	Chẳng là gã mã giám sinh,	
+805	806	刎󰑼𠬠𥒥󰘩情㐌涓	Vẫn là một đứa phong tình đã quen.	
+806	807	過制吏﨤囘顛	Quá chơi lại gặp hồi đen,	
+807	808	涓漨吏劍咹沔月花	Quen vùng lại kiếm ăn miền nguyệt hoa.	
+808	809	楼撑固媒秀󰜏	Lầu xanh có mụ tú bà,	
+809	810	郎制㐌阻󰡲茹歇綠	Làng chơi đã trở về nhà hết duyên.	
+810	811	情期庄限麻𢧚	Tình cờ chẳng hẹn mà nên,	
+811	812	󰘚鋸𦲾䔲堆边𠬠坊	Mạt cưa mướp đắng đôi bên một phường.	
+812	813	終𦝄𨸈𠬠𫔳行	Chung lưng mở một cửa hàng,	
+813	814	觥𫷜奔粉半𦎛㐌例	Quanh năm buôn phấn bán gương đã lề.	
+814	815	𨄹尋泣𢄂時闺	Dạo tìm khắp chợ thì quê,	
+815	816	啫名󰞌下𠰺芸咹制	Giả danh hầu hạ dạy nghề ăn chơi.	
+816	817	󰏀埋欧拱事𡗶	Rủi may âu cũng sự trời,	
+817	818	断膓吏論󰘚㝵󰀡綠	Đoạn trường lại chọn mặt người vô duyên.	
+818	819	㤕娘㤕分婵娟	Xót nàng xót phận thuyền quyên,	
+819	820	梗花𠫾半𠓨船梩奔	Cành hoa đi bán vào thuyền lái buôn.	
+820	821	卯𩢬㐌拈𠓨囷	Mẹo lừa đã chớm vào khuôn,	
+821	822	聘󰀩𥜤價迎婚産𣈜	Sính nghi rẻ giá nghinh hôn sẵn ngày.	
+822	823	𢜠󰠐旗㐌旦𢬣	Mừng thầm cờ đã đến tay,	
+823	824	強𥚆𨤔玉強醝曲凰	Càng nhìn vẻ ngọc càng say khúc vàng.	
+824	825	㐌𢧚国色天香	Đã nên quốc sắc thiên hương,	
+825	826	𠬠唭尼罕𠦳鐄庄吪	Một cười này hẳn nghìn vàng chẳng ngoa.	
+826	827	米低渃畧披花	Về đây nước trước bẻ hoa,	
+827	828	王孫貴客乙󰑼都僥	Vương tôn quý khách ắt là đua nhau.	
+828	829	𠀧𦊚𤾓两此󰠳	Ba bốn trăm lạng thử đâu,	
+829	830	拱㐌皮本群𨍦時利	Cũng đà vừa vốn còn sau thì lời.	
+830	831	𠰘唁掑旦羡尼	Miếng ngon kề đến tạn nơi,	
+831	832	本茹拱惜𧵑𡗶拱貪	Vốn nhà cũng tiếc của trời cũng tham.	
+832	833	桃仙㐌𤊰𢬣凡	Đào tiên đã bén tay phàm,	
+833	834	時攀梗橘朱柑事𠁀	Thì vin cành quít cho cam sự đời.	
+834	835	󰡎尘󰋇󰘚郎制	Dưới trần mấy mặt làng chơi,	
+835	836	制花㐌易󰋇㝵别花	Chơi hoa chưa dễ mấy người biết hoa.	
+836	837	渃補榴𧖱𦙤𬷤	Nước vỏ lựu máu mào gà,	
+837	838	𠼦牟招集吏󰑼群元	Mượn màu chiêu tập lại là còn nguyên.	
+838	839	䏢麻打吝昆顛	Mập mờ đánh lận con đen,	
+839	840	包饒拱闭饒錢秩之	Bao nhiêu cũng bấy nhiêu tiền mất chi?	
+840	841	媒𫅷或固調之	Mụ già hoặc có điều gì,	
+841	842	料功秩𠬠𣇜跪麻傕	Liều công mất một buổi quì mà thôi.	
+842	843	旦低塘詫賒吹	Đến đây đường sá xa xôi,	
+843	844	麻些不動女㝵生𪟽	Mà ta bất động nữa người sinh nghi.	
+844	845	惜台𠬠朶茶縻	Tiếc thay một đoá trà mi,	
+845	846	昆蜂㐌𨸈塘𠫾𨇒𧗱	Con ong đã mở đường đi lối về!	
+846	847	𠬠干湄𫗄󰠱尼	Một cơn mưa gió nặng nề,	
+847	848	傷之旦玉惜之旦香	Thương gì đến ngọc tiếc gì đến hương.	
+848	849	𠯪春𠬠聀𢠩恾	Tiệc xuân một giấc mơ màng,	
+849	850	𤒘花底怒𠬠𡎢𡎢猪	Đuốc hoa để đó một nàng ngồi trơ.	
+850	851	湥貞尋謝𣻆湄	Giọt riêng tầm tã tuôn mưa,	
+851	852	分𠇮浽客分除浽春	Phần căm nỗi khách phần dơ nỗi mình	
+852	853	從之󰑼准灰腥	Tuồng chi là chốn hôi tanh,	
+853	854	身𠦳鐄底污名𦟐紅	Thân nghìn vàng để ô danh má hồng.	
+854	855	催群之女麻蒙	Thôi còn chi nữa mà mong,	
+855	856	𠁀㝵催世󰑼衝𠬠𠁀	Đời người thôi thế là xong một đời!	
+856	857	限綠悴分排排	Giận duyên tủi phận bời bời,	
+857	858	扲刀娘㐌筭排捐生	Cầm dao nàng đã toan bài quyên sinh.	
+858	859	𢪀𠫾𢪀吏𠬠𠇮	Nghĩ đi nghĩ lại một mình:	
+859	860	𠬠𠇮時渚𠄩情时牢	Một mình thì chớ hai tình thì sao?	
+860	861	𡢐油生事世󰅹	Sau dầu sinh sự thế nào,	
+861	862	追原󰝸矫累𠓨双親	Truy nguyên chẳng kẻo luỵ vào song thân.	
+862	863	打料欧唉且寅	Đánh liều âu hãy thả dần,	
+863	864	急迡催拱𠬠吝󰑼催	Kíp chầy thôi cũng một lần là thôi.	
+864	865	仍󰑼都旦虐吹	Những là đo đắn ngược xuôi,	
+865	866	㗂𬷤𦖑㐌嘅催𠃅墙	Tiếng gà nghe đã gáy sôi mé tường.	
+866	867	楼枚皮㗜𧥇霜	Lầu mai vừa rúc còi sương,	
+867	868	馬生𠽖𨄹倍傍𦋦𠫾	Mã sinh giục giạo vội vàng ra đi.	
+868	869	断膓台六分岐	Đoạn trường thay lúc phân kỳ,	
+869	870	𨀒𪀊泣警𨋣車岋𡹡	Vó câu khấp khểnh bánh xe gập ghềnh.	
+870	871	皮外𨑮𨤮長亭	Bề ngoài mười dặm trường đình,	
+871	872	王𪪳梗席賤行迻蹺	Vương Ông gánh tiệc tiễn hành đưa theo.	
+872	873	外時主客󰖧迢	Ngoài thì chủ khách dặt dìu,	
+873	874	𠬠茹萱貝𠬠娇於冲	Một nhà huyên với một kiều ở trong.	
+874	875	𥆾強吕渚湥紅	Nhìn càng lã chã giọt hồng,	
+875	876	󰁹𦖻娘買𤋵𢚸𥰊高	Rỉ tai nàng mới giải lòng thấp cao:	
+876	877	且生𫥧分䜹桃	“Vả sinh ra phận thơ đào,	
+877	878	功吒󰒂媄劫󰅹者衝	Công cha nghĩa mẹ kiếp nào giả xong!	
+878	879	吕廊渃濁披冲	“Lỡ làng nước đục pha trong,	
+879	880	𤾓𫷜底𠬠𬌓𢚸自低	Trăm năm để một tấm lòng từ đây.	
+880	881	𫀅𦎛冲闭饒𣈜	Xem gương trong bấy nhiêu ngày,	
+881	882	身昆庄矫默𢬣姂妑	Thân con chẳng kẻo mắc tay bợm già.	
+882	883	欺󰡲補永冲茹	Khi về bỏ vắng trong nhà,	
+883	884	欺𠓨推孕欺𦋦倍傍	“Khi vào dùi dắng khi ra vội vàng.	
+884	885	欺咹欺呐吕郎	Khi ăn khi nói lỡ làng,	
+885	886	欺柴欺伵𫀅常𫀅輕	Khi thầy khi tớ xem thường xem khinh.	
+886	887	恪牟几貴𠊛清	Khác màu kẻ quý người thanh,	
+887	888	𥋴𦋦朱技如形昆奔	“Ngắm ra cho kỹ như hình con buôn.	
+888	889	催昆群呐之昆	Thôi con còn nói chi con,	
+889	890	𤯩𢘾坦客托坉圭㝵	Sống nhờ đất khách thác chôn quê người!	
+890	891	王󰜏𦖑闭饒𠳒	Vương Bà nghe bấy nhiêu lời,	
+891	892	㗂寃㐌悶𫼢𡗶呌𨖲	Tiếng oan đã muốn rạch trời kêu lên.	
+892	893	𠄽勾渚𣴓𡃹勸	Vài câu chưa cạn chén khuyên,	
+893	894	𠃅外𢪀㐌𠽖連󰖁車	Mé ngoài nghỉ đã giục liền ruổi xe.	
+894	895	㤕昆𢚸󰠱皮皮	Xót con lòng nặng bì bì;	
+895	896	畧鞍𪪳吏奏呢𥰊高	Trước yên ông lại nằn nì thấp cao:	
+896	897	㤕身柳要䜹桃	“Xót thân liễu yếu thơ đào,	
+897	898	窒茄旦綏鎮𠓨的碎	Trất nhà đến nỗi giấn vào tôi ngươi.	
+898	899	自低𧣳𣷭边𡗶	Từ đây góc bể bên trời,	
+899	900	𬋟湄退退圭𠊛𠬠身	Nắng mưa thủi thủi quê người một thân.	
+900	901	𠦳尋如䏾松筠	Nghìn tầm nhờ bóng tùng quân,	
+901	902	雪霜𩂏𨔾朱身葛藤	Tuyết sương che chở cho thân cát đằng.	
+902	903	𣴓𠳒客買䜹浪	Cạn lời khách mới thưa rằng:	
+903	904	𢯜蹎催拱赤绳冉𢭂	Buộc chân thôi cũng xích thằng nhiệm trao.	
+904	905	枚𢖖油旦世󰅹	Mai sau dầu dến thế nào,	
+905	906	箕𦎛日月怒刀鬼神	Kìa gương nhật nguyệt nọ dao quỉ thần.	
+906	907	同同𫗄𠽖𫡮秦	Đùng dùng gió giục mây tần,	
+907	908	𠬠車𥪝𡎝紅塵如𠖤	Một xe trong cõi hồng trần như bay.	
+908	909	𬂙爲拔淚分𢬣	Trông vời gạt lệ phân tay,	
+909	910	谷𡗶審審𣈜𣈜󰠐󰠐	Góc trời thăm thẳm ngày ngày đăm đăm.	
+910	911	娘時𡎝客車侵	Nàng thì cõi khách xa xăm,	
+911	912	泊抛梂這顛滛岸𫡮	Bạc phau cầu giá đen dầm ngàn mây.	
+912	913	葦𦰤察察唏埋	Vi lau sát sát hơi may,	
+913	914	𠬠𡗶秩底貞差𠬠㝵	Một trời thu để riêng say một người.	
+914	915	埮𣅘雪淨𩂟𣾺	Dặm khuya ngắt tạnh mù khơi,	
+915	916	体𦝄麻𢢆仍𠳒𡽫滝	Thấy trăng mà thẹn những lời non sông.	
+916	917	楼秋層碧癋紅	Rừng thu từng biếc úa hồng,	
+917	918	𦖑𫚳如弋𬌓𢚸辰昏	Nghe chim như nhắc tấm lòng thần hôn.	
+918	919	仍󰑼𨔍渃𨔍𡽫	Những là lạ nước lạ non,	
+919	920	臨淄皮𠬠𣎃𧷺旦尼	Lâm Tri vừa một tháng tròn đến nơi.	
+920	921	車珠停軿𫔳外	Xe châu dừng bánh cửa ngoài,	
+921	922	簾冲㐌体𠬠㝵𨀈𦋦	Rèm trong đã thấy một người bước ra.	
+922	923	脱𬂙𤁕𤁕牟𦝄	Thoắt trông lợt lợt màu da,	
+923	924	咹之高𢀲𠰺它爫牢	Ăn gì cao lớn đẫy đà làm sao?	
+924	925	畧車雪吕嘆嘲	Trước xe lơi lả han chào,	
+925	926	󰂅𠳒娘買𨀈𠓨羡尼	Vâng lời nàng mới bước vào tạn nơi.	
+926	927	边時󰋇妸𪵟𧍋	Bên thì mấy ả mày ngài,	
+927	928	边時𡎢𦊚𠄼㝵廊制	Bên thì ngồi bốn năm người làng chơi.	
+928	929	𡧲時香𤓢罕灰	Giữa thì hương nến hẳn hoi,	
+929	930	撩幀官圣𤽸堆󰋃𪵟	Treo tranh quan thánh trắng đôi lông mày.	
+930	931	楼撑捐𫮇初󰅒	Lầu xanh quen lối xưa nay,	
+931	932	芸尼時𥙩𪪳尼先師	Nghề này thì lấy ông này tiên sư.	
+932	933	香𣋚花󰉲奉賒	Hương hôm hoa sớm phụng thờ,	
+933	934	姑󰅹醜𩴬朱䜹䋦行	Cô nào xấu mẽ cho thưa mối hàng.	
+934	935	𪭯襜𢯰襖󱋓𠴔	Cổi xiêm lột áo chán chường,	
+935	936	畧神仕願𤗖香淋滛	Trước thần sẽ nguyện mảnh hương lầm dầm.	
+936	937	対花𢯰𠁑袑𦣰	Đổi hoa lót dưới chiếu nằm,	
+937	938	𧊉蜂悲吏喑喑罒𡆫	Bướm ong bay lại ầm ầm tứ vi.	
+938	939	娇群料坦別之	Kiều còn liệu đất biết gì,	
+939	940	拠𠳒𥛉𬺗媒时󰂴𣦍	Cứ lời lạy xuống mụ thì khấn ngay:	
+940	941	𫔳行奔半朱枚	Cửa hàng buôn bán cho may,	
+941	942	店店寒食𣈜𣈜元宵	Đêm đêm hàn thực ngày ngày nguyên tiêu.	
+942	943	𬮙𠦳㝵体拱腰	Muôn nghìn người thấy cũng yêu,	
+943	944	𠮿嗃鶧燕習耀竹枝	“Xôn xao anh yến dập dìu trúc mai.	
+944	945	信鴈刎𦲿䜹排	Tin nhạn vẩn lá thơ bời,	
+945	946	迻㝵󰘂畧逴㝵󰘂娄	Đưa người cửa trước rước người cửa sau.	
+946	947	𨔍𦖻𦖑渚別󰠳	Lạ tai nghe chửa biết đâu,	
+947	948	𫀅情𦋦拱仍牟󰇾揚	Xem tình ra cũng những màu dở dang.	
+948	949	礼衝香火家堂	Lễ xong hương hoả gia đường,	
+949	950	秀󰜏勿𧂭蓮床𡎢𣦍	Tú bà vắt nóc lên giường ngồi ngay.	
+950	951	𠰺浪昆𥛉媄低	Dạy rằng: “con lạy mẹ đây,	
+951	952	𥛉耒時𥛉舅眉边箕	Lạy rồi thì lạy cậu mày bên kia	
+952	953	娘浪沛𨀈流󰡞	"Nàng rằng: ""Phải bước lưu ly,"	
+953	954	分𪬡󰂅㐌甘皮小星	Phận hèn vâng đã cam bề tiểu tinh.	
+954	955	調󰠳𥙩燕爫鶧	điều đâu lấy yến làm anh,	
+955	956	𬏝䜹庄別買名分之	“Ngây thơ chẳng biết với danh phận gì.	
+956	957	覩調納采于歸	Đủ điều nạp thái vu qui,	
+957	958	㐌欺鍾乍吏欺𨅸𡎢	“Đã khi chung chạ lại khi đứng ngồi.	
+958	959	徐𦋦台堛対嵬	Giờ ra thay bậc đổi ngôi,	
+959	960	敢嗔-吏𠬠𠳒朱明	“Dám xin gửi lại một lời cho minh.”	
+960	961	媒𦖑娘呐咍情	Mụ nghe nàng nói hay tình,	
+961	962	閉徐買浽三彭媒蓮	Bấy giờ mới nổi tam bành mụ lên:	
+962	963	尼尼事㐌果然	Này này sự đã quả nhiên,	
+963	964	催它刼𧵑𫯳綿𠫾耒	“Thôi đà cướp của chồng min đi rồi!	
+964	965	保時𠫾造𥙩㝵	“bBo thì đi dạo lấy người,	
+965	966	󰝡𧗱逴客劍利麻咹	Đem về rước khách kiếm lời mà ăn.	
+966	967	從󰟁󰒂扵󰟁仁	“Tuồng vô nghĩa ở vô nhân,	
+967	968	忿𠇮畧㐌秦緡此󱉁	Buồn mình trước đã tần mần thử chơi.	
+968	969	牟糊㐌秩𠫾耒	Màu hồ đã mất đi rồi,	
+969	970	催催本另𠫾𠁀茹麻	Thôi thôi vốn liếng đi đời nhà ma!	
+970	971	昆箕㐌半朱些	Con kia đã bán cho ta,	
+971	972	入家沛㨿法茹蚤低	Nhập gia phải cứ phép nhà tao đây.	
+972	973	尼箕󰡏󰇾排碑	“Lão kia có giở bài bây,	
+973	974	庄坊𠓨󰘚麻眉仃𦖑	“Chẳng phang vào mặt mà mày đành nghe.	
+974	975	㨿牢𠹾卒𠬠皮	Cớ sao chịu tốt một bề,	
+975	976	𡛔絲麻㐌我芸󰉺牢	Gái tơ mà đã ngứa nghề sớm sao!	
+976	977	沛爫朱別法蚤	Phải làm cho biết phép tao!	
+977	978	𪮞皮鞭立𪮭𠓨𦋦𢬣	Giật bì tiên rắp sấn vào ra tay.	
+978	979	娘浪𡗶審坦𠫅	"Nàng rằng: ""Trời thẳm đất dày!"	
+979	980	身尼㐌補仍𣈜𦋦𠫾	Thân này đã bỏ những ngày ra đi!	
+980	981	傕时傕固惜之	Thôi thì thôi có tiếc gì!	
+981	982	産刀𢬣襖即時󰇥𦋦	Sẵn dao tay áo tức thì giở ra.	
+982	983	𢜝肝󰞺玉料花	Sợ gan nát ngọc liều hoa,	
+983	984	媒群𬂙󰘚娘它過𢬣	Mụ còn trông mặt nàng đà quá tay.	
+984	985	傷喂才色墨尼	Thương ôi tài sắc mực này,	
+985	986	𠬠刀寃孽𢴑𦀊󰘩塵	Một dao oan nghiệt dứt dây phong trần.	
+986	987	浽寃破𡋿賒𧵆	Nỗi oan vỡ lở xa gần,	
+987	988	冲茹㝵秩𠬠吝如𣑻	Trong nhà người chật một lần như nen.	
+988	989	娘時弼弼聀仙	Nàng thì bặt bặt giấc tiên,	
+989	990	媒時𠬠𠬠󰘚𥚆魂𠖤	Mụ thì ngáy ngáy mắt nhìn hồn bay.	
+990	991	域娘𠓨准軒西	Vực nàng vào chốn hiên tây,	
+991	992	割𠊛𫀅朔𧼋柴𬟥湯	Cắt người xem sóc chạy thầy thuốc men.	
+992	993	󰅹台渚歇塵緣	Nào hay chưa hết trần duyên,	
+993	994	𥪝迷羕㐌等边𠬠娘	Trong mê dường đã đứng bên một nàng.	
+994	995	󰁹浪因果󰇥揚	"Rỉ rằng: ""Nhân quả dở dang,"	
+995	996	㐌󰝺遁女断膓特牢	Đã toan trốn nợ đoạn trường được sao?	
+996	997	数群󰠱業𦟐桃	Số còn nặng nghiệp má đào,	
+997	998	𠊛油悶決𡗶󰅹㐌朱	“Người dầu muốn quyết trời nào đã cho!	
+998	999	唉嗔歇刼柳蒲	Hãy xin hết kiếp liễu bồ,	
+999	1000	滝錢塘仕限㗅𧗱𨍦	Sông Tiền Đường sẽ hẹn hò về sau.	
+1000	1001	𬟥湯卒𠬠𣈜輸	Thuốc thang suốt một ngày thâu,	
+1001	1002	聀迷𦖑㐌油油皮散	Giấc mơ nghe đã dầu dầu vừa tan.	
+1002	1003	秀󰜏直産边幔	Tú bà chực sẵn bên màn,	
+1003	1004	招𠳒𪢖𡁾綿蛮𫽻寅	Gieo lời ỏn thót mơn man gỡ dần:	
+1004	1005	𠬠𠊛易固󰋇身	Một người dễ có mấy thân.	
+1005	1006	花春登蘂𣈜春群𨱽	Hoa xuân đương nhị ngày xuân còn dài.	
+1006	1007	拱󰑼吕𠬠啉𠄩	Cũng là lỡ một lầm hai,	
+1007	1008	𥒥鐄牢女押奈湄𫡮	Đá vàng sao nỡ ép nài mưa mây!	
+1008	1009	吕󰖄卒㐌𠓨低	Lỡ chân trót đã vào đây,	
+1009	1010	鎖󰟀春底行𣈜桃𡽫	Khoá buồng xuân để đợi ngày đào non.	
+1010	1011	㝵群時𧵑唉群	Người còn thì của hãy còn,	
+1011	1012	尋尼稱底󰑼昆丐茹	Tìm nơi xứng để là con cái nhà.	
+1012	1013	爫之罪报寃家	Làm chi tội báo oan gia,	
+1013	1014	舌𠇮麻害旦些咍之	"Thiệt mình mà hại đến ta hay gì?"""	
+1014	1015	拱𦖻󰋇浽𡅧呢	Kề tai mấy nỗi nằn nì,	
+1015	1016	娘𦖑󰟯拱是非𫼢𣑳	Nàng nghe dường cũng thị phi rạch ròi.	
+1016	1017	𡲤推神夢󰋇𠳒	Vả suy thần mộng mấy lời,	
+1017	1018	夙姻時拱固𡗶於冲	Túc nhân thì cũng có trời ở trong.	
+1018	1019	刼尼女者渚衝	Kiếp này nợ giả chưa xong,	
+1019	1020	爫之時拱𠬠𫯳刼𨍦	Làm chi thì cũng một chồng kiếp sau!	
+1020	1021	朗𦖑侵噤󱖺頭	Lặng nghe tâm ngẩm cúi đầu,	
+1021	1022	䜹浪埃固悶󰠲󰡫尼	"Thưa rằng: ""Ai có muốn đâu thế này."	
+1022	1023	時如𠳒世󰑼埋	“Được như lời thế là may,	
+1023	1024	罕浪枚固如𣈙朱庄	Hẳn rằng mai có như rày cho chăng!	
+1024	1025	戾欺蜂𧊉代騰	“Lệ khi ong bướm đãi đằng,	
+1025	1026	旦調𤯩濁牢平托冲	Đến điều sống đục, sao bằng thác trong!	
+1026	1027	媒浪昆唉從容	"Mụ rằng: ""Con hãy thong dong,"	
+1027	1028	沛調𢚸吏対𢚸麻󱉁	Phải điều lòng lại dối lòng mà chơi!	
+1028	1029	枚𨍦扵庄如𠳒	Mai sau ở chẳng như lời,	
+1029	1030	蓮頭固䏾󰘚𡗶𤎜𤐝	Trên đầu có bóng mặt trời rạng soi.	
+1030	1031	体𠳒决断罕灰	Thấy lời quyết đoán hẳn hoi,	
+1031	1032	停𢚸娘共仕𠿯𠿯寅	Đành lòng nàng cũng sẽ nguôi nguôi dần.	
+1032	1033	󰁡𢖖󰁇碧鎖春	Trước sau ngưng biếc khoá xuân,	
+1033	1034	𢵼𡽫賒󰌺𦝄𧵆扵終	Vệt non xa tấm trăng gần ở chung.	
+1034	1035	𦊛皮八夊賒𬂙	Tư bề bát ngát xa trông,	
+1035	1036	吉鐄𡑱怒𡏧紅埮箕	Cát vàng cồn nọ bụi hồng dặm kia.	
+1036	1037	彼嗙𫡮𣌋畑𣅘	Bẽ bàng mây sớm đèn khuya.	
+1037	1038	姅情姅景如支𬌓𢚸	Nửa tình nửa cảnh như chia tấm lòng.	
+1038	1039	想㝵󰡎月󱋓同	Tưởng người dưới nguyệt chén đồng,	
+1039	1040	信霜隴唉𣈙𬂙埋徐	Tin sương luống hãy rày trông mai chờ.	
+1040	1041	边𡗶谷𣷭󰅲爲	Bên trời góc bể bơ vơ,	
+1041	1042	󰌺𣘈滑𣳮包徐朱派	Tấm son gột rửa bao giờ cho phai.	
+1042	1043	㤕㝵揨𫔳𣋚埋	Xót người tựa cửa hôm mai,	
+1043	1044	撅燶答冷仍埃妬徐	Quạt nồng đắp lạnh những ai đó giờ?	
+1044	1045	蓬萊隔󰋇𬋟湄	Sân lai cách mấy nắng mưa,	
+1045	1046	󰡏欺㭲梓㐌皮㝵揞	Có khi gốc tử đã vừa người ôm.	
+1046	1047	盆𬂙㪯𣷭𧵆𣋚	Buồn trông cửa bể gần hôm,	
+1047	1048	船埃倘𦑃𬲇帆賒賒	Thuyền ai thoáng cánh gió buồm xa xa.	
+1048	1049	𢞂𬂙𦰟渃買沙	Buồn trông ngọn nước mới sa,	
+1049	1050	花㵢蛮莫別󰑼𧗱󰠳	Hoa trôi man mác biết là về đâu?	
+1050	1051	𢞂𬂙内𦹵油油	Buồn trông nội cỏ rầu rầu,	
+1051	1052	󰖄𫡮󰘚坦𠬠牟撑撑	Chân mây mặt đất một màu xanh xanh.	
+1052	1053	𢞂𬂙𩙌捲󰘚溋	Buồn trông gió cuốn mặt duềnh,	
+1053	1054	喑󰠐㗂㳥呌觥槣𡎢	Om thòm tiếng sóng kêu quanh ghế ngồi.	
+1054	1055	冬觥仍渃𡽫㝵	Chung quanh những nước non người,	
+1055	1056	𤴬𢚸流落𢧚𠄽𦊚勾	Đau lòng lưu lạc nên vài bốn câu.	
+1056	1057	噤𠿯𢷀幅簾珠	Ngậm ngùi rủ bức rèm châu,	
+1057	1058	隔楼𦖑固㗂󰠲和韻	Cách lầu nghe có tiếng đâu hoạ vần.	
+1058	1059	𠬠払皮擢青春	Một chàng vừa trạc thanh xuân,	
+1059	1060	形容沚淬袄巾妙揚	Hình dung chải chuốt áo khăn dịu dàng.	
+1060	1061	𢪀浪拱脉書香	Nghĩ rằng cũng mạch thư hương,	
+1061	1062	𠳨𦋦買別浪払楚卿	Hỏi ra mới biết rằng chàng sở khanh.	
+1062	1063	䏾娥湿倘𠁑萌	Bóng nga thấp thoáng dưới mành.	
+1063	1064	𬂙払娘拱𦋦情刀帶	Trông nàng chàng cũng ra tình đeo đai:	
+1064	1065	喂嘆色渃香𡗶	“Ôi than sắc nước hương trời,	
+1065	1063	惜朱󰠲俸落類旦低	Tiếc cho đâu bỗng lạc loài đến đây?	
+1066	1064	桂𥪝𦝄杏𨕭𫡮	Quế trong trăng hạnh trên mây,	
+1067	1065	葛洪女底朱苔墮花	Cát hồng nỡ để cho đầy đoạ hoa!	
+1068	1066	又一体云	Hựu nhất thể vân:	
+1069	1067	價停𥪝月𨕭𫡮	Giá đành trong nguyệt trên mây,	
+1070	1068	花牢花窖也苔闭花	Hoa sao hoa khéo giã giày bấy hoa?	
+1071	1069	汝肝貞陣𡗶󰒌	Nổi gan riêng giận trời già,	
+1072	1070	𢚸尼埃𤏣朱埃唉𢚸	Lòng này ai tỏ cho ta hỡi lòng?	
+1073	1069	婵娟󰂇別󰠰䧺	Thuyền quyên ví biết anh hùng,	
+1074	1070	𦋦𢬣操櫃𢼂篭如󱉁	Ra tay tháo cũi sổ lồng như chơi!	
+1075	1071	惜調啉庄別些	Tiếc điều lầm chẳng biết ta	
+1076	1072	𧗱珠𢵼玉易它如󱉁	Vể châu vớt ngọc dễ đà như chơi	
+1077	1073	窻秋㐌怯𦑃外	Song thu đã khép cánh ngoài,	
+1078	1074	𦖻群同望󰋇𠳒𨫊釘	Tai còn đồng vọng mấy lời sắt đanh.	
+1079	1075	𢪀㝵催吏𢪀𠇮	Nghĩ người thôi lại nghĩ mình,	
+1080	1076	感𢚸洙㤕𤁕情如爲	Cám lòng chua xót lạt tình bơ vơ.	
+1081	1077	仍󰑼吝吕𬋟湄	Những là lần lữa nắng mưa,	
+1082	1078	刼󰘩塵別包𣇞󰑼催	Kiếp phong trần biết bao giờ là thôi?	
+1083	1079	打料𠴍𠬠𠄩𠳒	Đánh liều nhắn một hai lời,	
+1084	1080	洳𢬣济度𣾼㝵沉淪	Nhờ tay tế độ vớt người trầm luân.	
+1085	1081	󰟚箋計歇賒𧵆	Mảnh tiên kể hết xa gần,	
+1086	1082	浽茹报答浽身落𩑛	Nỗi nhà báo đáp nỗi thân lạc loài.	
+1087	1083	歆刀皮𤎜𣈜梅	Hôm dao vừa rạng ngày mai,	
+1088	1084	便鴻娘買𠴍𠳒𠳚郎	Tiện hồng nàng mới nhắn lời gửi sang.	
+1089	1085	𡗶西朗蕩䏾鐄	Trời tây lãng đãng bóng vàng,	
+1090	1086	復書㐌体信払旦尼	Phục thư đã thấy tin chàng đến nơi.	
+1091	1087	𨷑𫀅蔑幅箋枚	Mở xem một bức tiên mai,	
+1092	1088	伶伶昔越󰡏𠄩𡦂題	Rành rành tích việt có hai chữ đề.	
+1093	1089	𥙩𥪝意思麻推	Lấy trong ý tứ mà suy:	
+1094	1090	𣈜𠄩𨑮𠬠戌時沛庄	Ngày hai mươi mốt tuất thì phải chăng?	
+1095	1091	𪀄歆催脱󰡲棱	Chim hôm thoi thót về rừng,	
+1096	1092	架茶縻㐌唅𦝄姅萌	Giá [trà/đồ] mi đã ngậm trăng nửa mành.	
+1097	1093	墻東𢯦動䏾梗	Tường đông lay động bóng cành,	
+1098	1094	𢩵窻吔体楚卿蹥𠓨	Đẩy song đã thấy sở khanh lẻn vào.	
+1099	1095	尙崇打惮𦋦嘲	Sượng sùng đánh dạn ra chào,	
+1100	1096	󰞃催娘買󰁹𢭂慇懃	Đoạn thôi nàng mới rỉ trao ân cần.	
+1101	1097	浪碎䕯渃㤕身	Rằng: “tôi bèo nước xót thân,	
+1102	1098	落塘恾𥙩女󰜊燕莺	“Lạc đường mang lấy nợ nần yến oanh.	
+1103	1099	敢洳骨肉死生	Dám nhờ cốt nhục tử sinh,	
+1104	1100	群𡗉結𦹵唅鋉󰡲𨍦	Còn nhiều kết cỏ ngậm vành về sau.	
+1105	1101	朗𡎢𠸬僣𡴯頭	Lặng ngồi thấm thía gật đầu:	
+1106	1102	些低沛慢埃󰠲麻浪	“Ta đây phải mượn ai đâu mà rằng!	
+1107	1103	娘它別旦些庄	Nàng đà biết đến ta chăng,	
+1108	1104	𣷭沉淪垃朱平買催	Bể trầm luân lấp cho bằng mới thôi!	
+1109	1105	娘浪𬮙事恩㝵	"Nàng rằng: ""Muôn sự ơn người,"	
+1110	1106	󰟨󰅹嗔决𠬠排朱衝	Thế nào xin quyết một bài cho xong?	
+1111	1107	浪些󰡏馭追󰘩	"Rằng: ""Ta có ngựa truy phong,"	
+1112	1108	󰡏𠸜𠁑帳本𣳔健兒	Có tên dưới trướng vốn dòng kiện nhi.	
+1113	1109	乘机𨇍𨀈𦋦𠫾	“Thừa cơ lén khẽ ra đi,	
+1114	1110	𠀧𨑮𦒹斫斫󰅹吏欣	“Ba mươi sáu chước chước gì lại hơn?	
+1115	1111	油欺𫗄夾湄单	Dù khi gió kép mưa đơn,	
+1116	1112	固些低拱庄干㨿之	Có ta đây cũng chẳng cơn cớ gì!	
+1117	1113	𦖑𠳒娘㐌生𪟽	Nghe lời nàng đã sinh nghi,	
+1118	1114	双它過旦管之特身	Song đà quá đến quản gì được thân.	
+1119	1115	拱料䏕眜跤蹎	Cũng liều nhắm mắt giao chân,	
+1120	1116	麻𫀅昆造𡏦運旦󰠳	Mà xem con tạo xoay vần đến đâu.	
+1121	1117	拱饒𨇍𨀈𠁑楼	Cùng nhau lẻn bước dưới lầu,	
+1122	1118	双双馭畧馭娄𠬠团	Song song ngựa trước ngựa sau một đoàn.	
+1123	1119	店秋刻潙更殘	Đêm thu khắc vợỉ canh tàn,	
+1124	1120	𫗄𣘃律𦲿𦝄𡶨唅𦎛	Gió cây trút lá trăng ngàn ngậm gương.	
+1125	1121	𫮇󰍹𦹵辣味霜	Lối mòn cỏ lợt mùi sương,	
+1126	1122	𢚸闺𠫾𠬠𨀈塘𠬠𤴬	Lòng quê đi một bước đường một đau.	
+1127	1123	㗂𬷤嗃𠳗嘅㕰	Tiếng gà xao xác gáy mau,	
+1128	1124	㗂㝵󰠳㐌𠃅𨍦𠰺揚	Tiếng người đâu đã mé sau dậy dàng.	
+1129	1125	娘強村式肝鐄	Nàng càng thổn thức gan vàng,	
+1130	1126	楚卿㐌雉𦀊綱𫮇󰅹	Sở Khanh đã rẽ dây cương lối nào!	
+1131	1127	𠬠𠇮坤別爫牢	Một mình khôn biết làm sao,	
+1132	1128	埮棱𨀈𥰊𨀈高駭䧺	Dặm rừng bước thấp bước cao hãi hùng.	
+1133	1129	化兒实󰡏女𢚸	Hoá nhi thật có nỡ lòng,	
+1134	1130	爫之𠫅紫紆紅𡗋󰅉	Làm chi giày tía vò hồng lắm nao!	
+1135	1131	𠬠团覩旦𫏾𨍦	Một đoàn đổ đến trước sau,	
+1136	1132	𤢇󰠳󰡎坦𦑃󰠳𨕭𡗶	Vuốt đâu dưới đất cánh đâu trên trời?	
+1137	1133	秀󰜏速𬆅旦尼	Tú bà tốc thẳng đến nơi,	
+1138	1134	音音押調𠬠唏吏茹	Hăm hăm áp điệu một hơi lại nhà.	
+1139	1135	󰜌行庄𠳨庄查	Hung hăng chẳng hỏi chẳng tra,	
+1140	1136	登𢬣𡏧柳拉花哉排	Đang tay vùi liễu giập hoa tơi bời.	
+1141	1137	𬚸䏧埃拱󰑼㝵	Thịt da ai cũng là người,	
+1142	1138	𢚸󰅹紅𣳔𧺁淶庄𤴬	Lòng nào hồng rụng thắm rời chẳng đau.	
+1143	1139	歇𠳒首腹懇求	Hết lời thú phục khẩn cầu,	
+1144	1140	捥𦝄𡶀覩梏頭𧖱沙	Uốn lưng thịt đổ cất đầu máu sa.	
+1145	1141	浪碎㤕分婵󰜏	Rằng: “tôi chút phận đàn bà,	
+1146	1142	渃𡽫󰡞𫔳󰡞茹旦低	“Nước non lìa cửa lìa nhà đến đây.	
+1147	1143	悲除𤯩托扵𢬣	Bây giờ sống thác ở tay,	
+1148	1144	身尼㐌旦世尼時催	Thân này đã đến thế này thì thôi!	
+1149	1145	仍碎󰡏咤之碎	Nhưng tôi có sá chi tôi,	
+1150	1146	分碎停丕本㝵低󰠳	“Phận tôi đành vậy vốn người để đâu?	
+1151	1147	身𧐖包管壈頭	Thân lươn bao quản lấm đầu,	
+1152	1148	𡮍𢚸貞白自𨍦拱徐	“Chút lòng trinh bạch từ sau cũng chừa”	
+1153	1149	特𠳒媒買隨机	Được lời mụ mới tuỳ cơ,	
+1154	1150	扒𠊛保領扒祠供招	Bắt người bảo lĩnh bắt tờ cung chiêu.	
+1155	1151	排𦠘󰡏妸馬娇	Bày vai có ả mã kiều,	
+1156	1152	悴娘𦋦買打料𠹾端	Xót nàng ra mới đánh liều chịu đoan.	
+1157	1153	媒強計日計寬	Mụ càng kể nhặt kể khoan,	
+1158	1154	頓摷旦墨燶󰜊買他	Đón rào đến mực nồng nàn mới tha.	
+1159	1155	域娘𠓨𢪀冲茹	Vực nàng vào nghỉ trong nhà,	
+1160	1156	馬嬌吏𠼯意𦋦𠸕𠳒	Mã kiều lại hở ý ra dặn lời:	
+1161	1157	催它默吝時催	Thôi đà mắc lận thì thôi!	
+1162	1158	𠫾󰠳𫽄別昆㝵楚卿	Đi đâu chẳng biết con người Sở Khanh?	
+1163	1159	泊情浽㗂楼撑	Bạc tình nổi tiếng lầu xanh,	
+1164	1160	𠬠𢬣墫別󰋇梗芙蓉	Một tay chôn biết mấy cành phù dung.	
+1165	1161	拖刀立産斫用	Đà đao sắp sẵn chước dùng,	
+1166	1162	𨔍之𠬠骨𠬠童初󰅒	Lạ gì một cốt một đồng xưa nay!	
+1167	1163	固𠀧𤾓两𢭂𢬣	“Có ba trăm lạng trao tay,	
+1168	1164	空仍之固傳尼路箕	“Không dưng chi có chuyện này trò kia.	
+1169	1165	耒𦋦𠭤󰘚卽時	Rồi ra trở mặt tức thì,	
+1170	1166	扒𠳒呌渚淶之麻𠁀	“Bớt lời kêu chớ rầy chi mà đời.”	
+1171	1167	娘浪誓説󰠱𠳒	"Nàng rằng: ""Thề thốt nặng lời,"	
+1172	1168	󰡏󰠳麻吏固㝵險溇	“Có đâu mà lại CÓ người hiểm sâu.”	
+1173	1169	群登推畧𢪀娄	Còn đương suy trước nghĩ sau,	
+1174	1170	󰘚模㐌体於󰠳引𠓨	Mặt mo đã thấy ở đâu dẫn vào.	
+1175	1171	楚卿蓮㗂嘹哰	Sở khanh lên tiếng rêu rao:	
+1176	1172	喥𦖑娘󰡏昆󰅹扵低	“Dọ nghe rằng có con nào ở đây,	
+1177	1173	抛朱眷𫗄𫫵𦝄	Phao cho quyến gió rủ mây,	
+1178	1174	唉𫀅固別󰘚尼󰑼埃	Hãy xem có biết mặt này là ai?	
+1179	1175	娘浪催󰡫時催	"Nàng rằng: ""Thôi thế thì thôi,"	
+1180	1176	浪空時拱𪡔𠳒浪空	“Rằng không, thì cũng la trời rằng không.”	
+1181	1177	楚卿咶噒同同	Sở Khanh quát mắng đùng đùng,	
+1182	1178	𨀈𠓨皮立恃䧺𦋦𢬣	Bước vào vừa rắp thị hùng ra tay.	
+1183	1179	娘浪𡗶尔固咍	"Nàng rằng: ""Trời nhẽ có hay!"	
+1184	1180	眷鶧𫫵燕事尼在埃	Quyến anh rủ yến sự này tại ai?	
+1185	1181	󰝡𠊛𢩵𫴋井台	Đem người dẩy xuống giếng thơi,	
+1186	1182	呐耒耒吏咹𠳒特𣦍	Nói rồi rồi lại ăn lời được ngay!	
+1187	1183	群箋昔越扵𢬣	Còn tiên tích việt ở tay,	
+1188	1184	𤑟𤉜󰘚󰀎󰘚尼渚埃	Rõ ràng mặt ấy mặt này chớ ai?	
+1189	1185	𠳒𣦍冬󰘚冲外	Lời ngay đông mặt trong ngoài,	
+1190	1186	埃埃拱𡃍󰘚㝵󰟁良	Ai ai cũng gớm mặt người vô lương.	
+1191	1187	𥢆情案㐌𤑟𤉜	Riêng tình án đã rõ ràng,	
+1192	1188	唋從𢪀買劍塘操𨆢	Dơ tuồng nghỉ mới kiếm đường tháo lui.	
+1193	1189	󰟀𥢆𥢆仍湥洡	Buồng riêng riêng những sụt sùi,	
+1194	1190	󰀩身麻吏唅𠿯朱身	Nghĩ thân mà lại ngậm ngùi cho thân.	
+1195	1191	惜台冲這𤽸銀	Tiếc thay trong giá trắng ngần,	
+1196	1192	旦󰘩塵拱󰘩塵如埃	Đến phong trần cũng phong trần như ai.	
+1197	1193	粃盃拱𠬠刼𠊚	Tẻ vui cũng một kiếp người,	
+1198	1194	紅顔沛眾扵𠁀買𠱋	Hồng nhan phải giống ở đời mãi ru!	
+1199	1195	刼初㐌唪塘修	Kiếp xưa đã vụng đường tu,	
+1200	1196	刼尼庄矫填蒲買吹	Kiếp này chẳng kẻo đền bù mới xuôi.	
+1201	1197	酉牢𤭸㐌侶耒	Dẫu sao bình đã vỡ rồi,	
+1202	1198	𥙩身麻者女𠁀朱衝	Lấy thân mà giả nợ đời cho xong.	
+1203	1199	皮旬月郎𦎛冲	Vừa tuần nguyệt sáng gương trong,	
+1204	1200	秀󰜏聘吏從容吲𠻀	Tú bà sính lại thong dong dặn dò:	
+1205	1201	芸󱉁拱𡗋功夫	Nghề chơi cũng lắm công phu,	
+1206	1202	昆㝵些沛別朱覩調	“Con người ta phải biết cho đủ điều.”	
+1207	1203	娘浪湄𫗄㕸韶	"Nàng rằng: ""Mưa gió dập dìu,"	
+1208	1204	料身時拱沛料世催	Liều thân thì cũng phải liều thế thôi!	
+1209	1205	媒浪埃拱如埃	"Mụ rằng: ""Ai cũng như ai,"	
+1210	1206	㝵些埃固钱𢙇旦低	“Người ta ai có tiền hoài đến đây?	
+1211	1207	扵冲群𡗋調咍	Ở trong còn lắm điều hay,	
+1212	1208	挼店怯𨷑挼𣈜𥢆終	Nỗi đêm khép mở nỗi ngày riêng chung.	
+1213	1209	尼昆属𥙩爫𢚸	Này con thuộc lấy làm lòng:	
+1214	1210	鑅外𬙞𡦂鑅冲糁芸	Vành ngoài bảy chữ vành trong tám nghề.	
+1215	1211	󱉁朱柳󰇏花吱	Chơi cho liễu chán hoa chê,	
+1216	1212	朱𡑝六𥒥朱迷敏𠁀	Cho lăn lóc đá cho mê mẫn đời.	
+1217	1213	欺𦖑杳欺湿㝵	“Khi khóe hạnh khi nét ngài,	
+1218	1214	欺吟𬢱月欺唭𠹳花	Khi ngâm ngợi nguyệt khi cười cợt hoa.	
+1219	1215	調󰑼芸業冲茹	Đều là nghề nghiệp trong nhà,	
+1220	1216	覩銀意湿買󰑼㝵𤐝	Đủ ngần ấy nết mới là người soi.	
+1221	1217	哙頭󰂅代󰋇𠳒	Cúi đầu vâng dạy mấy lời,	
+1222	1218	羕珠󰞺月羕派朝紅	Dường chau nét nguyệt, dường phai chiều hồng.	
+1223	1219	仍𦖑呐㐌𢢆樁	Những nghe nói đã thẹn thùng,	
+1224	1220	渃𠁀𡗋挼𨔍𨓡汔溪	Nước đời lắm nỗi lạ lùng khắt khe!	
+1225	1221	淬𠇮擧閣房圭	Xót mình cửa các phòng khuê,	
+1226	1222	捛𢚸󰄴𥙩仍芸業台	Vỡ lòng học lấy những nghề nghiệp hay!	
+1227	1223	窖󰑼󰘚惮𫵇𠫅	Khéo là mặt dạn mày dày,	
+1228	1224	刼㝵㐌旦世尼時催	Kiếp người đã đến thế này thì thôi!	
+1229	1225	傷咍身分落類	Thương thay thân phận lạc loài,	
+1230	1226	酉牢拱扵𢬣㝵別牢	Dẫu sao cũng ở tay người biết sao?	
+1231	1227	楼撑買𢷀帳桃	Lầu xanh mới rủ trướng đào,	
+1232	1228	強撩價玉強高品㝵	Càng treo giá ngọc càng cao phẩm người.	
+1233	1229	別包𧊉也蜂淶	Biết bao bướm lả ong lơi,	
+1234	1230	局醝苔𣎃陣唭卒店	Cuộc say đầy tháng, trận cười suốt đêm.	
+1235	1231	習耀𦲿𫗄梗𪀄	Dập dìu lá gió cành chim,	
+1236	1232	󰉺迻宋玉最尋長卿	Sớm đưa Tống Ngọc tối tìm Trường Khanh.	
+1237	1233	欺醒𨢇六殘更	Khi tỉnh rượu lúc tàn canh,	
+1238	1234	秩𠇮𠇮吏傷𠇮淬車	Giật mình mình lại thương mình xót xa.	
+1239	1235	欺牢封錦𢷀󰑔	Khi sao phong gấm rủ là,	
+1240	1236	除牢散作如花𡨌塘	Giờ sao tan tác như hoa giữa đường.	
+1241	1237	󰘚牢𠫅𫗄磾霜	Mặt sao dày gió dạn sương,	
+1242	1238	身牢𧊉󱋓蜂𠴔闭身	Thân sao bướm chán ong chường bấy thân!	
+1243	1239	默㝵湄楚𫡮秦	Mặc người mưa sở mây tần,	
+1244	1240	仍𠇮󰅹別固春󰑼之	Những mình nào biết có xuân là gì.	
+1245	1241	隊畨𫗄𢭸花掑	Đòi phen gió tựa, hoa kề,	
+1246	1242	姅簾雪唅𦊚夏𦝄偷	Nửa rèm tuyết ngậm, bốn hè trăng thâu.	
+1247	1243	景󰅹景庄刀愁	Cảnh nào cảnh chẳng đeo sầu,	
+1248	1244	㝵忿景固盃󰠳包徐	Người buồn cảnh có vui đâu bao giờ?	
+1249	1245	隊畨湿𦘧句䜹	Đòi phen nét vẽ câu thơ,	
+1250	1246	宫琹𥪝月渃箕𠁑花	Cung cầm trong nguyệt, nước cờ dưới hoa.	
+1251	1247	盃󰑼盃強矫󰑼	Vui là vui gượng kẻo là,	
+1252	1248	埃知音妬漫麻貝埃	Ai tri âm đó mặn mà với ai?	
+1253	1249	徐唹𫗄竹湄梅	Thờ ơ gió trúc mưa mai,	
+1254	1250	菫󰡣𤾓挼搥埋𠬠身	Ngẩn ngơ trăm nỗi dùi mài một thân.	
+1255	1251	𤋾𢚸隊󰞃賒𧵆	Ôm lòng đòi đoạn xa gần,	
+1256	1252	庄紆麻󰑚庄𢴍麻𤴬	Chẳng vò mà rối chẳng dần mà đau.	
+1257	1253	汝恩𠃩𡦂高溇	Nhớ ơn chín chữ cao sâu,	
+1258	1254	𠬠㝵𠬠我䏾橷斜斜	Một ngày một ngã bóng dâu tà tà.	
+1259	1255	埮𠦳渃瀋𡽫賒	Dặm nghìn nước thẳm non xa,	
+1260	1256	𢪀󰠳身分昆𦋦世尼	Nghĩ đâu thân phận con ra thế này!	
+1261	1257	𡑝槐堆拙䜹𬏝	Sân hoè đôi chút thơ ngây,	
+1262	1258	珍甘埃几拖台󰜋𠇮	Trân cam ai kẻ đỡ thay việc mình?	
+1263	1259	𢖵𠳒願約三生	Nhớ lời nguyện ước ba sinh,	
+1264	1260	賒吹埃󰡏別情庒埃	Xa xôi ai có biết tình chăng ai?	
+1265	1261	欺󰡲𠳨柳章臺	Khi về hỏi liễu Chương Đài,	
+1266	1262	梗春㐌𢯏朱㝵專𢬣	Cành xuân đã bẻ cho người chuyên tay.	
+1267	1263	情溇蒙者󰒂𠫅	Tình sâu mong giả nghĩa dày,	
+1268	1264	花箕㐌执核尼朱渚	Hoa kia đã chắp cây này cho chưa?	
+1269	1265	䋦情隊󰞃紆絲	Mối tình đòi đoạn vò tơ,	
+1270	1266	聀鄕䦕𨻫仍𢠩更𨱽	Giấc hương quan luống những mơ canh dài.	
+1271	1267	窻紗宇宇方𡗶	Song sa võ võ phương trời,	
+1272	1268	󰅒黄昏㐌吏枚昏黄	Nay hoàng hôn đã lại mai hôn hoàng.	
+1273	1269	吝吝兎泊鵶鐄	Lần lần thỏ bạc ác vàng,	
+1274	1270	拙㝵𥪝会断膓隊干	Xót người trong hội đoạn trường đòi cơn.	
+1275	1271	㐌朱𥙩𡦂紅顔	Đã cho lấy chữ hồng nhan,	
+1276	1272	爫朱朱害朱殘朱斤	Làm cho cho hại cho tàn cho cân.	
+1277	1273	㐌苔𠓨刼󰘩塵	Đã đày vào kiếp phong trần,	
+1278	1274	牢朱叕辱𠬠吝買傕	Sao cho xuyết nhục một lần mới thôi.	
+1279	1275	客遊俸固𠬠㝵	Khách du bỗng có một người,	
+1280	1276	其心户束拱𩑛書香	Kỳ tâm họ thúc cũng loài thư hương.	
+1281	1277	本㝵縣錫州常	Vốn người huyện tích, châu thường,	
+1282	1278	蹺嚴親𨷑𡾵行臨淄	Theo nghiêm thân mở ngôi hàng lâm tri.	
+1283	1279	花魁慕㗂翹兒	Hoa khôi mộ tiếng kiều nhi,	
+1284	1280	帖紅尋旦香圭𠳚𠓨	Thiếp hồng tìm đến hương khuê gửi vào.	
+1285	1281	帳蘇夾󰘚花桃	Trướng tô giáp mặt hoa đào,	
+1286	1282	𨤔󰅹庄漫󰞺󰅹庄扵	Vẻ nào chẳng mặn nét nào chẳng ưa.	
+1287	1283	海棠蔓蔓梗󰡯	Hải đường mởn mởn cành tơ,	
+1288	1284	𣈜春強𫗄強湄強燶	Ngày xuân càng gió càng mưa càng nồng.	
+1289	1285	月花花月󰞽燶	Nguyệt hoa hoa nguyệt não nùng,	
+1290	1286	店春埃易扲𢚸特庄	Đêm xuân ai dễ cầm lòng được chăng!	
+1291	1287	𨔍之声氣󰠋恒	Lạ gì thanh khí nhẽ hằng,	
+1292	1288	𠬠𦀊𠬠𥾾埃𢬂朱𦋦	Một dây một buộc ai giằng cho ra?	
+1293	1289	𣌋桃最槾憐󰑼	Sớm đào tối mận lân la,	
+1294	1290	畧群𦝄𫗄娄𦋦𥒥鐄	Trước còn trăng gió sau ra đá vàng.	
+1295	1291	擛牢埋敏𨔍羕	Dịp sao may mắn lạ dường,	
+1296	1292	吏皮及曠嚴堂吏圭	Lại vừa gặp khoảng nghiêm đường lại quê.	
+1297	1293	生強𠬠醒𨑮迷	Sinh càng một tỉnh mười mê,	
+1298	1294	𣈜春𡗋六𠫾米貝春	Ngày xuân lắm lúc quên về với xuân.	
+1299	1295	欺𫗄阁欺𦝄𡑝	Khi gió gác khi trăng sân,	
+1300	1296	瓢仙篤𨢇勾神浽䜹	Bầu tiên dốc rượu câu thần nối thơ.	
+1301	1297	欺香𣌋欺𫡮昉	Khi hương sớm khi mây trưa,	
+1302	1298	盘𡆫馭渃塘絲和弹	Bàn vây lừa nước đường tơ hoạ đàn.	
+1303	1299	疲𢠩冲局追歡	Mệt mờ trong cuộc truy hoan,	
+1304	1300	強悁属󰞺強𢺤𢬢情	Càng quen thuộc nết càng dan díu tình.	
+1305	1301	𨔍朱丐㳥傾城	Lạ cho cái sóng khuynh thành,	
+1306	1302	爫朱覩舘漂亭如󱉁	Làm cho đổ quán xiêu đình như chơi.	
+1307	1303	束生悁󰞺卜淶	Thúc sinh quen nết bốc rời,	
+1308	1304	𤾓𠦳覩𠬠陣唭如空	Trăm nghìn đổ một trận cười như không.	
+1309	1305	媒強蘇綠捽紅	Mụ càng tô lục chuốt hồng,	
+1310	1306	𧖱貪哎𧡊唏銅時迷	Máu tham ngửi thấy hơi đồng thì mê.	
+1311	1307	󰡎𦝄鵑㐌哙夏	Dưới trăng quyên đã gọi hè,	
+1312	1308	頭墻󰌕榴󰟧𤍶󰠐󱖮	Đầu tường lửa lựu lập loè đâm bông.	
+1313	1309	房󰑔沛𣇜從容	Phòng la phải buổi thong dong,	
+1314	1310	湯香󰡦幅帳紅泟花	Thang hương rủ bức trướng hồng sạch hoa.	
+1315	1311	𤑟𤉜冲玉𤽸牙	Rõ ràng trong ngọc trắng ngà,	
+1316	1312	𠫅𠫅産𤒘𠬠座天然	Dày dày sẵn đúc một toà thiên nhiên.	
+1317	1313	生強𤏣󰞺強𠸦	Sinh càng tỏ nét càng khen,	
+1318	1314	寓情𢬣草𠬠偏律唐	Ngụ tình tay thảo một thiên luật Đường.	
+1319	1315	娘浪󰂅別𢚸払	"Nàng rằng: ""Vâng biết lòng chàng,"	
+1320	1316	𠳒行珠玉行𠳒錦絩	Lời lời châu ngọc hàng hàng gấm thêu.	
+1321	1317	咍㘋󰠋拱浽貂	Hay hèn nhẽ cũng nối điêu,	
+1322	1318	浽生𢪀𠬠𠄩調昂昂	“Nỗi quê nghĩ một hai điều ngang ngang.	
+1323	1319	𢚸群𠳚盎𫡮鐄	“Lòng còn gửi áng mây vàng,	
+1324	1320	絆外嗔唉𠹾払歆󰅒	“Bấn ngòi xin hãy chịu chàng hôm nay.”	
+1325	1321	浪牢呐𨔍𨓡台	"Rằng: ""Sao nói lạ lùng thay!"	
+1326	1322	梗箕庄沛桧尼麻𦋦	Cành kia chẳng phải cỗi này mà ra?	
+1327	1323	娘強悴突秋波	Nàng càng tủi dột thu ba,	
+1328	1324	断膓録意󰇾麻盆星	Đoạn trường lúc ấy dở mà buồn tênh:	
+1329	1325	妾如花㐌离梗	Thiếp như hoa đã lìa cành,	
+1330	1326	払如昆𧊉吕鑅麻󱉁	“Chàng như con bướm lựa vành mà chơi.	
+1331	1327	主春仃㐌󰡏尼	Chúa xuân đành đã có nơi,	
+1332	1328	𥐆𣈜催渚𨱽𠳒爫之	“Vắn ngày thôi chớ dài lời làm chi!”	
+1333	1329	生浪自課相知	"Sinh rằng: ""Từ thuở tương tri,"	
+1334	1330	𬌓𥢆𥢆仍𥘀爲渃𡽫	Tấm riêng riêng những nặng vì nước non.	
+1335	1331	𤾓𢆥併局𣃲𧷺	Trăm năm tính cuộc vuông tròn,	
+1336	1332	沛𢲛朱旦𦰟源㴖滝	“Phải dò cho đến ngọn nguồn ngác sông.”	
+1337	1333	娘浪𬮙隊恩𢚸	"Nàng rằng: ""Muôn đội ơn lòng,"	
+1338	1334	㤕𠲖边娶边從易󰠳	Xót e bên thú bên tòng dễ đâu.	
+1339	1335	平康拫那闭𥹰	Bình Khang nấn ná bấy lâu,	
+1340	1336	腰花腰特𠬠牟點粧	Yêu hoa yêu được một màu điểm trang.	
+1341	1337	耒𫥨𣳮粉𢭂香	“Rồi ra rữa phấn xao hương,	
+1342	1338	𢚸箕𪧚特常常買庄	Lòng kia giữ được thường thường mãi chăng?	
+1343	1339	𡲤冲㙴桂宫𦝄	“Vả trong thềm Quế cung trăng,	
+1344	1340	主張打㐌姉姮扵冲	Chủ trương đành đã chị Hằng ở trong.	
+1345	1341	闭𥹰康潔帶同	“Bấy lâu khăng khít dải đồng,	
+1346	1342	添㝵㝵拱支𢚸貞西	Thêm người người cũng chia lòng riêng tây.	
+1347	1343	尾之𡭧分瓢𫡮	“Vĩ chi chút phận bèo mây,	
+1348	1344	爫朱𣷭爱欺苔欺潙	Làm cho bể ái khi đầy khi vơi.	
+1349	1345	𤾓調昂󰏟爲碎	Trăm điều ngang ngửa vì tôi,	
+1350	1346	身𢖖埃𠹾罪𡗶𧘇朱	Thân sau ai chịu tội trời ấy cho?	
+1351	1347	如払杏凭𢬣孤	Như chàng có vững tay co,	
+1352	1348	𨑮分拱荅店朱𠬠𠄽	Mười phần cũng đắp điếm cho một vài.	
+1353	1349	世冲由𢀲欣外	Thế trong dù lớn hơn ngoài,	
+1354	1350	畧唅獅子𠳚㝵藤𦲿	Trước hàm sư tử gửi người đằng la.	
+1355	1351	𪭯頭淪󰡎𠃅茹	“Cúi đầu luồn dưới mái nhà,	
+1356	1352	󰖷咮吏罪平𠀧󰌕燶	Giấm chua lại tội bằng ba lửa nồng.	
+1357	1353	扵𨕭群固茹椿	Ở trên còn có nhà thung,	
+1358	1354	𢚸𨕭𬂙𬺗別𢚸杏傷	“Lòng trên trông xuống biết lòng có thương?	
+1359	1355	咤之柳𡉦花墻	Sá chi liễu ngõ hoa tường,	
+1360	1356	楼撑吏補𦋦坊楼撑	Lầu xanh lại bỏ ra phường lầu xanh.	
+1361	1357	吏強洳羕𤵺形	Lại càng dơ dáng dại hình,	
+1362	1358	停身分妾𢪀名價払	Đành thân phận thiếp ngại danh giá chàng.	
+1363	1359	傷牢朱院時傷	Thương sao cho vẹn thì thương,	
+1364	1360	併牢朱論每塘時󰂅	“Tính sao cho trọn mọi đường thì vâng.”	
+1365	1361	生浪咍呐提澄	"Sinh rằng: ""Hay nói đè chừng,"	
+1366	1362	𢚸低𢚸帝渚曾咍牢	Lòng đây lòng đấy chưa từng hay sao?	
+1367	1363	塘賒渚𪟽吳󰍈	“Đường xa chớ ngại ngô lào,	
+1368	1364	𤾓調唉㨿𬂙𠓨𠬠些	Trăm điều hãy cứ trông vào một ta.	
+1369	1365	㐌𧵆之󰡏調賒	Đã gần chi có điều xa,	
+1370	1366	𥒥鐄拱决󰘩波拱料	Đá vàng cũng quyết phong ba cũng liều.	
+1371	1367	拱饒根紊旦調	Cùng nhau căn vặn đến điều,	
+1372	1368	指𡽫誓𣷭𥘀招旦𠳒	Chỉ non thề bể nặng gieo đến lời.	
+1373	1369	𠰚𡽫店𥐆情𨱽	Nỉ non đêm vắn tình dài,	
+1374	1370	外軒兎㐌𡽫兑唅𦎛	Ngoài hiên thỏ đã non đoài ngậm gương.	
+1375	1371	慢調竹院乘凉	Mượn điều trúc viện thừa lương,	
+1376	1372	逴󰡲唉暫𧿫娘𠬠尼	Rước về hãy tạm giấu nàng một nơi.	
+1377	1373	󰇏和插産𠄩排	Chiến hoà sắp sẵn hai bài,	
+1378	1374	𢚁𢬣柴署摱㝵𠻀󰑼	Cậy tay thầy thợ mượn người dò la.	
+1379	1375	半信旦󰘚秀󰜏	Bắn tin đến mặt tú bà,	
+1380	1376	輸机媒拱求和敢牢	Thua cơ mụ cũng cầu hoà dám sao!	
+1381	1377	𤑟𤉜𧵑引𢬣𢭂	Rõ ràng của dẫn tay trao,	
+1382	1378	歷移𠬠帖申𠓨𫔳公	Lịch dời một thiếp thân vào cửa công.	
+1383	1379	公私𠄩󰠋調衝	Công riêng hai nhẽ đều xong,	
+1384	1380	𨃴仙律㐌脱妄尘埃	Gót tiên trót đã thoát vòng trần ai.	
+1385	1381	𠬠茹森合竹梅	Một nhà sum họp trúc mai,	
+1386	1382	強溇󰒂𣷭強𨱽情滝	Càng sâu nghĩa bể càng dài tình sông.	
+1387	1383	香強㳥󰌕強燶	Hương càng sóng lửa càng nồng;	
+1388	1384	強吹𨤔月強篭牟蓮	Càng sôi vẻ nguyệt càng lồng màu sen.	
+1389	1385	姅𢆥唏㗂皮悁	Nửa năm hơi tiếng vừa quen,	
+1390	1386	𡑝梧梗碧㐌𢫔𦲿鐄	Sân ngô cành biếc đã chen lá vàng.	
+1391	1387	𡏘秋皮扔𥱰霜	Hè thu vừa nảy giò sương,	
+1392	1388	車蒲㐌体椿當旦尼	Xe bồ đã thấy xuân đường đến nơi.	
+1393	1389	󰘩雷浽陣排排	Phong lôi nổi trận bời bời,	
+1394	1390	焠𢚸𠲖唉併排分支	Sốt lòng ơi hỡi tính bài phân chia.	
+1395	1391	决𣦍辨白𠬠皮	Quyết ngay biện bạch một bề,	
+1396	1392	𠰺朱𦟐粉吏𧗱楼撑	Dạy cho má phấn lại về lầu xanh.	
+1397	1393	体𠳒嚴訓伶伶	Thấy lời nghiêm huấn rành rành,	
+1398	1394	打料生買𥙩情奈呌	Đánh liều sinh mới lấy tình nài kêu.	
+1399	1395	浪昆別罪㐌𡗉	"Rằng: ""Con biết tội đã nhiều,"	
+1400	1396	酉浪𩆐𩄰鈽鐐拱甘	Dẫu rằng sấm sét búa rìu cũng cam.	
+1401	1397	㤕爲𢬣㐌𢪠藍	“Xót vì tay đã giúng chàm,	
+1402	1398	𤵺耒群別坤爫牢低	Dại rồi còn biết khôn làm sao đây!	
+1403	1399	共僥𡲤㗂𠬠𣈜	Cùng nhau vả tiếng một ngày,	
+1404	1400	揞琹埃女𢴑𦀊朱停	Ôm cầm ai nỡ dứt dây cho đành.	
+1405	1401	量𨕭决󰝸傷情	“Lượng trên quyết chẳng thương tình,	
+1406	1402	泊顛催󰡏惜𠇮爫之	Bạc đen thôi có tiếc mình làm chi!	
+1407	1403	体𠳒鐄𥒥知知	Thấy lời vàng đá tri tri,	
+1408	1404	焠肝𪪳買告脾㪯公	Sốt gan ông mới cáo tì cửa công.	
+1409	1405	坦平浽㳥同同	Đất bằng nổi sóng đùng đùng,	
+1410	1406	府堂差𦲿票紅催查	Phủ đường sai lá phiếu hồng thôi tra.	
+1411	1407	拱僥蹺𨃴差󰡲	Cùng nhau theo gót sai nha.	
+1412	1408	双双𠓨畧𡑝花𥛉跪	Song song vào trước sân hoa lạy quì.	
+1413	1409	𬂙𨖲󰘚𨫊顛󰔿	Trông lên mặt sắt đen sì,	
+1414	1410	立威畧㐌威𫥨󰠱𠳒	Lập uy trước đã ra uy nặng lời:	
+1415	1411	妸箕𤵺󰞺󱉁排	Gã kia dại nết chơi bời,	
+1416	1412	麻昆㝵意󰑼㝵冬迻	“Mà con người ấy là người đong đưa!	
+1417	1413	從之花貸香乘	Tuồng chi hoa thải hương thừa,	
+1418	1414	慢牟𣘈粉打𩢬昆顛	Mượn màu son phấn đánh lừa con đen.	
+1419	1415	推冲情狀原单	“suy trong tình trạng nguyên đơn,	
+1420	1416	皮󰅹時拱渚安皮󰅹	Bề nào thì cũng chưa yên bề nào.	
+1421	1417	法公照案論𠓨	Phép công chiếu án luận vào,	
+1422	1418	󰡏𠄩塘意悶牢默𠇮	Có hai đường ấy muốn sao mặc mình:	
+1423	1419	𠬠󰑼㨿法加刑	“Một là cứ phép gia hình,	
+1424	1420	󰜋󰑼吏拠楼撑付󰡲	Một là lại cứ lầu xanh phó về.	
+1425	1421	娘浪㐌决𠬠皮	"Nàng rằng: ""đã quyết một bề,"	
+1426	1422	󰔓尼王𥙩絲箕󰋇吝	“Dện này vương lấy tơ kia mấy lần!	
+1427	1423	濁冲身拱󰑼身	Đục trong thân cũng là thân,	
+1428	1424	要䜹󰂅𠹾畧𡑝雷霆	Yếu thơ vâng chịu trước sân lôi đình.	
+1429	1425	𠰺浪拠法加刑	"Dạy rằng cứ phép gia hình!"""	
+1430	1426	𠀧核秩吏𠬠梗牡丹	Ba cây chặt lại một cành mẫu đơn.	
+1431	1427	分仃之敢呌寃	Phận đành chi dám kêu oan,	
+1432	1428	桃󰍾𤷄𦟐柳散作眉	Đào hoen quẹn má liễu tan tác mày.	
+1433	1429	𠬠𡑝淋葛㐌苔	Một sân lầm cát đã đầy,	
+1434	1430	𦎛矑渃水梅𤷍󰑀霜	Gương lờ nước thuỷ mai gầy vóc sương.	
+1435	1431	󰀩情払束麻傷	Nghĩ tình chàng thúc mà thương,	
+1436	1432	裊車𬂙体𢚸強㤕賒	Nẻo xa trông thấy lòng càng xót xa.	
+1437	1433	哭浪寃酷爲些	"Khóc rằng: ""Oan khốc vì ta,"	
+1438	1434	󰡏𦖑𠇮畧渚它矫𨍦	“Có nghe mình trước chả đà kẻo sau.	
+1439	1435	𣴓𢚸󰝸別󰆹溇	Cạn lòng chẳng biết nghĩ sâu,	
+1440	1436	底埃𦝄悴花愁爲埃	Để ai trăng tủi hoa sầu vì ai?	
+1441	1437	府堂𦖑倘𠓨𦖻	Phủ đường nghe thoảng vào tai,	
+1442	1438	動𢚸吏𠲟旦𠳒貞西	Động lòng lại gạn đến lời riêng tây.	
+1443	1439	湥洡払買䜹𣦍	Sụt sùi chàng mới thưa ngay,	
+1444	1440	頭𡳪吏計事𣈜求𠦳	Đầu đuôi lại kể sự ngày cầu thân:	
+1445	1441	娘它併歇賒𧵆	Nàng đà tính hết xa gần,	
+1446	1442	自初娘㐌別親固𣈙	Từ xưa nàng đã biết thân có rày.	
+1447	1443	在碎称𥙩𠬠碎	“Tại tôi xứng lấy một tay,	
+1448	1444	底娘朱旦浽尼爲碎	Để nàng cho đến nỗi này vì tôi.	
+1449	1445	𦖑𠳒呐共傷𠳒	Nghe lời nói cũng thương lời,	
+1450	1446	擛威買𠰺𨷑排解𡆫	Dẹp uy mới dạy mở bài giải vi.	
+1451	1447	浪如罕固世時	"Rằng: ""Như hẳn có thế thì,"	
+1452	1448	𦝄花仍拱是非別調	“Trăng hoa nhưng cũng thị phi biết điều.”	
+1453	1449	生浪㤕分浡䕯	"Sinh rằng: ""Xót phận bọt bèo,"	
+1454	1450	蹺隊拱𡲤𠃣𡗉笔硯	“Theo đòi cũng vả ít nhiều bút nghiên”	
+1455	1451	唭浪㐌世時𢧚	"Cười rằng: ""đã thế thì nên,"	
+1456	1452	木枷唉此𠬠篇呈芸	Mộc già hãy thử một thiên trình nghề.	
+1457	1453	娘󰂅拮笔𢬣題	Nàng vâng cất bút tay đề,	
+1458	1454	箋花呈𫏾案批袩詳	Tiên hoa trình trước án phê xem tường.	
+1459	1455	𠸦浪價𤁕盛唐	Khen rằng: “giá lạt thịnh đường,	
+1460	1456	才尼色意𠦳鐄渚斤	Tài này sắc ấy nghìn vàng chưa cân.	
+1461	1457	实󰑼才子佳人	Thực là tài tử giai nhân,	
+1462	1458	朱陳󰅹固朱陳󰅹欣	“Châu Trần nào có Châu Trần nào hơn!	
+1463	1459	催停卓󰇾摸𪬡	“Thôi đừng chác dữ mua hờn,	
+1464	1460	爫之呂揲朱弹昂宫	Làm chi lỡ nhịp cho đàn ngang cung.	
+1465	1461	㐌迻旦畧㪯公	đã đưa đến trước cửa công,	
+1466	1462	外時󰑼𨤧双冲󰑼情	“ngoài thì là nhẽ song trong là tình.	
+1467	1463	妯昆冲道家庭	Dâu con trong đạo gia đình,	
+1468	1464	催時揲浽不平󰑼衝	Thôi thì dẹp nỗi bất bình là xong!	
+1469	1465	急時懺所礼公	Kíp thì sắm sửa lễ công,	
+1470	1466	轎花精𩙌𤒘紅點牢	Kiệu hoa tinh gió đuốc hồng điểm sao.	
+1471	1467	排行鼓舞𠮿嗃	Bày hàng cổ vũ xôn xao,	
+1472	1468	双双迻細帳桃聘堆	Song song đưa tới trướng đào sánh đôi.	
+1473	1469	傷爲湿重爲才	Thương vì nết trọng vì tài.	
+1474	1470	束𪪳催拱擛𠳒󰘩波	Thúc ông thôi cũng dẹp lời phong ba.	
+1475	1471	惠香𠶗󱋨𠬠茹	Huệ hương sực nức một nhà,	
+1476	1472	曾荄䔲吏漫𣻕欣初	Từng cay đắng lại mặn mà hơn xưa.	
+1477	1473	𠻵𠸟𨢇󰉺掑𣆐	Mảng vui rượu sớm cờ trưa,	
+1478	1474	桃㐌𠖤審蓮皮扔撑	Đào đà bay thắm sen vừa nảy xanh.	
+1479	1475	帳糊永尾店清	Trướng hồ vắng vẻ đêm thanh,	
+1480	1476	𠲖情娘買排情貞終	E tình nàng mới bày tình riêng chung:	
+1481	1477	分蒲自院𡦂從	Phận bồ từ vẹn chữ tòng,	
+1482	1478	対台鴈亇㐌拱苔年	“Đổi thay nhạn cá đã cùng đầy niên.	
+1483	1479	信茹𣈜𠬠󰠐信	“Tin nhà ngày một thầm tin,	
+1484	1480	慢情葛藟𤁕情糟糠	Mặn tình cát luỹ lạt tình tao khang.	
+1485	1481	𢪀𦋦实拱𢧚󰟯	“Nghĩ ra thật cũng nên dường,	
+1486	1482	沁唏埃几𪧚床朱些	Tăm hơi ai kẻ giữ giàng cho ta?	
+1487	1483	濫𦖑几𢀲冲茹	Trộm nghe kẻ lớn trong nhà,	
+1488	1484	扵𠓨囷法呐𫥨䋦𦀾	Ở vào khuôn phép nói ra mối giường.	
+1489	1485	𠲖咍仍胣非常	“E thay những dạ phi thường,	
+1490	1486	易𠻀󰟱波坤量䏾滝	“Dễ dò rốn bể khôn lường bụng sông!	
+1491	1487	麻些卒𠬠𢆥𣳔	Mà ta suốt một năm ròng,	
+1492	1488	世󰅹拱庄酉戎特󰅹	“Thế nào cũng chẳng giấu giung được nào.	
+1493	1489	悲除渚𤏣消耗	“Bây giờ chưa tỏ tiêu hao,	
+1494	1490	或󰑼冲󰡏爫牢庄󰑼	Hoặc là trong có làm sao chăng là?	
+1495	1491	嗔払料急吏茹	“Xin chàng liệu kíp lại nhà,	
+1496	1492	畧󰑼𢢲意娄些別情	“Trước là đẹp ý sau ta biết tình.	
+1497	1493	店𣈜𪧚墨󰕚觥	Đêm ngày giữ mực giấu quanh,	
+1498	1494	𣈙吝埋呂如形渚通	Rày lần mai lữa như hình chưa thông.	
+1499	1495	𦖑𠳒勸𠴗從容	Nghe lời khuyên dỗ thong dong,	
+1500	1496	定𢚸生買决情回裝	Định lòng sinh mới quyết lòng hồi trang.	
+1501	1497	𠓇𦋦𠳚旦椿堂	Rạng ra gửi đến xuân đường,	
+1502	1498	束𪪳拱倍󰖢払宁家	Thúc ông cũng vội giục chàng ninh gia.	
+1503	1499	践迻𠬠󱋓𬮦河	Tiễn đưa một chén quan hà,	
+1504	1500	春亭脱㐌遁𦋦臯亭	Xuân đình thoắt đã dạo ra Cao đình.	
+1505	1501	秦滝𠬠带撑撑	Sông Tần một dải xanh xanh,	
+1506	1502	雷催坡柳󰋇梗楊䦕	Loi thoi bờ liễu mấy cành Dương quan.	
+1507	1503	扲𢬣𨱽咀𥐆嘆	Cầm tay dài thở ngắn than,	
+1508	1504	支配𪟽戰合散喭𠳒	Chia phôi ngừng chén hợp tan nghẹn lời.	
+1509	1505	娘浪𡽫渃賒𣾺	"Nàng rằng: ""Non nước xa khơi,"	
+1510	1506	牢朱冲蔭時外買淹	Sao cho trong ấm thì ngoài mới êm.	
+1511	1507	易𤍶𦀫𧺁侖金	Dễ loà yếm thắm trôn kim,	
+1512	1508	爫之氷󰘚扒𪀄苦𢚸	“Làm chi bưng mặt bắt chim khó lòng!	
+1513	1509	堆些拙󰒂刀蓬	Đôi ta chút nghĩa đèo bồng,	
+1514	1510	旦茹畧-呐崇朱明	“Đến nhà trước liệu nói sòng cho minh.	
+1515	1511	油欺湄𫗄不平	“Dù khi mưa gió bất bình,	
+1516	1512	𢀲停威𢀲碎停分碎	“Lớn đành uy lớn tôi đành phận tôi.	
+1517	1513	欣調𧿫虐𧿫吹	“Hơn điều giấu ngược giấu xuôi,	
+1518	1514	吏恾仍󰟳󰟴𡗶旦𨍦	Lại mang những việc tày trời đến sau.	
+1519	1515	傷饒嗔𠯆吝饒	Thương nhau xin nhớ lời nhau,	
+1520	1516	𢆥迡拱庄𠫾󰠳麻迡	Năm chầy cũng chẳng đi đâu mà chầy.	
+1521	1517	󱋓迻𠯆𩛷吝󰅒	“Chén đưa nhớ bữa lần nay,	
+1522	1518	󱋓𢜠嗔待店尼𫷜𨍦	“Chén mừng xin đợi đêm này năm sau.”	
+1523	1519	𠊛蓮馭几支袍	Người lên ngựa kẻ chia bâu,	
+1524	1520	棱󰊈秋㐌染牟䦕山	Rừng phong, thu đã nhuốm màu quan san.	
+1525	1521	琰紅󰣟捲征鞍	Dặm hồng bụi cuốn chinh an,	
+1526	1522	𬂙㝵㐌屈󰋇岸核撑	Trông người đã khuất mấy ngàn cây xanh.	
+1527	1523	㝵米隻䏾𠄼更	Người về chiếc bóng năm canh,	
+1528	1524	几𠫾𬮙埮𠬠𠇮坡配	Kẻ đi muôn dặm một mình pha phôi.	
+1529	1525	暈𦝄埃仕爫堆	Vừng trăng ai sẻ làm đôi?	
+1530	1526	姅印襘隻姅𤐝埮長	Nửa in gối chiếc nửa soi dặm trường!	
+1531	1527	計之仍浽肓塘	Kể chi những nỗi dọc đường.	
+1532	1528	󰟀冲尼浽主張扵茹	Buồng trong lại nỗi chủ trương ở nhà.	
+1533	1529	本𣳔户宦名家	Vốn dòng họ hoạn danh gia,	
+1534	1530	昆官吏部哙󰑼宦姐	Con quan lại bộ gọi là Hoạn Thư.	
+1535	1531	緣騰順裊󰊄迻	Duyên Đằng thuận nẻo gió đưa,	
+1536	1532	拱払結󰖥-絲仍𣈜	Cùng chàng kết tóc xe tơ những ngày	
+1537	1533	扵咹時󰞺拱咍	Ở ăn thì nết cũng hay,	
+1538	1534	呐調𦀾𦄾時𢬣拱󰒌	Nói điều ràng buộc thì tay cũng già.	
+1539	1535	自𦖑園買添花	Từ nghe vườn mới thêm hoa,	
+1540	1536	𠰘㝵㐌𡗋信茹時空	Miệng người đã lắm tin nhà thì không.	
+1541	1537	󰌕心強拉強燶	Lửa tâm càng dập càng nồng,	
+1542	1538	𠻆㝵顛泊𦋦𢚸𦝄花	Giận người đen bạc ra lòng trăng hoa.	
+1543	1539	󰂇平首实拱些	Ví bằng thú thật cùng ta,	
+1544	1540	󰠃容几󰡎買󰑼塘𨕭	Cũng dung kẻ dưới mới là đường trên.	
+1545	1541	𤵺之庄𪧚𥙩𪤍	Dại chi chẳng giữ lấy nền,	
+1546	1542	卒之麻聀㗂悭𠓨𠇮	Tốt chi mà chác tiếng ghen vào mình?	
+1547	1543	吏群氷扒󰕚觥	Lại còn bưng bít giấu quanh,	
+1548	1544	爫之仍𫗁𥘷𬎸󱋨唭	Làm chi những thói trẻ ranh nực cười!	
+1549	1545	併浪隔󰘚屈𠳒	Tính rằng cách mặt khuất lời,	
+1550	1546	󰕚些些共料排󱃙朱	Giấu ta ta cũng liệu bài giấu cho!	
+1551	1547	𢗼之󰟳意麻𢗼	Lo gì việc ấy mà lo,	
+1552	1548	蜆𥪝𠰘󱋓󰡏補𠫾󰠳	Kiến trong miệng chén có bò đi đâu?	
+1553	1549	爫朱𥚆庄特饒	Làm cho nhìn chẳng được nhau,	
+1554	1550	爫朱苔墮拮頭拯𨖲	Làm cho đày đoạ cất đầu chẳng lên.	
+1555	1551	爫朱𬂙体眼前	Làm cho trông thấy nhãn tiền.	
+1556	1552	朱㝵𠽄板半船別𢬣	Cho người thăm ván bán thuyền biết tay.	
+1557	1553	𥪝𢚸謹󰝸埃咍	Trong lòng kín chẳng ai hay,	
+1558	1554	外𦖻底默𫗄悲𠃅外	Ngoài tai để mặc gió bay mé ngoài.	
+1559	1555	𥪝𢚸謹󰝸埃咍	Trong lòng kín chẳng ai hay,	
+1560	1556	𫫗信意拱料排新功	Mách tin ý cũng liệu bài tân công.	
+1561	1557	小姐浽陣同同	Tiểu thư nổi giận đùng đùng:	
+1562	1558	𡃍咍絩𦂾𫥨𢚸撩𤽗	“Gớm thay thêu dệt ra lòng trêu ngươi!	
+1563	1559	郎君󰅹沛如埃	“Lang quân nào phải như ai,	
+1564	1560	調尼罕𪽝仍𠊛是非	Điều này hẳn bởi những người thị phi!	
+1565	1561	倍鐄爫󰀿𦋦威	Vội vàng làm dữ ra uy,	
+1566	1562	𠀲時𡲤𠰘󰡗時𢯏𪘵	Đứa thì vả miệng gã thì bẻ răng.	
+1567	1563	𠀲時𡲤𠰘󰡗時𢯏𪘵	Đứa thì vả miệng gã thì bẻ răng.	
+1568	1564	󰅹埃群敢呐能𠬠𠳒	Nào ai còn dám nói năng một lời!	
+1569	1565	󰟀桃𣌉𣋽清台	Buồng thêu khuya sớm thảnh thơi.	
+1570	1566	𦋦𠓨𠬠墨呐唭如空	Ra vào một mực nói cười như không.	
+1571	1567	店𣈜𢚸仍吲𢚸	Đêm ngày lòng những dặn lòng,	
+1572	1568	生它󰡲旦楼紅󰡎鞍	Sinh đà về đến lầu hồng xuống yên.	
+1573	1569	𠳒散合浽寒暄	Lời tan hợp nỗi hàn huyên,	
+1574	1570	𡦂情強󰚷𡦂緣強燶	Chữ tình càng mặn chữ duyên càng nồng.	
+1575	1571	洗尘盃󱋓從容	Tẩy trần vui chén thong dong,	
+1576	1572	浽𢚸埃扵𥪝𢚸麻𦋦	Nỗi lòng ai ở trong lòng mà ra?	
+1577	1573	払󰡲𫀅意思茹	Chàng về xem ý tứ nhà,	
+1578	1574	事𠇮拱拉隣󰑼𤋵排	Sự mình cũng rắp lân la giải bày.	
+1579	1575	󰋇番唭醒呐醝	Mấy phen cười tỉnh nói say,	
+1580	1576	󰖥絲庄動𡮳埋事情	Tóc tơ chẳng động mảy may sự tình.	
+1581	1577	𢪀󰑼氷謹𠰘󰜍	Nghĩ là bưng kín miệng bình,	
+1582	1578	󰅹埃󰡏考麻𠇮吏称	Nào ai có khảo mà mình đã xưng!	
+1583	1579	仍󰑼𠲖邑用孕	Những là e ấp dùng dằng,	
+1584	1580	捽𦀊𢜝女動棱吏催	Rút dây sợ nữa động rừng lại thôi.	
+1585	1581	󰡏欺盃傳摸唭	Có khi vui chuyện mua cười,	
+1586	1582	小姐吏󰇥仍調󰠳󰠳	Tiểu thư lại giở những lời đâu đâu.	
+1587	1583	浪冲玉𥒥鐄鍮	"Rằng: ""Trong ngọc đá vàng thau,"	
+1588	1584	𨑮分些㐌信饒奇𨑮	Mười phần ta đã tin nhau cả mười.	
+1589	1585	𠸦朱仍𠰘容𨱽	Khen cho những miệng dông dài,	
+1590	1586	𧊉蜂吏達仍調󰣁箕	“Bướm ong lại đặt những lời nọ kia.	
+1591	1587	妾油䏾庄咍推	Thiếp dù vụng chẳng hay suy,	
+1592	1588	㐌涂䏾󰆹吏碑𠰘唭	đã dơ bụng nghĩ lại bia miệng cười!	
+1593	1589	体𠳒統請如󱉁	Thấy lời thủng thỉnh như chơi,	
+1594	1590	順𠳒払拱呐吹扡扽	Thuận lời chàng cũng nói xuôi đỡ đòn,	
+1595	1591	仍󰑼唭粉𠹳𣘈	Những là cười phấn cợt son,	
+1596	1592	畑𣅘鍾䏾𦝄𧷺聘𦠘	Đèn khuya chung bóng trăng tròn sánh vai.	
+1597	1593	𡽫春蓴䱛变味	Non xuân thuần vược bén mùi,	
+1598	1594	汫鐄㐌扔𠬠𠄽信梧	Giếng vàng đã nẩy một vài tin ngô.	
+1599	1595	鄭念𠯆景江湖	Chạnh niềm nhớ cảnh giang hồ,	
+1600	1596	𠬠念䦕塞󰋇務𫗄𦝄	Một niềm quan tái mấy mùa gió trăng.	
+1601	1597	情貞渚敢󰁹𪘵	Tình riêng chưa dám rỉ răng,	
+1602	1598	小姐畧㐌料澄乳戈	Tiểu thư trước đã liệu chừng nhủ qua:	
+1603	1599	隔𠄼𫡮泊賒賒	Cách năm mây bạc xa xa,	
+1604	1600	臨淄拱沛併調晨昏	“Lâm Tri cũng phải tính mà thần hôn.”	
+1605	1601	特𠳒如𨷑𡬷𣘈	Được lời như mở tấc son,	
+1606	1602	𨀒󰙃𬆅𫮇渃𡽫春㝵	Vó câu thẳng ruổi nước non xuân người.	
+1607	1603	竜冬底渃印𡗶	Long lanh đáy nước in trời,	
+1608	1604	城磋𤌋碧𡽫披䏾鐄	Thành xây khói biếc non phơi bóng vàng.	
+1609	1605	唏󰙃皮𢶢埮長	Vó câu vừa gióng dặm trường,	
+1610	1606	車香娘㐌順塘歸寧	Xe hương nàng đã thuận đường quy ninh.	
+1611	1607	䜹茹萱歇每情	Thưa nhà huyên hết mọi tình,	
+1612	1608	浽払扵泊浽𠇮𠹾顛	Nỗi chàng ở bạc nỗi mình chịu đen.	
+1613	1609	𢪀浪恨𤴪𪬡悭	Nghĩ rằng: “giận ghẻ hờn ghen,	
+1614	1610	醜払麻󰡏埃𠸦之𠇮	Xấu chàng mà có ai khen chi mình!	
+1615	1611	丕𢧚𥋓󰘚爫清	Vậy nên ngảnh mặt làm thinh,	
+1616	1612	謀高本㐌󰡥伶仍𣈜	Mưu cao vốn đã rắp ranh những ngày.	
+1617	1613	臨淄塘步𣎃迡	Lâm Tri đường bộ tháng chầy,	
+1618	1614	麻塘海道𨖅𣦍時𧵆	Mà đường hải đạo sang ngay thì gần.	
+1619	1615	扽船攎󰘚家人	Dọn thuyền lựa mặt gia nhân,	
+1620	1616	唉󰝡𦀊赤纀蹎娘𧗱	Hãy đem dây xích buộc chân nàng về.	
+1621	1617	爫朱朱𤻻朱迷	Làm cho cho mệt cho mê,	
+1622	1618	爫朱𤴬疸𠲖提朱󰏤	“Làm cho đau đớn ê chề cho coi.	
+1623	1619	畧朱補恄仍㝵	Trước cho bõ ghét những người,	
+1624	1620	畧朱底𠬠路唭󰡲娄	“Sau cho để một trò cười về sau.”	
+1625	1621	夫人𠸦斫拱牟	Phu nhân khen chước cũng mầu,	
+1626	1622	朝昆買𠰺默油𦋦𢬣	Chiều con mới dạy mặc dầu ra tay.	
+1627	1623	所郎帆𫗄撩𫡮	Sửa sang buồm gió lèo mây,	
+1628	1624	犬鷹吏𪮙𠬠𠄽棍光	Khuyển ưng lại chọn một vài côn quang.	
+1629	1625	吲𠻀歇各每塘	Dặn dò hết các mọi đường,	
+1630	1626	順風𠬠𦲿𣾼𨖅𣷷󰟴	Thuận phong một lá vượt sang bến tề.	
+1631	1627	娘自隻䏾窻𦂛	Nàng từ chiếc bóng song the,	
+1632	1628	塘箕浽怒如支䋦愁	Đường kia nỗi nọ như chia mối sầu.	
+1633	1629	䏾桑㐌熾昂頭	Bóng tang đã xế ngang đầu,	
+1634	1630	別󰠳蔭冷別󰠳𠮾裴	Biết đâu ấm lạnh biết đâu ngọt bùi.	
+1635	1631	𩅘誓㐌枕觥𦠘	Tóc thề đã chấm quanh vai,	
+1636	1632	󰅹𠳒𡽫渃󰅹𠳒鉄𣘈	Nào lời non nước nào lời sắt son?	
+1637	1633	𦼜󰡄𡮍分昆昆	Sắn bìm chút phận con con,	
+1638	1634	香緣別󰡏𣃲𧷺朱庄	Hương duyên biết có vuông tròn cho chăng?	
+1639	1635	身牢𡗉按不平	Thân sao nhiều án bất bằng!	
+1640	1636	料如宫廣姉姮𢪀󰅉	Liều như cung Quảng chị Hằng nghĩ nao!	
+1641	1637	店秋𫗄律窻桃	Đêm thu gió lọt song đào,	
+1642	1638	姅鑅𦝄缺𠀧牢𡨌𡗶	Nửa vành trăng khuyết ba sao giữa trời.	
+1643	1639	󰠱香旦畧天臺	Nén hương đến trước thiên đài,	
+1644	1640	挼𢚸懇渚𣴓𠳒云云	Nỗi lòng khấn chửa cạn lời vân vân.	
+1645	1641	𠁑花𧻭𠎪惡人	Dưới hoa dậy lũ ác nhân,	
+1646	1642	喑喑哭鬼󰟹神木𫥨	Ầm ầm khốc quỷ kinh thần mọc ra.	
+1647	1643	苔𡑝鎌捽𤎜𤍶	Đầy sân gươm tuốt sáng loà,	
+1648	1644	失󰟹娘渚別浪爫牢	Thất kinh nàng chửa biết là làm sao.	
+1649	1645	𬟥迷󰠳率洒𠓨	Thuốc mê đâu thoắt tưới vào,	
+1650	1646	𢠩恾如聀占包別之	Mơ màng như giấc chiêm bao biết gì.	
+1651	1647	𧿆𣦍𨖲馭即時	Dẫy ngay lên ngựa tức thì,	
+1652	1648	房桃院󰀋𦊚皮󰌕炵	Phòng đào viện sách bốn bề lửa chong.	
+1653	1649	産屍無主边滝	Sẵn thây vô chủ bên sông,	
+1654	1650	󰝂𠓨底妬吝崇埃台	Đem vào để đó lẫn sòng ai hay?	
+1655	1651	碎隊魄落魂𠖤	Tôi đòi phách lạc hồn bay,	
+1656	1652	坡乾蓓𦹵㭲核隐𠇮	Pha càn bụi cỏ, gốc cây ẩn mình.	
+1657	1653	束翁茹拱𧵆觥	Thúc ông nhà cũng gần quanh,	
+1658	1654	秩𬂙𦰟󰌕失󰟹𣳔涞	Chợt trông ngọn lửa thất kinh rụng rời.	
+1659	1655	伵柴𧼋𣦎旦尼	Tớ thầy chạy thẳng đến nơi,	
+1660	1656	哉排洒󰌕尋㝵劳嗃	Tơi bời tưới lửa tìm người lao xao.	
+1661	1657	𫗄嵩𦰟󰌕強高	Gió tung ngọn lửa càng cao,	
+1662	1658	碎隊尋覩娘󰅹体󰠳	Tôi đòi tìm đủ nàng nào thấy đâu.	
+1663	1659	歇虚歇海𥚆饒	Hớt hơ hớt hải nhìn nhau,	
+1664	1660	汫溇蓓葚畧娄尋光	Giếng sâu bụi rậm trước sau tìm quàng.	
+1665	1661	𧼋𦋦准󱀄房香	Chạy ra chốn cũ phòng hương,	
+1666	1662	𬂙炭体𠬠埬昌𤈜殘	Trông than thấy một đống xương cháy tàn.	
+1667	1663	𣦍情埃別謀肝	Ngay tình ai biết mưu gian,	
+1668	1664	罕娘催吏󰡏盘浪埃	Hẳn nàng thôi lại có bàn rằng ai.	
+1669	1665	束𪪳洡湥𥐆𨱽	Thúc ông sùi sụt vắn dài,	
+1670	1666	𢪀昆永尾傷㝵󰞺那	Nghĩ con vắng vẻ thương người nết na.	
+1671	1667	遺骸抇𪭯󰡲茹	Di hài nhặt gói về nhà,	
+1672	1668	󰅹󰑼衾歛󰅹󰑼䘮斎	Nào là khâm liệm nào là tang trai.	
+1673	1669	礼常㐌院𠬠𠄩	Lễ thường đã vẹn một hai,	
+1674	1670	陸程払拱旦尼闭徐	Lục trình chàng cũng đến nơi bấy giờ.	
+1675	1671	𨀈𠓨准󱀄楼䜹	Bước vào chốn cũ lầu thơ,	
+1676	1672	招𠇮勿把哭不	Gieo mình vật vã khóc than:	
+1677	1673	𨖅茹吒細中堂	Sang nhà cha tới trung đường,	
+1678	1674	灵床牌位蜍娘扵𨕭	Linh sàng bài vị thờ nàng ở trên.	
+1679	1675	唉喂呐歇事緣	Hỡi ôi nói hết sự duyên,	
+1680	1676	絲情𠞹𫆧󰌕煩𤈜肝	Tơ tình đứt ruột lửa phiền cháy gan.	
+1681	1677	招𠇮勿把哭不	Gieo mình vật vã khóc than:	
+1682	1678	昆㝵世意托寃世尼	Con người thế ấy thác oan thế này!	
+1683	1679	聀浪梅竹吏𡆫	Chắc rằng mai trúc lại vầy,	
+1684	1680	埃咍永訣旦𣈜迻饒	“Ai hay vĩnh quyết đến ngày đưa nhau!”	
+1685	1681	傷強𪟽𪟽強𤴬	Thương càng nghĩ nghĩ càng đau,	
+1686	1682	易埃拉惨撅愁朱𢣧	Dễ ai rấp thảm quạt sầu cho khuây.	
+1687	1683	𧵆沔𦖑󰡏𠬠柴	Gần miền nghe có một thầy,	
+1688	1684	󰠀符𦤶鬼高𢬣通玄	Phi phù trí quỉ cao tay thông huyền.	
+1689	1685	𨕭三宝𠁑九泉	Trên tam bảo dưới cửu tuyền,	
+1690	1686	尋󰠲時拱別信𤑟𤉜	Tìm đâu thì cũng biết tin rõ ràng.	
+1691	1687	懺生礼物迻𨖅	Sắm sanh lễ vật đưa sang,	
+1692	1688	真尋朱体󰘚娘𠳨嘆	Xin tìm cho thấy mặt nàng hỏi han.	
+1693	1689	道人伏畧凈𡊨	Đạo nhân phục trước tĩnh đàn,	
+1694	1690	出神𦀊丿渚殘𥘀香	Xuất thần giây phút chưa tàn nén hương.	
+1695	1691	阻𧗱明白呐詳	Trở về minh bạch nói tường:	
+1696	1692	𩈘娘庄体󰟳娘㐌查	Mặt nàng chẳng thấy việc nàng đã tra.	
+1697	1693	𠊛尼󰠱刼寃家	“Người này nặng kiếp oan gia,	
+1698	1694	群𡗉女𡗋牢它托朱	Còn nhiều nợ lắm sao đà thác cho!	
+1699	1695	𠇮宮登默难蘇	Mệnh cung đang mắc nạn to,	
+1700	1696	蔑𢆥女買𠽄𠻀特信	Một năm nữa mới thăm dò được tin.	
+1701	1697	𠄩边夾󰘚廛廛	Hai bên giáp mặt chiền chiền,	
+1702	1698	悶𥚆麻庄敢𥚆𨔍台	Muốn nhìn mà chẳng dám nhìn lạ thay!	
+1703	1699	調󰠲呐𨔍󰟯尼	Điều đâu nói lạ dường này,	
+1704	1700	事娘󰑼世𠳒柴敢信	Sự nàng là thế lời thầy dám tin.	
+1705	1701	庄戈童骨光川	Chẳng qua đồng cốt quàng xiên,	
+1706	1702	㝵󰠳麻吏体𨕭𡎝尘	Người đâu mà lại thấy trên cõi trần?	
+1707	1703	惜花仍唅𠿯春	Tiếc hoa những ngậm ngùi xuân,	
+1708	1704	身尼易吏󰋇吝及仙	Thân này dễ lại mấy lần gặp tiên!	
+1709	1705	渃㵢花用㐌安	Nước trôi hoa rụng đã yên,	
+1710	1706	咍󰠳地獄扵沔人間	Hay đâu địa ngục ở miền nhân gian.	
+1711	1707	犬鵉㐌担謀肝	Khuyển Ưng đã đắt mưu gian,	
+1712	1708	域娘迻𫴋底安𠁑船	Vực nàng đưa xuống để an dưới thuyền.	
+1713	1709	帆高撩𬆅𦑃耑	Buồm cao lèo thẳng cánh suyền,	
+1714	1710	提澄縣錫氷沔𣾼𨖅	Đè chừng huyện tích băng miền vượt sang.	
+1715	1711	󰇥渡蓮𨍦󰟷堂	Dỡ đò lên trước sảnh đường,	
+1716	1712	犬鵉𠄩𠀲納娘𤼸功	Khuyển Ưng hai đứa nộp nàng dâng công.	
+1717	1713	域娘暫𫴋门房	Vực nàng tạm xuống môn phòng,	
+1718	1714	唉群帖帖聀燶渚派	Hãy còn thiếp thiếp giấc nồng chưa phai.	
+1719	1715	黄梁𦖑醒魂梅	Hoàng lương nghe tỉnh hồn mai,	
+1720	1716	𫔳茹󰠳秩楼臺󰅹低	Cửa nhà đâu mất lâu đài nào đây?	
+1721	1717	徬徨󰇥醒󰇥醝	Bàng hoàng dở tỉnh dở say,	
+1722	1718	󰟷𨕭𠻵㗂隊𣦍蓮侯	Sảnh trên mắng tiếng đòi ngay lên hầu.	
+1723	1719	了鬟𨕭󰡎𠽖毛	A hoàn trên dưới giục mau,	
+1724	1720	駭䧺娘買蹺𨍦每㝵	Hãi hùng nàng mới theo sau mọi người.	
+1725	1721	𥋷𬖉座曠圯𨱽	Nhác trông toà thoáng dãy dài,	
+1726	1722	天官家宰󰡏排撩𨖲	Thiên quan trủng tể có bài treo trên.	
+1727	1723	平𣈜𤓢𤏧𠄩边	Bằng ngày nến thắp hai bên,	
+1728	1724	𨕭床七宝𡎢𨕭𠬠󰜏	Trên giường thất bảo ngồi lên một bà.	
+1729	1725	𠲟𠴛𦰟𠳨梗查	Gạn gùng ngọn hỏi ngành tra,	
+1730	1726	事𠇮娘㐌拠麻𠳚䜹	Sự mình nàng đã cứ mà gởi thưa.	
+1731	1727	不情浽陣𫡮湄	Bất tình nổi trận mây mưa.	
+1732	1728	󰂋娘仍󰡔巴蜍悁身	Diếc nàng: “Những giống bơ thờ quen thân.	
+1733	1729	昆尼庄沛善人	Con này chẳng phải thiện nhân,	
+1734	1730	庄牟遁主時筠論𫯳	“Chẳng màu trốn chúa thì quân lộn	
+1735	1731	𦋦從猫𡏢𪂮同	Ra tuồng mèo mả cò đồng,	
+1736	1732	𦋦從𨻫縱庄衝皮󰅹	Ra tuồng lúng túng chẳng xong bề nào.	
+1737	1733	㐌󰝂𠇮半㪯蚤	Đã đem mình bán cửa tao,	
+1738	1734	吏群共犬爫高砌尼	“Lại còn khủng khiển làm cao thế này!	
+1739	1735	家法󰠲𥘷怒𠖤	“Gia pháp bơ trẻ nọ bay!	
+1740	1736	唉朱𠀧󰁭別𢬣𠬠吝	Hãy cho ba chục biết tay một lần.	
+1741	1737	了鬟𨕭󰡎㖡噒	A hoàn trên dưới dạ rân,	
+1742	1738	酉浪𤾓𠰘坤分𨤧-	Dẫu rằng trăm miệng khôn phân nhẽ nào.	
+1743	1739	竹棍𦋦飭拉𠓨	Trúc côn ra sức chập vào,	
+1744	1740	𦧘󰅹庄󰞺肝󰅹庄󰟹	Thịt nào chẳng nát gan nào chẳng kinh.	
+1745	1741	㤕台桃李𠬠梗	Xót thay đào lý một cành,	
+1746	1742	𠬠畨湄𫗄散情𠬠畨	Một phen mưa gió tan tành một phen.	
+1747	1743	花奴傳𠰺対𠸜	Hoa nô truyền dạy đổi tên,	
+1748	1744	房絩𠰺押𠓨番侍牌	Phòng thêu dạy ép vào phiên thị tì.	
+1749	1745	𦋦𠓨蹺𠎪青衣	Ra vào theo lũ thanh y,	
+1750	1746	𣹘油𫡮󰏀䏧𨨲管包	Dãi dầu tóc rối da chì quản bao.	
+1751	1747	管家󰡏𠬠媒󰅹	Quản gia có một mụ nào,	
+1752	1748	体㝵体󰞺𦋦𠓨麻傷	Thấy người thấy nết ra vào mà thương.	
+1753	1749	欺茶󱋓欺𬟥易	Khi chè chén khi thuốc thang,	
+1754	1750	󰝂𠳒方便𨷑塘好生	Đem lời phương tiện mở đường hiếu sinh.	
+1755	1751	𠰺浪埋󰏀㐌停	"Dạy rằng: ""May rủi đã đành,"	
+1756	1752	柳蒲𠇮𪧚𥙩𠇮朱台	Liễu bồ mình giữ lấy mình cho hay.	
+1757	1753	拱󰑼寃業之低	Cũng là oan nghiệp chi đây,	
+1758	1754	沙机買旦势尼𫽄仍	Sa cơ mới đến thế này chẳng dưng.	
+1759	1755	扵低𦖻壁脉棱	Ở đây tai vách mạch rừng,	
+1760	1756	𧡊埃㝵𫇰拱停𥚆之	Thấy ai người cũ cũng đừng nhìn chi.	
+1761	1757	矯欺𩆐𩄰不期	Kẻo khi sấm sét bất kỳ,	
+1762	1758	昆蜂丐蜆呌之特寃	Con ong cái kiến kêu gì được oan!	
+1763	1759	娘強𥮊玉如滇	Nàng càng giỏ ngọc như chan,	
+1764	1760	𩛂𢚸𩛂仍盘桓念西	No lòng no những bàn hoàn niềm tây.	
+1765	1761	󰘩塵刼㐌𠹾苔	Phong trần kiếp đã chịu đầy,	
+1766	1762	淋炭拱󰡏次尼平𠄩	Lầm than cũng có thứ này bằng hai!	
+1767	1763	爫牢泊󰝸皮傕	LÀM sao bạc chẳng vừa thôi?	
+1768	1764	󰇿󰇿𥾾買𥙩㝵紅顔	Chằng chằng buộc mãi lấy người hồng nhan.	
+1769	1765	㐌停夙債前寃	Đã đành túc trái tiền oan,	
+1770	1766	拱料玉󰞺花殘麻之	Cũng liều ngọc nát hoa tàn mà chi.	
+1771	1767	仍󰑼娘耨戈時	Những là nương náu qua thì,	
+1772	1768	小姐沛𣇜買󰡲寧家	Tiểu thư phải buổi mới về ninh gia.	
+1773	1769	媄昆路傳隣󰑼	Mẹ con trò chuyện lân la,	
+1774	1770	夫人買噲娘𦋦𠰺𠳒	Phu nhân mới gọi nàng ra dạy lời:	
+1775	1771	小姐𠁑帳少㝵	Tiểu thư dưới trướng thiếu người,	
+1776	1772	朱󰡲边意蹺隊臺粧	“Cho về bên ấy theo đòi đài trang.”	
+1777	1773	領𠳒娘買蹺𨖅	Lĩnh lời, nàng mới theo sang,	
+1778	1774	別󰠲地獄天堂󰑼󰠲	Biết đâu địa ngục thiên đường là đâu.	
+1779	1775	𣌋𣅘巾󰘚畧頭	Sớm khuya khăn mặt lược đầu,	
+1780	1776	分昆候𪧚昆候敢差	Phận con hầu giữ con hầu dám sai.	
+1781	1777	沛店唵呵朝𡗶	Phải đêm êm ả chiều trời,	
+1782	1778	竹絲𠳨旦芸制每𣈜	Trúc tơ hỏi đến nghề chơi mọi ngày.	
+1783	1779	領𠳒娘買𢴑𦀊	Lĩnh lời nàng mới dắt dây,	
+1784	1780	𠰚𡽫咱𡁾易醝𢚸㝵	Nỉ non thánh thót dễ say lòng người.	
+1785	1781	小姐𫀅拱傷才	Tiểu thư xem cũng thương tài,	
+1786	1782	囷威󰟯拱扒𠄽𦊚分	Khuôn uy dường cũng bớt vài bốn phân.	
+1787	1783	㪯㝵苔墮㤕身	Cửa người đày đoạ xót thân,	
+1788	1784	𠰚䏾店恩恨𢚸	Sớm năn nỉ bóng đêm ân hận lòng.	
+1789	1785	臨淄󰡑󰒂刃蓬	Lâm Tri chút nghĩa đèo bòng,	
+1790	1786	渃䕯底𡦂相逢刼𨍦	Nước bèo để chữ tương phùng kiếp sau.	
+1791	1787	𦊚方𫡮𤽸𠬠牟	Bốn phương mây trắng một màu,	
+1792	1788	󰛎潙故囯別󰠳󰑼茹	Trông vời cố quốc biết đâu là nhà?	
+1793	1789	吝吝𣎃淪𣈜戈	Lần lần tháng lọn ngày qua,	
+1794	1790	浽𧵆󰅹別塘車世尼	Nỗi gần, nào biết đường xa thế này.	
+1795	1791	臨淄自課鴛𠖤	Lâm Tri từ thủa uyên bay,	
+1796	1792	房空傷几𣎃𣈜隻身	Phòng không thương kẻ tháng ngày chiếc thân.	
+1797	1793	眉撑𦝄買印痕	Mày xanh trăng mới in ngần,	
+1798	1794	粉乘香󱀄倍分㤕車	Phấn thừa hương cũ bội phần xót xa.	
+1799	1795	蓮殘梅吏𦭒花	Sen tàn mai lại chiếng hoa,	
+1800	1796	愁𨱽𣈜𥐆冬它郎春	Sầu dài ngày vắn đông đà sang xuân.	
+1801	1797	尋󰠲朱体故人	Tìm đâu cho thấy cố nhân?	
+1802	1798	𥙩勾運𠇮𪭯寅𢖵傷	Lấy câu vận mệnh cổi dần nhớ thương.	
+1803	1799	鄭念𢖵旦家鄕	Chạnh niềm nhớ đến gia hương,	
+1804	1800	𢖵圭払吏尋塘深圭	Nhớ quê chàng lại tìm đường thăm quê.	
+1805	1801	小姐迍𫔳吔提	Tiểu thư đón cửa dã giề,	
+1806	1802	寒暄皮𣴓每皮𧵆賒	Hàn huyên vừa cạn mọi bề gần xa.	
+1807	1803	茹香高捲幅羅	Nhà hương cao cuốn bức là,	
+1808	1804	房𥪝傳哙娘𦋦𥛉𢜠	Phòng trong truyền gọi nàng ra lạy mừng.	
+1809	1805	𨀈𦋦𠬠𨀈𠬠𨀊	Bước ra một bước một dừng,	
+1810	1806	𬂙賒娘㐌𤏣澄裊賒	Trông xa nàng đã tỏ chừng nẻo xa.	
+1811	1807	沛浪𬋟𤈛畑𤍶	Phải rằng nắng quáng đèn loà,	
+1812	1808	𤑟𤉜𡎢妬庄󰑼束生	Rõ ràng ngồi đó chẳng là thúc sinh?	
+1813	1809	碑徐情買𤑟情	Bây giờ tình mới rõ tình,	
+1814	1810	催催㐌默𠓨𫒥󰝸差	Thôi thôi đã mắc vào vành chẳng sai!	
+1815	1811	斫󰠲󰡏斫𨔍𠁀	Chước đâu có chước lạ đời,	
+1816	1812	㝵󰠲麻吏󰡏㝵精魔	Người đâu mà lại có người tinh ma.	
+1817	1813	𤑟𤉜实侶堆些	Rõ ràng thật lứa đôi ta,	
+1818	1814	爫𦋦昆於主茹堆尼	Làm ra con ở chúa nhà đôi nơi.	
+1819	1815	皮外噠噠呐唭	Bề ngoài thớt thớt nói cười,	
+1820	1816	麻冲岩險𣩂㝵空刀	Mà trong nham hiểm chết người không dao.	
+1821	1817	碑除坦𥰊𡗶高	Bây giờ đất thấp trời cao,	
+1822	1818	咹爫牢呐爫牢悲除	Ăn làm sao nói làm sao bây giờ?	
+1823	1819	強𬂙󰘚強󰡢󰡣	Càng trông mặt càng ngẩn ngơ,	
+1824	1820	𫆧蟳隊󰞂如絲󰑚排	Ruột tằm đòi đoạn như tơ rối bời,	
+1825	1821	𢜝威敢󰝸󰂅𠳒	Sợ uy dám chẳng vâng lời,	
+1826	1822	󱖺頭納𫴋𡑝梅𠬠󱴲	Cúi đầu nép xuống sân mai một chiều.	
+1827	1823	生它魄落塊漂	Sinh đà phách lạc hồn xiêu:	
+1828	1824	傷喂󰝸沛娘娇扵低	Thương ôi chẳng phải nàng kiều ở đây?	
+1829	1825	因爫牢旦󰡫尼	Nhân làm sao đến thế này?	
+1830	1826	催催些㐌默𢬣它耒	Thôi thôi ta đã mắc tay ai rồi!	
+1831	1827	𢜝悁敢𠼯𫥨𠳒	Sợ quen dám hở ra lời,	
+1832	1828	坤拫湥玉湥洡𡮈沙	Khôn ngăn giọt ngọc sụt sùi nhỏ sa.	
+1833	1829	小姐𬂙󰘚𠳨查	Tiểu thư trông mặt hỏi tra:	
+1834	1830	買󰡲󰡏󰟳之麻動容	Mới về có việc chi mà động dung?	
+1835	1831	生浪孝服皮衝	"Sinh rằng: ""Hiếu phục vừa xong,"	
+1836	1832	推𢚸陟𡵆𤴬𢚸冬天	“Suy lòng trắc dĩ đau lòng chung thiên!”	
+1837	1833	𠸦浪孝于㐌𢧚	"Khen rằng: ""Hiếu tử đã nên!"	
+1838	1834	洗塵慢󱋓解煩店秋	Tẩy trần mượn chén giải phiền đêm thu	
+1839	1835	㛪𫯳󱋓酢󱋓酬	Vợ chồng chén tạc chén thù,	
+1840	1836	扒娘𨅸植持壼𠄩尼	Bắt nàng đứng chực trì hồ hai nơi.	
+1841	1837	扒寬扒日旦𠳒	Bắt khoan bắt nhặt đến lời,	
+1842	1838	扒跪尽󰘚扒𨑮尽𢬣	Bắt quì tận mặt bắt mời tận tay.	
+1843	1839	生強如𤵺如𬏝	Sinh càng như dại như ngây,	
+1844	1840	湥𨱽湥𥐆󱋓苔󱋓潙	Giọt dài giọt vắn chén đầy chén vơi.	
+1845	1841	𢘩𠫾秩呐秩唭	Dửng đi chợt nói chợt cười,	
+1846	1842	告醝払㐌淡排𤎜𦋦	Cáo say chàng đã dạm bài lảng ra.	
+1847	1843	小姐倍𠯦昆花	"Tiểu thư vội thét: ""Con hoa!"	
+1848	1844	勸払庄𣴓時些󰡏扽	Khuyên chàng chẳng cạn thì ta có đòn.	
+1849	1845	生強󰞺𫆧散魂	Sinh càng nát ruột tan hồn.	
+1850	1846	󱋓𠶆沛唅蒲丸燥𣦍	Chén mời phải ngậm bồ hòn ráo ngay.	
+1851	1847	小姐唭醒呐醝	Tiểu thư cười tỉnh nói say,	
+1852	1848	渚重局𨢇吏排路󱉁	Chưa xong cuộc rượu lại bày trò chơi.	
+1853	1849	浪花奴覩每才	"Rằng: ""Hoa nô đủ mọi tài,"	
+1854	1850	版弹呲𨄹𠬠排払𦖑	Bản đàn thử dạo một bài chàng nghe.	
+1855	1851	娘它散唤痺迷	Nàng đà tán hoán tê mê,	
+1856	1852	󰂅𠳒𦋦𫏾屏𦂛󰟴弹	Vâng lời ra trước bình the vặn đàn.	
+1857	1853	𦊚𦀊如哭如嘆	Bốn dây như khóc như than,	
+1858	1854	遣㝵蓮蓆拱散󰞺𢚸	Khiến người trên tiệc cũng tan nát lòng.	
+1859	1855	拱沖𠬠㗂絲桐	Cùng trong một tiếng tơ đồng,	
+1860	1856	㝵外唭𦵚㝵冲哭󰠐	Người ngoài cười nụ người trong khóc thầm.	
+1861	1857	湥珠呂渚坤扲	Giọt châu lã chã khôn cầm,	
+1862	1858	𩠴頭払仍拔󰠐湥湘	Cúi đầu chàng những gạt thầm giọt tương.	
+1863	1859	小姐吏𠽇𥙩娘	Tiểu thư lại nạt lấy nàng:	
+1864	1860	局盃𢭮曲断膓意之	Cuộc vui gảy khúc đoạn trường ấy chi!	
+1865	1861	牢󰝸別意思之	Sao chẳng biết ý tứ gì?	
+1866	1862	朱払盆𬐒罪時在𤽗	Cho chàng buồn bã tội thì tại ngươi.	
+1867	1863	生強惨切徘徊	Sinh càng thảm thiết bồi hồi,	
+1868	1864	倍傍強呐強唭朱戈	Vội vàng gượng nói gượng cười cho qua.	
+1869	1865	曲𧍰更㐌點𠀧	Khúc rồng canh đã điểm ba,	
+1870	1866	小姐𥚆󰘚羕它甘心	Tiểu thư nhìn mặt dường đà cam tâm.	
+1871	1867	𢚸貞㕸𠳚𢜠󰠐	Lòng riêng khấp khởi mừng thầm:	
+1872	1868	𢝙尼㐌補𤴬吟初󰅒	“Buồn này đã bõ đau ngầm xưa nay!”	
+1873	1869	生時肝𤉗𫆧苔	Sinh thì gan héo ruột dày,	
+1874	1870	浽𢚸強𢪀強荄䔲𢚸	Nỗi lòng càng nghĩ càng cay đắng lòng.	
+1875	1871	𠊛𠓨鐘𪭯鵉房	Người vào chung gối loan phòng,	
+1876	1872	娘𦋦𢭸䏾畑終更𨱽	Nàng ra tựa bóng đèn chong canh dài.	
+1877	1873	旦󰅒買別頭𡳪	Đến nay mới biết đầu đuôi,	
+1878	1874	𧖱悭󰠲󰡏𨔍𠁀茹悭	Máu ghen đâu có lạ đời nhà ghen!	
+1879	1875	斫󰠲𢪊翠𢺺鴛	Chước đâu rẽ thuý chia uyên.	
+1880	1876	埃𦋦塘乃埃𥚆特埃	Ai ra đường nấy ai nhìn được ai?	
+1881	1877	悲除𠬠域𠬠𠳒	Bây giờ một vực một trời,	
+1882	1878	歇調朝𡮶歇調是非	Hết điều chiều chuộng hết lời thị phi.	
+1883	1879	珥如苝󰠱如𨨲	Nhẹ như bấc nặng như chì,	
+1884	1880	𫽻牢𦋦女群之󰑼緣	Gỡ sao ra nợ còn gì là duyên?	
+1885	1881	吕󰟯𡭧分婵娟	Lỡ dường chút phận thuyền quyên,	
+1886	1882	𣷭溇㳥奇󰡏全特爲	Bể sâu sóng cả có tuyền được vay?	
+1887	1883	𠬠𠇮陰倚店迡	Một mình âm ỷ đêm chầy,	
+1888	1884	𥒦油潙渃𬑉苔𠄼更	Đĩa dầu vơi nước mắt đầy năm canh.	
+1889	1885	󰉚𣅘候下臺萾	Sớm khuya hầu hạ đài doanh,	
+1890	1886	小姐暫󰘚提情𠳨查	Tiểu thư chạm mặt đè tình hỏi tra.	
+1891	1887	攎𠳒娘買䜹戈	Lựa lời nàng mới thưa qua:	
+1892	1888	沛欺𠇮吏㤕賒浽𠇮	Phải khi mình lại xót xa nỗi mình.	
+1893	1889	小姐吏𠳨束生	Tiểu thư lại hỏi thúc sinh:	
+1894	1890	忌払查𥙩实情朱󰅉	Cậy chàng tra lấy thực tình cho nao.	
+1895	1891	生它薩𫆧如胞	Sinh đà rát ruột như bào,	
+1896	1892	呐𫥨庄便𬂙𠓨庄󰡵	Nói ra chẳng tiện trông vào chẳng xoang.	
+1897	1893	仍𠲖吏累旦娘	Những e lại luỵ đến nàng,	
+1898	1894	哺崇買仕料塘𠳨查	Phô sòng mới sẽ liệu đường hỏi tra.	
+1899	1895	󱖺頭跪畧𡑝花	Cúi đầu quì trước sân hoa,	
+1900	1896	白供娘買𨖲戈𠬠祠	Bạch cung nàng mới lên qua một tờ.	
+1901	1897	靣前呈貝小姐	Diện tiền trình với tiểu thư,	
+1902	1898	率󰏙󰟯󰡏󰡢󰡣󰅉情	Thoắt xem dường có ngẩn ngơ nao tình.	
+1903	1899	連𢬣𢭂吏束生	Liền tay trao lại thúc sinh,	
+1904	1900	浪才𢧚重麻情𢧚傷	"Rằng: ""Tài nên trọng mà tình nên thương."	
+1905	1901	󰂇生󰡏𢼂𢀭𢀨	Ví sinh có số giàu sang,	
+1906	1902	債尼酉𤒘茹鐄拱𢧚	Giá này dẫu đúc nhà vàng cũng nên!	
+1907	1903	𣷭塵沉浽婵娟	Bể trần chìm nổi thuyền quyên,	
+1908	1904	有才傷浽󰟁緣𨔍𠁀	Hữu tài thương nỗi vô duyên lạ đời!	
+1909	1905	生浪实󰡏如𠳒	"Sinh rằng: ""Thật có như lời,"	
+1910	1906	紅顔泊𠇮𠬠㝵󰅹爲	Hồng nhan bạc mệnh một người nào vay!	
+1911	1907	𠦳初欧拱󰡫尼	Nghìn xưa âu cũng thế này,	
+1912	1908	慈悲欧料扒𢬣買皮	Từ bi âu liệu bớt tay mới vừa.	
+1913	1909	小姐浪意冲詞	"Tiểu thư rằng: ""ý trong tờ,"	
+1914	1910	㕸󰝂𠇮泊嗔洳𫔳空	Rắp đem mệnh bạc xin nhờ cửa không.	
+1915	1911	催時催拱朝𢚸	Thôi thì thôi cũng chiều lòng,	
+1916	1912	拱朱朱𢪀冲妄𨀈𦋦	“Cũng cho cho nghỉ trong vòng bước ra.	
+1917	1913	産󰞹音閣園些	Sẵn Quan Âm Các vườn ta,	
+1918	1914	󰡏核𤾓𡱩󰡏花𦊚務	Có cây trăm thước có hoa bốn mùa.	
+1919	1915	󰡏古樹󰡏山瑚	“Có cổ thụ có san hô,	
+1920	1916	朱娘𦋦妬𪧚厨誦经	“Cho nàng ra đó giữ chùa tụng kinh.”	
+1921	1917	曾曾𡗶買平明	Tưng tưng trời mới bình minh,	
+1922	1918	香花五供懺生礼常	Hương hoa ngũ cúng sắm sanh lễ thường.	
+1923	1919	󰡡迻旦畧𫢋堂	Mống đưa đến trước phật đường,	
+1924	1920	三皈五戒朱娘出家	Tam qui ngũ giới cho nàng xuất gia.	
+1925	1921	襖撑対𥙩袈裟	Áo xanh đổi lấy cà sa,	
+1926	1922	法名吏対𠸜𦋦濯泉	Pháp danh lại đổi tên ra trạc tuyền.	
+1927	1923	󰉺𣅘併覩油畑	Sớm khuya tính đủ dầu đèn,	
+1928	1924	春秋割産𠄩𠸜香茶	Xuân thu cắt sẵn hai tên hương trà.	
+1929	1925	娘自另𨁪園花	Nàng từ lánh dấu vườn hoa,	
+1930	1926	󰟯𧵆棱紫󰟯賒𡏧紅	Dường gần rừng tía dường xa bụi hồng.	
+1931	1927	因緣󰠲吏群蒙	Nhân duyên đâu lại còn mong?	
+1932	1928	塊調𢢆粉𢣃紅催催	Khỏi điều thẹn phấn tủi hồng thôi thôi.	
+1933	1929	𫢋前惨垃愁洃	Phật tiền thảm lấp sầu khơi,	
+1934	1930	𣈜鋪手字店㘨心香	Ngày pho thủ tự đêm nồi tâm hương.	
+1935	1931	朱台湥渃梗楊	Cho hay giọt nước cành dương,	
+1936	1932	󰌎𢚸洒𤎕每塘塵緣	Lửa lòng tưới tắt mọi đường trần duyên.	
+1937	1933	𣙩𣘽自阻牟禅	Sồng nâu từ trở mầu thiền,	
+1938	1934	𡑝秋𦝄㐌𠄽番𨅸頭	Sân thu trăng đã vài phen đứng đầu.	
+1939	1935	𬮦房杄日䋥毛	Quan phòng then nhặt lưới mau,	
+1940	1936	呐𠳒畧󰘚淶珠永㝵	Nói lời trước mặt rơi châu vắng người.	
+1941	1937	閣经院󰀋堆尼	Gác kinh viện sách đôi nơi,	
+1942	1938	冲𡬼𡬷吏扱𨑮䦕山	Trong gang tấc lại gấp mười quan san.	
+1943	1939	仍󰑼唅咀𠸂嘆	Những là ngâm thở giột than,	
+1944	1940	小姐沛𣇜问安󰡲茹	Tiểu thư phải buổi vấn an về nhà.	
+1945	1941	乘机生買輦𦋦	Thừa cơ sinh mới lẻn ra,	
+1946	1942	侵侵旦𠃅園花貝娘	Xăm xăm đến mé vườn hoa với nàng.	
+1947	1943	湥淶計挼断膓	Sụt sùi kể nỗi đoạn trường,	
+1948	1944	湥珠尋謝昌長襖撑	Giọt châu tầm tã ướt tràng áo xanh:	
+1949	1945	浪甘𠹾泊貝情	Rằng cam chịu bạc với tình,	
+1950	1946	主東底罪𠬠𠇮朱花	“Chúa Đông để tội một mình cho hoa!	
+1951	1947	𥰊机輸智弹󰜏	Thấp cơ thua trí đàn bà,	
+1952	1948	𬂙𠓨𤴬𫆧呐𫥨𪿒𠳒	Trông vào đau ruột nói ra ngại lời.	
+1953	1949	爲些朱累旦㝵	“Vì ta cho luỵ đến người,	
+1954	1950	葛淋玉𤽸舌催春撑	“Cát lầm ngọc trắng thiệt thòi xuân xanh.	
+1955	1951	管之蓮閣󰡎溋	“Quản chi trên gác dưới duềnh,	
+1956	1952	拱筭𤯩托貝情朱衝	Cũng toan sống thác với tình cho xong.	
+1957	1953	宗堂𡮍渚甘𢚸	Tông đường chút chửa cam lòng,	
+1958	1954	哏󰛈𢯏𠬠𡦂同爫𠄩	Cắn răng bẻ một chữ đồng làm hai.	
+1959	1955	𢢆𠇮𥒥󰞺鐄派	Thẹn mình đá nát vàng phai,	
+1960	1956	𤾓身易贖𠬠𠳒特牢	Trăm thân dễ chuộc một lời được sao!	
+1961	1957	娘浪隻栢㳥濤	"Nàng rằng: ""Chiếc bách sóng đào,"	
+1962	1958	浽沉拱默六󰅹󰏀埋	“Phù trầm cũng mặc lúc nào rủi may.	
+1963	1959	𡮍身𠹴𠶔淎淶	Chút thân quằn quại vũng lầy,	
+1964	1960	𤯩乘群想旦𣈙女牢	Sống thừa còn tưởng đến rày nữa sao!	
+1965	1961	拱料𠬠湥湄𩆋	Cũng liều một giọt mưa rào,	
+1966	1962	麻朱天下𬂙𠓨拱台	Mà cho thiên hạ trông vào cũng hay!	
+1967	1963	𡮍爲琹㐌󰐻𦀊	“Chút vì cầm đã bám dây,	
+1968	1964	庄𤾓𢆥拱𠬠𣈜緣些	Chẳng trăm năm cũng một ngày duyên ta.	
+1969	1965	料麻𦋦𫔳朱𦋦	Liệu mà ra cửa cho ra,	
+1970	1966	意󰑼情󰠱意󰑼恩溇	Ấy là tình nặng ấy là ân sâu.	
+1971	1967	生浪貞想闭𥹰	"Sinh rằng: ""Riêng tưởng bấy lâu,"	
+1972	1968	𢚸㝵岩險別󰠲麻量	“Lòng người nham hiểm biết đâu mà lường.	
+1973	1969	女欺𬲄膆負傍	Nữa khi giông tố phũ phàng,	
+1974	1970	舌貞蒂拱吏強極低	“Thiệt riêng đấy cũng lại càng cực đây.	
+1975	1971	料麻高𧼋賒𠖤	“Liệu mà cao chạy xa bay,	
+1976	1972	爱恩些󰡏銀尼麻催	Ái ân ta có ngần này mà thôi.	
+1977	1973	碑除几虐㝵吹	Bây giờ kẻ ngược người xuôi,	
+1978	1974	別包除吏𫃸𠳒渃𡽫	Biết bao giờ lại nối lời nước non?	
+1979	1975	酉浪滝𣴓𥒥󰍹	Dẫu rằng sông cạn đá mòn,	
+1980	1976	昆蚕旦𣩂拱群矫絲	“Con tằm đến chết cũng còn kéoo tơ.”	
+1981	1977	共饒計礼娄初	Cùng nhau kể lể sau xưa,	
+1982	1978	呐耒吏呐𠳒渚歇𠳒	Nói rồi lại nói lời chưa hết lời.	
+1983	1979	󰘚𬂙𢬣󰝸女淶	Mặt trông tay chẳng nỡ rời,	
+1984	1980	花婢㐌動㗂㝵裊賒	Hoa tì đã động tiếng người nẻo xa.	
+1985	1981	忍󰋈呐悴𨅸𦋦	Nhịn ngừng nuốt tủi đứng ra,	
+1986	1982	小姐󰠲㐌𨃴花𨀈𠓨	Tiểu thư đâu đã gót hoa bước vào.	
+1987	1983	唭唭呐呐𠮾嗷	Cười cười nói nói ngọt ngào,	
+1988	1984	𠳨払買扵准󰅹吏󱉁	"Hỏi: ""Chàng mới ở chốn nào lại chơi?"""	
+1989	1985	対光生買料𠳒	Dối quanh sinh mới liệu lời:	
+1990	1986	尋花過𨀈袩㝵曰經	Tìm hoa quá bước xem người viết kinh.	
+1991	1987	𠸦浪笔法㐌精	"Khen rằng: ""Bút pháp đã tinh,"	
+1992	1988	𬧺𠓨貝帖香亭󰅹輸	“So vào với thiếp hương đình nào thua!	
+1993	1989	惜台流落江湖	Tiếc thay lưu lạc giang hồ,	
+1994	1990	𠦳鐄实拱𢧚模𥙩才	Nghìn vàng thật cũng nên mua lấy tài.	
+1995	1991	船茶𣹕渃紅梅	Thiền trà rót nước hồng mai,	
+1996	1992	從容綏𨃴書齋拱󰡲	Thong dong nối gót thư trai cùng về.	
+1997	1993	娘強𠲖戾塢𠲖	Nàng càng e lệ ủ ê,	
+1998	1994	󰁹𦖻𠳨吏花婢畧𡢐	Rỉ tai hỏi lại hoa tì trước sau.	
+1999	1995	花浪󰜏旦㐌𥹰	"Hoa rằng: ""Bà đến đã lâu,"	
+2000	1996	𨂚蹎𨅸納度󰠲姅除	Dón chân đứng núp độ đâu nữa giờ.	
+2001	1997	停停技󰖥蹎絲	Rành rành kẽ tóc chân tơ,	
+2002	1998	󰋇𠳒𦖑歇㐌餘𤏣詳	Mấy lời nghe hết đã dư tỏ tường:	
+2003	1999	包饒󰞂苦情傷	Bao nhiêu đoạn khổ tình thương.	
+2004	2000	弹󰜏羕意体欧𠬠㝵	“Nỗi ông vật vã nỗi nàng thở than.	
+2005	2001	垠碎𨅸吏𠬠边	Ngăn tôi đứng lại một bên,	
+2006	2002	󰇏𦖻耒買𨀈𨖲𨕭楼	Chán tai rồi mới bước lên trên lầu.	
+2007	2003	𦖑崔󰟹駭掣󰠲	Nghe thôi kinh hãi xiết đâu:	
+2008	2004	弹󰜏羕意体欧𠬠㝵	“Đàn bà dường ấy thấy âu một người!	
+2009	2005	意買肝意買才	Ấy mới gan ấy mới tài!	
+2010	2006	𢪀強添𢪀産荄用移	“Nghĩ càng thêm nghĩ sởn gai rụng rời.	
+2011	2007	㝵󰠲溇色渃𠁀	Người đâu sâu sắc nước đời,	
+2012	2008	麻払束手𦋦㝵抪𢬣	“Mà chàng thúc thủ ra người bó tay.	
+2013	2009	实賍扒特󰟯尼	Thực tang bắt được dường này,	
+2014	2010	𧖱悭埃拱槔眉哏𬹸	“Máu ghen ai cũng cau mày cắn răng.	
+2015	2011	世麻㛪󰝸代滕	“Thế mà êm chẳng đãi đằng,	
+2016	2012	朝𠶆𢝙𨤔呐能妙楊	Chào mời vui vẻ nói năng dịu dàng.	
+2017	2013	𫺶由𫥨胣世常	Giận ru ra dạ thế thường,	
+2018	2014	唭𠱋買实坤量險𫐷	Cười ru mới thực khôn lường hiểm sâu.	
+2019	2015	身些些沛𢗼歐	Thân ta ta phải lo âu,	
+2020	2016	𠰘𤞻毒𧋻扵󰠲准尼	Miệng hùm nọc rắn ở đâu chốn này.	
+2021	2017	󰂇庄招𦑃高𠖤	Ví chăng gieo cánh cao bay,	
+2022	2018	樔𣘃𥹰拱固𣈜披花	Rào cây lâu cũng có ngày bẻ hoa.	
+2023	2019	分䕯包管渃沙	Phận bèo bao quản nước sa,	
+2024	2020	泠汀󰠲女拱󰑼泠汀	Lênh đênh đâu nữa cũng là lênh đênh.	
+2025	2021	㐱𠲖圭客𠬠𠇮	Chỉn e quê khách một mình,	
+2026	2022	𢬣空渚易尋𨪪蔭𩛂	Tay không chưa dễ tìm vành ấm no.	
+2027	2023	𢪀𠫾𢪀吏觥孤	Nghĩ đi nghĩ lại quanh co.	
+2028	2024	𫢋前産固每圖經銀	Phật tiền, sẵn có mọi đồ kim ngân.	
+2029	2025	边𠇮㩫底𧦈身	Bên mình giắt để hộ thân,	
+2030	2026	吝𦖑更㐌𠬠分𪔠𠀧	Lần nghe canh đã một phần trống ba.	
+2031	2027	拮𠇮戈𦰟墻花	Cất mình qua ngọn tường hoa,	
+2032	2028	吝塘蹺䏾𦝄斜𧗱西	Lần đường theo bóng trăng tà về tây.	
+2033	2029	𩆪𩂟淡吉頽核	Mịt mù dặm cát đồi cây,	
+2034	2030	㗂𬷤店𦹵𨁪𩌂梂霜	Tiếng gà điếm cỏ dấu giày cầu sương.	
+2035	2031	更𣅘身𡛔琰長	Canh khuya thân gái dặm trường,	
+2036	2032	㐱𠲖塘詫分傷𤋵油	Chỉn e đường sá phần thương dãi dầu.	
+2037	2033	𡗶東皮𤍎岸橷	Trời đông vừa rạng ngàn dâu,	
+2038	2034	𠀧爲󰅹㐌別󰠲󰑼茄	Bơ vơ nào đã biết đâu là nhà.	
+2039	2035	厨󰠲𬂙体裊車	Chùa đâu trông thấy nẻo xa,	
+2040	2036	伶伶招隐庵𠀧𡦂排	Rành rành “chiêu ẩn am” ba chữ bài	
+2041	2037	侵侵𢱗𫔳𨀈𠓨	Xăm xăm gõ cửa bước vào	
+2042	2038	住持𦖑㗂逴𨑮𠓨冲	Trụ trì nghe tiếng rước mời vào trong.	
+2043	2039	体牟咹默𣘽𣙩	Thấy màu ăn mặc nâu sồng,	
+2044	2040	󰔼緣師長𫅜𢚸連傷	Giác Duyên sư trưởng lành lòng liền thương.	
+2045	2041	𣵲󰠃梗𦰟朱詳	Gạn gùng ngành ngọn cho tường,	
+2046	2042	𨔍𨓡娘唉尋塘呐觥	Lạ lùng nàng hãy tìm đường nói quanh:	
+2047	2043	小禅圭扵北京	Tiểu thiền quê ở Bắc Kinh,	
+2048	2044	皈師皈𫢋修行闭𥹰	Quy sư quy Phật tu hành bấy lâu.	
+2049	2045	本師耒拱旦𨍦	Bản sư rồi cũng đến sau,	
+2050	2046	𠰺迻法宝郎候師兄	Dạy đưa pháp bảo sang hầu sư huynh.	
+2051	2047	𣈙󰂅面献冷冷	Rày vâng diện hiến rành rành,	
+2052	2048	鐘鐄磬泊边𠇮󰇥𦋦	Chuông vàng khánh bạc bên mình giở ra.	
+2053	2049	袩戈師買𠰺戈	Xem qua sư mới dạy qua:	
+2054	2050	沛尼恒水𨔍些厚情	“phải nơi hằng thuỷ là ta hậu tình.	
+2055	2051	䝨徒塘詫𠬠𠇮	“hiền đồ đường sá một mình,	
+2056	2052	扵低徐待師兄𠃣𣈜	ở đây chờ đợi sư huynh ít ngày,	
+2057	2053	𠳚身特准庵𩄲	Gởi thân được trốn am mây,	
+2058	2054	㙁𦯬㙮対𣎃𣈜從容	Muối dưa đắp đổi tháng ngày thong dong,	
+2059	2055	偈經勾󱀄属𢚸	Kệ kinh câu cũ thuộc lòng,	
+2060	2056	香畑役󱀄斎房悁𢬣	Hương đèn việc cũ trai phòng quen tay.	
+2061	2057	𣌋𣅘𦋦𠃅𤗹𩄲	Sớm khuya ra mái phên mây,	
+2062	2058	𦰟畑挑月㗂𣖖󰠱霜	Ngọn đèn khêu nguyệt tiếng chày nện sương.	
+2063	2059	体娘聰慧恪常	Thấy nàng thông tuệ khác thường,	
+2064	2060	師強你󰘚娘強凭蹎	Sư càng nể mặt nàng càng vững chân.	
+2065	2061	𫔳婵皮𦝄𡳳春	Cửa thiền vừa trăng cuối xuân,	
+2066	2062	䏾花苔坦𨤔銀昂𡗶	Bóng hoa đầy đất vẻ ngân ngang trời.	
+2067	2063	󰊄光𩄲淨請台	Gió quang mây tạnh thảnh thơi,	
+2068	2064	固㝵𡊨越𨖲制𫔳伽	Có người đàn việt lên chơi cửa già.	
+2069	2065	󰇥圖鐘磬袩戈	Giở đồ chuông khánh xem qua,	
+2070	2066	𠸦浪窖頡𧵑茹宦娘	Khen rằng: “khéo hệt của nhà Hoạn nương!”	
+2071	2067	󰔼緣實意𢗼量	Giác Duyên thực ý lo lường,	
+2072	2068	𣎀清買誨吏娘𠠩𢖖	Đêm thanh mới hỏi lại nàng trước sau.	
+2073	2069	𢪀浪坤浽鬪牟	Nghĩ rằng khôn nỗi giấu mầu,	
+2074	2070	事𠇮娘買𨃴頭排𣦍	Sự mình nàng mới gót đầu bày ngay:	
+2075	2071	悲除事㐌󰟯尼	Bây giờ sự đã dường này,	
+2076	2072	分䝨油磊油埋在㝵	Phận hèn dù rủi dù may tại người.	
+2077	2073	󰔼緣𦖑呐𣳔涞	Giác Duyên nghe nói rụng rời,	
+2078	2074	姅傷姅𢜝徘徊庄衝	Nửa thương nửa sợ bồi hồi chẳng xong.	
+2079	2075	󰁹𦖻娘買𤋵𢚸	Rỉ tai nàng mới dãi lòng:	
+2080	2076	於低𫔳𫢋󰑼空狹之	Ở đây cửa phật là không hẹp gì.	
+2081	2077	衣庄仍事不期	E chăng những sự bất kỳ,	
+2082	2078	底娘朱旦世時共伤	Để nàng cho đến thế thì cũng thương.	
+2083	2079	另車畧料尋塘	Lánh xa trước liệu tìm đường,	
+2084	2080	𡎥除渃旦𢧚󰟯群圭	Ngồi chờ nước đến nên dường còn quê.	
+2085	2081	固茹媒泊边箕	Có nhà mụ Bạc bên kia,	
+2086	2082	庵𩄲涓磊𠫾󰡲油香	Am mây quen lối đi về dầu hương.	
+2087	2083	𠴍郎吲喝每塘	Nhắn sang dặn hết mọi đường,	
+2088	2084	扽茹唉暫朱娘翥真	Dọn nhà hãy tạm cho nàng chứa chân.	
+2089	2085	仍𢜠特准安身	Những mừng được chốn an thân,	
+2090	2086	倍傍󰅹及併𧵆併賒	Vội vàng nào kịp tính gần tính xa.	
+2091	2087	󰅹𪟽共祖姂𫅷	Nào ngờ cũng tổ bợm già,	
+2092	2088	泊󰜏󰄴貝秀󰜏同門	Bạc bà học với Tú bà đồng môn.	
+2093	2089	体娘𤁕粉󰕔𣘈	Thấy nàng lạt phấn nhàm son,	
+2094	2090	𢜠󰠐特󰡭半奔固唎	Mừng thầm được thóp bán buôn có lời.	
+2095	2091	虚空達補𢧚𠳒	Hư không đặt bỏ nên lời,	
+2096	2092	娘它𢀲󰡨用涞𡗋番	Nàng đà sớn sác rụng rời lắm phen.	
+2097	2093	媒強吹𠲝朱連	Mụ càng xoi dói cho len,	
+2098	2094	𥙩𠳒凶險押緣朱陳	Lấy lời hung hiểm ép duyên châu trần.	
+2099	2095	浪娘𬮙淡𠬠身	"Rằng: ""Nàng muôn dặm một thân,"	
+2100	2096	吏恾仍㗂与賒𫅜賒	“Lại mang nhứng tiếng dữ gần lành xa.	
+2101	2097	害寃家𧵑破家	Khéo oan gia của phá gia,	
+2102	2098	群埃敢貯𠓨茹女低	Còn ai dám chứa vào nhà nữa đây.	
+2103	2099	急筭劍准車𦀊	Kíp toan kiếm chốn xe dây,	
+2104	2100	空仍渚易麻𠖤塘𡗶	Không dưng chưa dễ mà bay đường trời.	
+2105	2101	尼𧵆時庄便尼	“Nơi gần thì chẳng tiện nơi,	
+2106	2102	尼賒時庄固㝵󰅹賒	Nơi xa thì chẳng có người nào xa.	
+2107	2103	尼払泊倖𡥙茹	Này chàng bạc hạnh cháu nhà,	
+2108	2104	共冲身戚𫆧𦚐庄埃	Cũng trong thân thích ruột rà chẳng ai.	
+2109	2105	𫔳茹奔半州台	“Cửa nhà buôn bán châu Thai,	
+2110	2106	實他固𠬠单差庄𪟽	Thật thà có một đơn sai chẳng hề.	
+2111	2107	世󰅹娘共沛𦖑	Thế nào nàng cũng phải nghe.	
+2112	2108	成身耒仕料𧗱州台	Thành thân rồi sẽ liệu về châu Thai.	
+2113	2109	闭󰅒埃吏別埃	“bấy nay ai lại biết ai,	
+2114	2110	油𢚸𣷭𢌌滝𨱽青青	Dầu lòng bể rộng, sông dài thênh thênh.	
+2115	2111	娘油庄决順情	Nàng dù chẳng quyết thuận tình.	
+2116	2112	債𠇮裊畧累𠇮旦娄	Trái lời nẻo trước luỵ mình đến sau.	
+2117	2113	娘強󰘚塢眉朱	Nàng càng mặt ủ mày chau,	
+2118	2114	強𦖑媒呐強𤴬如寅	Càng nghe mụ nói càng đau như dần.	
+2119	2115	𢪀𠇮縱坦仕真	Nghĩ mình túng đất sẩy chân,	
+2120	2116	世弯娘買賒𧵆咀嘆	Thế cùng nàng mới xa gần thở than:	
+2121	2117	妾如昆燕落弹	Thiếp như con én lạc đàn,	
+2122	2118	沛弓𣈙㐌𢜝磐𣛠弓	“Phải cung rày đã sợ bàn máy cung.	
+2123	2119	穹塘油併𡦂從	Cùng đường dù tính chữ tòng,	
+2124	2120	別㝵別󰘚別𢚸爫牢	Biết người biết mặt biết lòng làm sao?	
+2125	2121	女欺𬮙𠬠世󰅹	Nữa khi muôn một thế nào,	
+2126	2122	半𤞻奔鬼聀𠓨𦝄󰠲	“Bán hùm buôn quỷ chắc vào lưng đâu?	
+2127	2123	油埃𢚸固所求	Dù ai lòng có sở cầu,	
+2128	2124	心盟嗔决貝僥𠬠𠳒	Tâm minh xin quyết với nhau một lời.	
+2129	2125	証明固坦固𡗶	Chứng minh có đất có trời,	
+2130	2126	闭除𣾼𣷭𦋦𣾺管之	Bấy giờ vượt bể ra khơi quản gì.	
+2131	2127	特𡗶媒買𦋦𠫾	Được lời mụ mới ra đi,	
+2132	2128	𫫗信户泊卽時怩生	Mách tin họ Bạc tức thì náy sinh.	
+2133	2129	𠬠茹扽擛令庭	Một nhà dọn dẹp linh đình,	
+2134	2130	抉𡑝達逴𣳮󰜍𤏧香	Quét sân đặt trác rửa bình thắp hương.	
+2135	2131	泊生跪𫴋倍傍	Bạc sinh quì xuống vội vàng,	
+2136	2132	過𠳒願歇城隍士公	Quá lời nguyện hết Thành hoàng Thổ công.	
+2137	2133	畧𡑝𢚸㐌𤋵𢚸	Trước sân lòng đã giải lòng,	
+2138	2134	𥪝幔爫礼絲紅結緣	Trong màn làm lễ Tơ hồng kết duyên.	
+2139	2135	成親買逴𫴋船	Thành thân mới rước xuống thuyền,	
+2140	2136	順󱏹𠬠𦲿吹沔州台	Thuận buồm một lá xuôi miền châu Thai.	
+2141	2137	船皮杜𣷷清台	Thuyền vừa đỗ bến thảnh thơi,	
+2142	2138	泊生𨖲畧尋尼每㝵	Bạc sinh lên trước tìm nơi mọi ngày.	
+2143	2139	共茹行院初󰅒	Cũng nhà hàng viện xưa nay,	
+2144	2140	共坊半𦧘共𢬣奔𠊛	Cũng phường bán thịt cũng tay buôn người.	
+2145	2141	袩㝵定價皮耒	Xem người định giá vừa rồi,	
+2146	2142	䋦行𠬠㐌𦋦𨑮時󰇵	Mối hàng một đã ra mười thì buông.	
+2147	2143	曼㝵𠾔轎逴娘	Mượn người thuê kiệu rước nàng,	
+2148	2144	泊󰝡󰘚泊劍塘朱車	Bạc đem mặt bạc kiếm đường cho xa.	
+2149	2145	轎花達畧㙴花	Kiệu hoa đặt trước thềm hoa,	
+2150	2146	边冲体𠬠媒𦋦倍傍	Bên trong thấy một mụ ra vội vàng.	
+2151	2147	迻娘𠓨𥛉家堂	Đưa nàng vào lạy gia đường,	
+2152	2148	共神眉𤽸共坊楼撑	Cũng thần mày trắng cũng phường lầu xanh.	
+2153	2149	脱𬂙娘㐌別情	Thoạt trông nàng đã biết tình,	
+2154	2150	𪀄篭坤𨤧拮𠇮𠖤髙	Chim lồng khôn nhẽ cất mình bay cao.	
+2155	2151	劍吒丐𢼂花桃	Chém cha cái số hoa đào,	
+2156	2152	𨔉𦋦耒吏𫃚𠓨如制	Gỡ ra rồi lại buộc vào như chơi!	
+2157	2153	𢪀代麻喭朱代	Nghĩ đời mà ngán cho đời,	
+2158	2154	才情之𡗋朱𡗶坦悭	Tài tình chi lắm cho trời đất ghen!	
+2159	2155	昔台渃㐌打矾	Tiếc thay nước đã đánh phèn,	
+2160	2156	麻朱湓吏染蓮󰋇吝	Mà cho bùn lại nhuốm lên mấy lần!	
+2161	2157	洪鈞貝客紅裙	Hồng quân với khách hồng quần,	
+2162	2158	㐌磋旦世群恨渚他	Đã xoay đến thế còn hằn chưa tha.	
+2163	2159	吕自落𨀈𨀈𦋦	Lỡ từ lạc bước bước ra,	
+2164	2160	丐身料仍自茹料𠫾	Cái thân liệu những từ nhà liệu đi.	
+2165	2161	頭撑㐌罪情之	Đầu xanh đã tội tình gì?	
+2166	2162	𦟐紅填過姅時渚他	Má hồng đền quá nửa thì chưa thôi.	
+2167	2163	別身𧼋庄塊𡗶	Biết thân chạy chẳng khỏi trời,	
+2168	2164	拱料󰘚粉朱耒㝵撑	Cũng liều mặt phấn cho rồi ngày xanh.	
+2169	2165	吝偷󰊄沫𣎀清	Lần thâu gió mát đêm thanh,	
+2170	2166	俸󰠳固客边庭旦制	Bỗng đâu có khách biên đình đến chơi.	
+2171	2167	󰙐𤞻肣燕眉𧍋	Râu hùm cằm én mày ngài,	
+2172	2168	𦠘𠄼𡬷𢌌身𨑮𡱩高	Vai năm tấc rộng thân mười thước cao.	
+2173	2169	堂堂𠬠等󰠰豪	Đường đường một đấng anh hào,	
+2174	2170	棍拳欣飭畧韜𠁟才	Côn quyền hơn sức lược thao gồm tài.	
+2175	2171	隊𡗶踏坦於代	Đội trời đạp đất ở đời,	
+2176	2172	户徐𠸜海本㝵越東	Họ Từ tên Hải vốn người Việt Đông.	
+2177	2173	江糊涓趣浘漨	Giang hồ quen thú vẫy vùng,	
+2178	2174	鎌弹姅梗𡽫滝𠬠掉	Gươm đàn nửa gánh non sông một chèo.	
+2179	2175	戈制体㗂娘翹	Qua chơi thấy tiếng nàng Kiều,	
+2180	2176	𬌓𢚸兒女共漂󰠰䧺	Tấm lòng nhi nữ cũng xiêu anh hùng.	
+2181	2177	帖名迻旦楼紅	Thiếp danh đưa đến lầu hồng,	
+2182	2178	𠄩边共𥆁𠄩𢚸共於	Hai bên cùng liếc hai lòng cùng ưa.	
+2183	2179	徐浪心胆相期	Từ rằng: “tâm đảm tương cờ,	
+2184	2180	沛㝵𦝄𫗄沕潙咍牢	Phải người trăng gió vật vờ hay sao!	
+2185	2181	闭𥹰𦖑㗂𦟐桃	Bấy lâu nghe tiếng má đào,	
+2186	2182	𬑉撑庄底埃𠓨同空	“Mắt xanh chẳng để ai vào có không?	
+2187	2183	𠬠代特󰋇󰠰䧺	Một đời được mấy anh hùng,	
+2188	2184	補之󰠩𡊱𪀄篭麻制	Bõ chi cá chậu chim lồng mà chơi!	
+2189	2185	娘浪㝵𠰺过𠳒	"Nàng rằng: ""Người dạy quá lời,"	
+2190	2186	身尼群敢袩埃爫常	Thân này còn dám xem ai làm thường.	
+2191	2187	炪熯𪮙𥒥此鐄	Đốt than chọn đá thử vàng,	
+2192	2188	別󰠲麻𠳚肝膓𠓨󰠲	Biết đâu mà gởi can trường vào đâu?	
+2193	2189	群如𠓨畧𦋦娄	Còn như vào trước ra sau,	
+2194	2190	埃朱挸𪮙鐄鍮在𠇮	Ai cho kén chọn vàng thau tại mình?	
+2195	2191	徐浪𠳒呐有情	"Từ rằng: ""Lời nói hữu tình,"	
+2196	2192	遣㝵吏女勾平原君	Khiến người lại nhớ câu bình nguyên quân.	
+2197	2193	吏低𫀅吏朱𧵆	Lại đây xem lại cho gần,	
+2198	2194	倣信特𠬠𠄽分咍空	Phỏng tin được một vài phần hay không.	
+2199	2195	䜹浪量奇包容	"Thưa rằng: ""Lượng cả bao dung,"	
+2200	2196	晋陽特体𩄲𧍰固畨	Tấn Dương được thấy mây rồng có phen.	
+2201	2197	𢌌伤𦹵内花𪬡	Rộng thương cỏ nội hoa hèn,	
+2202	2198	𡮍身䕯浡敢煩枚娄	Chút thân bèo bọt dám phiền mai sau.	
+2203	2199	𦖑𠳒皮意咭頭	Nghe lời vừa ý gật đầu,	
+2204	2200	唭浪知己畧娄󰋇㝵	Cười rằng: “tri kỉ trước sau mấy người!	
+2205	2201	𠸦朱昆𬑉精代	Khen cho con mắt tinh đời,	
+2206	2202	󰠰䧺𨅸𡨌尘埃買󰒌	“Anh hùng đứng giữa trần ai mới già.	
+2207	2203	𠬠𠳒㐌別旦些	Một lời đã biết đến ta,	
+2208	2204	𬮙鍾𠦳駟共󰑼固僥	Muôn chung nghìn tứ cũng là có nhau.	
+2209	2205	𠄩边意合心投	Hai bên ý hợp tâm đầu,	
+2210	2206	欺親庄路󰑼求買親	Khi thân chẳng lọ là cầu mới thân.	
+2211	2207	吘𠳒呐貝氷人	Ngỏ lời nói với băng nhân,	
+2212	2208	钱𤾓吏拠原銀發還	Tiền trăm lại cứ nguyên ngân phát hoàn.	
+2213	2209	房貞所准声𫔮	Phòng riêng sửa chốn thanh nhàn,	
+2214	2210	達床七宝𡆫幔八仙	Đặt giường thất bảo vây màn bát tiên.	
+2215	2211	𤳆󰠰䧺𡛔婵娟	Trai anh hùng gái thuyền quyên,	
+2216	2212	菲願聘鳯𬙾緣騎𧏵	Phỉ nguyền sánh phượng đẹp duyên cưỡi rồng.	
+2217	2213	姅𢆥香󰌕登燶	Nửa năm hương lửa đương nồng,	
+2218	2214	丈夫率㐌動𢚸𦊚方	Trượng phu thoắt đã động lòng bốn phương.	
+2219	2215	𬂙潙𡗶𣷭溟濛	Trông vời trời bể mênh mang,	
+2220	2216	青鎌鞍馭𨖲塘𬆅𢫝	Thanh gươm yên ngựa lên đường thẳng dong.	
+2221	2217	娘浪分𡛔𡦂從	"Nàng rằng: ""Phận gái chữ tòng,"	
+2222	2218	払𠫾妾拱决𢚸嗔𠫾	“Chàng đi thiếp cũng quyết lòng xin đi”.	
+2223	2219	徐浪心胆相知	Từ rằng: “tâm đảm tương tri,	
+2224	2220	牢渚脱塊女兒常情	Sao chưa thoát khỏi nữ nhi thường tình.	
+2225	2221	包除𨑮萬精兵	Bao giờ mười vạn tinh binh,	
+2226	2222	㗂󰡕𠰺坦䏾旌葉塘	“tiếng đồng dậy đất bóng tinh rợp đường.	
+2227	2223	爫朱𤑟󰘚非常	Làm cho rõ mặt phi thường,	
+2228	2224	碑除些仕逴娘宜家	“Bấy giờ ta sẽ rước nàng nghi gia.	
+2229	2225	平󰅒𦊚𣷭空茹	Bằng nay bốn bể không nhà,	
+2230	2226	蹺強添泮別󰑼𠫾󰠲	Theo càng thêm bận biết là đi đâu?	
+2231	2227	停𢚸除妬𠃣𥹰	Đành lòng chờ đó ít lâu,	
+2232	2228	迡庒󰑼𠬠𢆥𢖖倍之	Chầy chăng là một năm sau vội gì!	
+2233	2229	决𠳒𢴑襖𦋦𠫾	Quyết lời dứt áo ra đi,	
+2234	2230	愈𫡮平㐌旦󰠍淡𣾺	Gió mây bằng đã đến kỳ dặm khơi.	
+2235	2231	娘時隻䏾窻梅	Nàng thì chiếc bóng song mai,	
+2236	2232	𣈜偷蕩蕩日掑扦𫡮	Đêm thâu đẵng đẵng nhặt cài then mây.	
+2237	2233	𡑝𦼔庄𡳒𨁪苔	Sân rêu chẳng vẽ dấu giày,	
+2238	2234	𦹵高欣𡱩柳𤷍𪽡分	Cỏ cao hơn thước liễu gầy và phân.	
+2239	2235	兑傷𬮙淡梓粉	Đoái thương muôn dặm tử phần,	
+2240	2236	魂圭蹺𦰟𫡮秦賒賒	Hồn quê theo ngọn mây tần xa xa.	
+2241	2237	㤕台萱扲椿𫅷	Xót thay huyên cỗi xuân già,	
+2242	2238	𬌓𢚸傷汝別󰑼󰡏𢢯	Tấm lòng thương nhớ biết là có nguôi.	
+2243	2239	祝󰑼𨑮󰋇𢆥𡗶	Chốc là mười mấy năm trời,	
+2244	2240	群𦋦欺㐌䏧蝟󰖥霜	Còn ra khi đã da mồi tóc sương.	
+2245	2241	惜台𫵀󰒂󱀄强	Tiếc thay chút nghĩa cũ càng,	
+2246	2242	酉离絲衹群王絲𢚸	Dầu lìa tơ chỉ còn vương tơ lòng.	
+2247	2243	緣㛪油𫃸絲紅	Duyên em dầu nối tơ hồng,	
+2248	2244	埋𦋦欺㐌𢬣𢸚𢬣恾	May ra khi đã tay bồng tay mang.	
+2249	2245	𡬷念故國他鄕	Tấc niềm cố quốc tha hương.	
+2250	2246	塘箕浽怒滚昂排排	Đường kia nỗi nọ ngổn ngang bời bời.	
+2251	2247	𦑃鴻𠖤俸絶潙	Cánh hồng bay bổng tuyệt vời,	
+2252	2248	㐌󰍹昆𬑉方𡗶󰝡󰝡	Đã mòn con mắt phương trời đăm đăm.	
+2253	2249	店𣈜𨻫仍音󰠐	Đêm ngày luống những âm thầm,	
+2254	2250	󰌕兵󰠲㐌喑喑𠬠方	Lửa binh đâu đã ầm ầm một phương.	
+2255	2251	𡴯𡗶殺氣𢠩恾	Ngất trời sát khí mơ màng,	
+2256	2252	苔滝鯨鰐秩塘甲兵	Đầy sông kình ngạc chật đường giáp binh.	
+2257	2253	㝵悁属几冬觥	Người quen thuộc kẻ chung quanh,	
+2258	2254	𫫵娘唉暫另𠇮󰓳尼	Rủ nàng hãy tạm lánh mình một nơi.	
+2259	2255	娘浪畧㐌󱊲𠳒	"Nàng rằng: ""Trước đã hẹn lời,"	
+2260	2256	酉冲危險敢涞約初	“Dẫu trong nguy hiểm dám rời ước xưa!”	
+2261	2257	群當堆孕󰡢󰡣	Còn đang dùi dắng ngẩn ngơ,	
+2262	2258	𠃅外㐌体𦰟旗㗂𬫤	Mé ngoài đã thấy ngọn cờ tiếng la.	
+2263	2259	甲兵矫且觥茹	Giáp binh kéo đến quanh nhà,	
+2264	2260	同錢拱󰡚󰅹󰑼夫人	Đồng thanh cùng gởi: “nào là phu nhân?”	
+2265	2261	𠄩边𨑮位將軍	Hai bên mười vị tướng quân,	
+2266	2262	撻鎌桧甲畧𡑝叩頭	Đặt gươm cởi giáp trước sân khấu đầu.	
+2267	2263	宮娥彩女綏𪢈	Cung nga thể nữ nối sau,	
+2268	2264	浪󰂅令旨逴朝于歸	"Rằng: ""Vâng lệnh chỉ rước chầu vu qui."""	
+2269	2265	産床鳯輦鸾󰀩	Sẵn sàng phượng liễn loan nghi,	
+2270	2266	花冠𤎒𤈪霞衣𤑟𤉜	Hoa quan giấp giới hà y rõ ràng.	
+2271	2267	鄧旗浽𪔠𨖲塘	Dựng cờ nổi trống lên đường,	
+2272	2268	竹絲浽畧桃鐄矫𨍦	Trúc tơ nổi trước đào vàng kéo sau.	
+2273	2269	火碑前路󰖁毛	Hoả bài tiền lộ ruổi mau,	
+2274	2270	南庭𦖑動𫪹朝大营	Nam đình nghe động trống chầu đại doanh.	
+2275	2271	矫旗壘發銃城	Kéo cờ luỹ phát súng thành,	
+2276	2272	徐公𦋦馭親迎𫔳外	Từ công ra ngựa thân nghênh cửa ngoài.	
+2277	2273	󰌕𠇮𨔍𨤔帶巾	Rỡ mình lạ vẻ cân đai,	
+2278	2274	唉群𦛜燕眉𧍋如初	Hãy còn hàm én mày ngài như xưa.	
+2279	2275	唭浪󰠩渃緣於	"Cười rằng: ""Cá nước duyên ưa,"	
+2280	2276	𢖵𠳒呐仍包除咍空	Nhớ lời nói những bao giờ hay không?	
+2281	2277	󰠰䧺買別󰠰䧺	Anh hùng mới biết anh hùng,	
+2282	2278	𣈙袩倣㐌甘𢚸意渚	Rày xem phỏng đã cam lòng ấy chưa?	
+2283	2279	娘浪󰡑分𬏝䜹	"Nàng rằng: ""Chút phận ngây thơ,"	
+2284	2280	拱埋𦀊葛特洳䏾核	Cũng may dây cát được nhờ bóng cây.	
+2285	2281	旦悲徐買体低	Đến bây giờ mới thấy đây,	
+2286	2282	麻𢚸㐌聀仍𣈜𠬠𠄩	Mà lòng đã chắc những ngày một hai.	
+2287	2283	拱饒𬂙󰘚奇唭	Cùng nhau trông mặt cả cười,	
+2288	2284	󰇶𢬣𧗱准帳梅叙情	Dan tay về chốn trướng mai tự tình.	
+2289	2285	席排賞將󰍁兵	Tiệc bày thưởng tướng khao binh,	
+2290	2286	喑󰝂𫪹陣習情楽軍	Om thòm trống trận rập rình nhạc quân.	
+2291	2287	荣花補課󰘩塵	Vinh hoa bõ thuở phong trần,	
+2292	2288	𡦂情𣈜吏添親𠬠𣈜	Chữ tình ngày lại thêm thân một ngày.	
+2293	2289	𥪝軍因六𢞂𡆫	Trong quân nhân lúc vui vầy,	
+2294	2290	從容買計事𣈜寒微	Thong dong mới kể sự ngày hàn vi:	
+2295	2291	欺󰟁錫欺臨淄	Khi vô tích khi lâm tri,	
+2296	2292	尼時𩢬倒尼時㤕傷	Nơi thì lừa đảo nơi thì xót thương.	
+2297	2293	󰌺身𣈙㐌珥讓	Tấm thân rày đã nhẹ nhàng,	
+2298	2294	󰡑群恩愛堆塘渚衝	Chút còn ân oán đôi đường chưa xong.	
+2299	2295	徐公𦖑歇始終	Từ công nghe hết thuỷ chung,	
+2300	2296	不平浽陣同同𩆐󰠓	Bất bình nổi giận đùng đùng sấm vang.	
+2301	2297	嚴軍𪮙將産床	Nghiêm quân chọn tướng sẵn sàng,	
+2302	2298	󰡎旗𠬠令倍傍󰖁𣋀	Dưới cờ một lệnh vội vàng ruổi sao.	
+2303	2299	𠀧軍指𦰟旗桃	Ba quân chỉ ngọn cờ đào,	
+2304	2300	道𦋦󰀡錫道𠓨臨淄	Đạo ra vô tích đạo vào lâm tri.	
+2305	2301	󰋇㝵負泊初箕	Mấy người phụ bạc xưa kia,	
+2306	2302	照名尋𪮙扒𧗱待查	Chiếu danh tìm chọn bắt về đợi tra.	
+2307	2303	吏差令箭傳戈	Lại sai lệnh tiễn truyền qua,	
+2308	2304	𪧚床户束𠬠茹朱安	Giữ giàng họ thúc một nhà cho yên.	
+2309	2305	媒宦家娓󰔼緣	Mụ quản gia vãi giác duyên,	
+2310	2306	拱差令節󰝂信逴𠶆	Cũng sai lệnh tiễn đem tin rước mời.	
+2311	2307	誓師計歇每𠳒	Thệ sư kể hết mọi lời,	
+2312	2308	𢚸𢚸拱𠻆㝵㝵执威	Lòng lòng cũng giận người người chấp uy.	
+2313	2309	道𡗶报復㐱稽	Đạo trời báo phục chỉn ghê,	
+2314	2310	窖台𠬠󰀮糝𧗱隊尼	Khéo thay một mẻ tóm về đòi nơi.	
+2315	2311	軍中鎌𢀲槊𨱽	Quân trung gươm lớn giáo dài,	
+2316	2312	𧗱冲侍立奇外双披	Vệ trong thị lập cơ ngoài song phi.	
+2317	2313	産床󰟴整威󰀩	Sẵn sàng tể chỉnh uy nghi,	
+2318	2314	博銅秩坦旌旗󰡱𡑝	Bác đồng chật đất tinh kỳ vầy sân.	
+2319	2315	帳𤞻𨷑𡨌中軍	Trướng hùm mở giữa trung quân,	
+2320	2316	徐公聘貝夫人拱𡎢	Từ công sánh với phu nhân cùng ngồi.	
+2321	2317	先嚴𫪹渚𠞹回	Tiên nghiêm trống chửa dứt hồi	
+2322	2318	點名𫏾引直外㪯轅	Điểm danh trước dẫn chực ngoài cửa viên.	
+2323	2319	徐浪恩怨𠄩边	"Từ rằng: ""ân oán hai bên,"	
+2324	2320	默娘處决报填朱明	Mặc nàng xử quyết báo đền cho minh.	
+2325	2321	娘浪洳𢚁威灵	Nàng rằng: “nhờ cậy uy linh,	
+2326	2322	唉嗔报答恩情朱孚	Hãy xin báo đáp ân tình cho phu.	
+2327	2323	报恩耒仕者𫌵	“Báo ân rồi sẽ giả thù.”	
+2328	2324	徐浪役意低朱默娘	Từ rằng: “việc ấy đây cho mặc nàng.”	
+2329	2325	朱鎌追旦束郎	Cho gươm truy đến Thúc lang,	
+2330	2326	󰘚如藍覩身羕󰕵󰠖	Mặt như chàm đổ thân dường [dẽ/cầy] run.	
+2331	2327	娘浪󰒂𥘀𠦳𡽫	"Nàng rằng: ""Nghĩa nặng nghìn non,"	
+2332	2328	臨淄㝵󱀄払群𢖵空	Lâm Tri người cũ chàng còn nhớ không?	
+2333	2329	参商󰝸院𡦂同	“Sâm Thương chẳng vẹn chữ đồng,	
+2334	2330	在埃呵敢負𢚸故人	Tại ai, há dám phụ lòng cố nhân?	
+2335	2331	錦𤾓捲泊𠦳斤	Gấm trăm cuốn bạc nghìn cân,	
+2336	2332	謝𢚸易称垠恩哙󰑼	“Tạ lòng dễ xứng báo ân gọi là.	
+2337	2333	㛪払鬼恠精魔	Vợ chàng quỷ quái tinh ma,	
+2338	2334	畨尼几𠎨󰜏𫅷及饒	Phen này kẻ cắp bà già gặp nhau.	
+2339	2335	蜆𨁏𠰘󱋓渚𥹰	Kiến bò miệng chén chưa lâu,	
+2340	2336	謀溇拱者󰒂溇朱皮	Mưu sâu cũng giả nghĩa sâu cho vừa.	
+2341	2337	束生𬂙󰘚闭除	Thúc sinh trông mặt bấy giờ,	
+2342	2338	蒲洃払㐌如湄𣿌滛	Bồ hôi chàng đã như mưa ướt dầm.	
+2343	2339	𢚸貞𢜠𢜝坤扲	Lòng riêng mừng sợ khôn cầm,	
+2344	2340	𢜝台麻吏𢜠󰠐朱埃	Sợ thay mà lại mừng thầm cho ai.	
+2345	2341	媒𫅷師長次𠄩	Mụ già sư trưởng thứ hai,	
+2346	2342	脱迻且畧倍𨑮逴蓮	Thoắt đưa đến trước vội mời rước lên.	
+2347	2343	𢴑𢬣𨷑󰘚朱𥚆	Dắt tay mở mặt cho nhìn:	
+2348	2344	花怒箕貝濯泉拱碎	Hoa nô kia với trạc tuyền cũng tôi.	
+2349	2345	𢖵欺侶𨀈仕潙	Nhớ khi lỡ bước sẩy vời,	
+2350	2346	𡽫鐄渚易填倍󰌺傷	Non vàng chưa dễ đền bồi tấm thương.	
+2351	2347	𠦳鐄哙㤕礼常	Nghìn vàng gọi chút lễ thường.	
+2352	2348	媒𢚸漂母󰋇鐄朱斤	“Mối lòng Phiếu Mẫu mấy vàng cho cân.”	
+2353	2349	𠄩㝵𬂙󰘚秦銀	Hai người trông mặt tần ngần,	
+2354	2350	姅分怯𢜝姅分𢜠盃	Nửa phần khiếp sợ nửa phần mừng vui.	
+2355	2351	娘浪嗔唉󰟱𡎢	"Nàng rằng: ""Xin hãy rốn ngồi,"	
+2356	2352	袩朱𤑟󰘚別碎报𫌵	Xem cho rõ mặt biết tôi báo thù.	
+2357	2353	急傳諸將献俘	Kíp truyền chư tướng hiến phù.	
+2358	2354	吏󰝂各跡犯囚候查	Lại đem các tích phạm tù hầu tra.	
+2359	2355	󰡎旗鎌捽埋𦋦	Dưới cờ gươm tuốt mai ra,	
+2360	2356	正名首犯𠸜󰑼宦姐	Chính danh thủ phạm tên là Hoạn Thư.	
+2361	2357	賒𬂙娘㐌嘲初	Xa trông nàng đã chào sơ:	
+2362	2358	小姐拱󰡏碑徐旦低	Tiểu thư cũng có bây giờ đến đây!	
+2363	2359	弹󰜏易󰡏󰋇𢬣	Đàn bà dễ có mấy tay,	
+2364	2360	𠁀初󰋇󰘚𠁀尼󰋇肝	Đời xưa mấy mặt đời này mấy gan!	
+2365	2361	易揚󰑼𫗁紅顔	“ Dẽ dàng là thói hồng nhan,	
+2366	2362	強荄󰠘𡗋強寃債𡗉	Càng cay ngặt lắm càng oan trái nhiều!	
+2367	2363	宦姐魄落魄漂	Hoạn Thư phách lạc hồn xiêu,	
+2368	2364	叩頭󰡎帳捛調呌󰞻	Khấu đầu dưới trướng lựa điều kêu ca.	
+2369	2365	浪碎㤕胣弹󰜏	Rằng: “tôi chút dạ đàn bà,	
+2370	2366	悭𡀢時拱㝵些常情	Ghen tuông thì cũng người ta thường tình.	
+2371	2367	𢪀朱欺阁曰經	Nghĩ cho khi gác viết kinh,	
+2372	2368	貝欺塊㪯𢴑情󰝸蹺	Với khi khỏi cửa dứt tình chẳng theo.	
+2373	2369	𢚸貞貞拱敬腰	“Lòng riêng riêng cũng kính yêu,	
+2374	2370	𫯳鍾渚易埃朝朱埃	Chồng chung chưa dễ ai chiều cho ai.	
+2375	2371	律𢚸𨠳役蔠荄	Trót lòng gây việc chông gai,	
+2376	2372	群𢘾量𣷭傷排󰅹庄	Còn nhờ lượng bể thương bài nào chăng.	
+2377	2373	𠸦朱实㐌𢧚浪	"Khen cho: ""Thật đã nên rằng,"	
+2378	2374	坤頑旦墨呐能沛𠳒	Khôn ngoan đến mực nói năng phải lời,	
+2379	2375	他𦋦時拱理𠁀	Tha ra thì cũng may đời,	
+2380	2376	爫𦋦時拱𦋦㝵𡮈然	Làm ra thì cũng ra người nhỏ nhen.	
+2381	2377	㐌𢚸知過時𢧚	đã lòng tri quá thời nên.	
+2382	2378	傳軍令𬺗帳前他𣦍	Truyền quân lệnh xuống trướng tiền tha ngay.	
+2383	2379	謝𢚸𥛉畧𡑝𫡮	Tạ lòng lạy trước sân mây,	
+2384	2380	㪯辕吏𢴑𠬠𦀊引𠓨	Cửa viên lại dắt một dây dẫn vào.	
+2385	2381	娘浪弄弄𡗶高	"Nàng rằng: ""Lộng lộng trời cao,"	
+2386	2382	害人人害事󰅹在些	Hại nhân nhân hại sự nào tại ta!	
+2387	2383	畧󰑼泊倖泊󰜏	Trước là Bạc hạnh Bạc bà,	
+2388	2384	边󰑼鷹犬边󰑼楚卿	Bên là Ưng Khuyển bên là Sở Khanh.	
+2389	2385	秀󰜏拱馬监生	Tú bà cùng Mã giám sinh,	
+2390	2386	各𠸜罪󰀎登情群牢	Các tên tội ấy đáng tình còn sao?	
+2391	2387	令軍传𫴋内力	Lệnh quân truyền xuống nội đao,	
+2392	2388	誓牢時吏拠牢加刑	Thề sao thì lại cứ sao gia hình.	
+2393	2389	𧖱淶𦧘󰞺散情	Máu rơi thịt nát tan tành,	
+2394	2390	埃埃𬂙体魂󰟹魄涞	Ai ai trông thấy hồn kinh phách rời.	
+2395	2391	朱台𬮙事在𡗶	Cho hay muôn sự tại trời,	
+2396	2392	負㝵拯補欺㝵負些	Phụ người chẳng bỏ khi người phụ ta.	
+2397	2393	󰋇㝵萡惡精魔	Mấy người bạc ác tinh ma,	
+2398	2394	𠇮爫𠇮𠹾呌麻埃傷	Mình làm mình chịu kêu mà ai thương!	
+2399	2395	𠀧軍冬󰘚法場	Ba quân đông mặt pháp trường.	
+2400	2396	青天白日𤑟𤉜朱𫀢	Thanh thiên bạch nhật rõ ràng cho coi.	
+2401	2397	󰟳娘报復皮耒	Việc nàng báo phục vừa rồi,	
+2402	2398	󰔼緣倍㐌𠳚𠳒辞󰆕	Giác Duyên vội đã gởi lời từ quy.	
+2403	2399	娘浪千載壹時	"Nàng rằng: ""Thiên tải nhất thì,"	
+2404	2400	故人㐌易󰋇欺盘桓	Cố nhân đã dễ mấy khi bàn hoàn.	
+2405	2401	耒低䕯合迷散	Rồi đây bèo hợp mây tan,	
+2406	2402	別󰠲䳽内𫡮𫔮󰑼󰠲	“Biết đâu hạc nội mây nhàn là đâu.	
+2407	2403	師浪拱拯󰋇𥹰	Sư rằng: “cũng chẳng mấy lâu,	
+2408	2404	冲𠄼𢆥吏及燒妬麻	Trong năm năm lại gặp nhau đó mà.	
+2409	2405	汝𣈜行脚方賒	Nhớ ngày hành cước phương xa,	
+2410	2406	及師三合本󰑼先知	Gặp sư tam hợp vốn là tiên tri.	
+2411	2407	保朱会合之期	Bảo cho hội hợp chi kỳ,	
+2412	2408	𢆥󰅒󰑼𠬠女時𠄼𢆥	Năm nay là một nữa thì năm năm.	
+2413	2409	買咍前定󰝸啉	Mới hay tiền định chẳng lầm,	
+2414	2410	㐌信調畧乙𥄮󰟳娄	đã tin điều trước ắt nhằm việc sau.	
+2415	2411	群𡗉恩爱貝饒	Còn nhiều ân ái với nhau,	
+2416	2412	机緣󰅹㐌歇󰠲倍之	Cơ duyên nào đã hết đâu vội gì!	
+2417	2413	娘浪前定先知	"Nàng rằng: ""Tiền định tiên tri,"	
+2418	2414	𠳒師㐌𠰺乙時庄差	Lời sư đã dạy ắt thì chẳng sai.	
+2419	2415	禍包徐󰡏及㝵	Hoạ bao giờ có gặp người,	
+2420	2416	爲碎𢚁𠳨𠬠𠳒終身	Vì tôi cậy hỏi một lời chung thân.	
+2421	2417	󰔼緣󰂅引慇懃	Giác Duyên vâng dặn ân cần,	
+2422	2418	謝辞脱㐌移蹎𡎝外	Tạ từ thoắt đã dời chân cõi ngoài.	
+2423	2419	娘自恩怨𫼢𢬗	Nàng từ ân oán rạch ròi,	
+2424	2420	殺寃󰟯㐌潙潙󰔼𢚸	Sát oan dường đã vơi vơi góc lòng.	
+2425	2421	謝恩𥛉畧徐公	Tạ ơn lạy trước từ công:	
+2426	2422	拙身蒲柳󰅹蒙󰡏𣈙	“Chút thân bồ liễu nào mong có rày!	
+2427	2423	濫洳𩆐𩂶𦋦𢬣	Trộm nhờ sấm sét ra tay,	
+2428	2424	𡬷貞如拮梗苔覩𠫾	Tấc riêng như cất gánh đầy đổ đi,	
+2429	2425	𪮻昌劄胣掣之	Chạm xương chép dạ xiết chi,	
+2430	2426	易󰝡肝腛填󰀩𡗶𫡮	Dễ đem gan óc đền nghì trời mây!	
+2431	2427	徐浪国士㧅󰅒	"Từ rằng: ""Quốc sĩ xưa nay,"	
+2432	2428	𪮙㝵知己𠬠𣈜特庒	Chọn người tri kỷ một ngày được chăng?	
+2433	2429	󰠰䧺㗂㐌哙浪	Anh hùng tiếng đã gọi rằng,	
+2434	2430	𡨌塘酉体不平麻他	Giữa đường dẫu thấy bất bằng mà tha!	
+2435	2431	况之󰟳拱󰟳茹	Huống chi việc cũng việc nhà,	
+2436	2432	路󰑼深謝買󰑼知恩	Lọ là thâm tạ với là tri ân.	
+2437	2433	㤕娘群𡮍双親	Xót nàng còn chút song thân,	
+2438	2434	悲󰅒几越㝵秦隔賒	“Bây nay kẻ Việt người Tần cách xa.	
+2439	2435	牢朱𬮙埮𠬠茹	“Sao cho muôn dặm một nhà,	
+2440	2436	朱㝵体󰘚󰑼些甘𢚸	Cho người thấy mặt là ta cam lòng.	
+2441	2437	倍傳所席軍中	Vội truyền sửa tiệc quân trung,	
+2442	2438	𬮙兵𠦳將会同洗寃	Muôn binh nghìn tướng hội đồng tẩy oan.	
+2443	2439	乘机竹扯󰏓散	Thừa cơ trúc chẻ ngói tan,	
+2444	2440	兵威自意𩆐灡𥪝外	Binh uy từ ấy sấm ran trong ngoài.	
+2445	2441	朝庭貞𠬠谷𡗶	Triều đình riêng một góc trời,	
+2446	2442	𫡂𠄩文武𫼢堆山何	Gồm hai văn võ rạch đôi sơn hà.	
+2447	2443	隊干󰊄撅湄沙	Đòi cơn gió quét mưa sa,	
+2448	2444	縣城踏覩𢆥座𡎝南	Huyện thành đạp đổ năm toà cõi nam.	
+2449	2445	風塵𥕄𠬠𥚇鎌	Phong trần mài một lưỡi gươm,	
+2450	2446	仍類架襖襊粓詫之	Những loài giá áo túi cơm sá gì.	
+2451	2447	迎昂𠬠𡎝边陲	Nghênh ngang một cõi biên thuỳ,	
+2452	2448	少之孤寡少之𬡹王	Thiếu gì cô quả thiếu gì bá vương!	
+2453	2449	畧旗埃敢争強	Trước cờ ai dám tranh cường,	
+2454	2450	𠄼𢆥䧺拠𠬠方海瀕	Năm năm hùng cứ một phương hải tần.	
+2455	2451	󰡏官總督重臣	Có quan tổng đốc trọng thần,	
+2456	2452	󰑼胡宗憲經綸𫡂才	Là Hồ Tôn Hiến kinh luân gồm tài.	
+2457	2453	𢩽車󰂅旨特差	Dẫy xe vâng chỉ đặc sai,	
+2458	2454	便宜八勦󰟳外董戈	Tiện nghi bát tiễu việc ngoài đổng nhung.	
+2459	2455	別徐󰑼𨅸󰠰䧺	Biết Từ là đấng anh hùng,	
+2460	2456	別娘拱預軍中論盘	Biết nàng cũng dự quân trung luận bàn.	
+2461	2457	㨂軍爫斫招安	Đóng quân làm chước chiêu an,	
+2462	2458	玉鐄錦󰑀差官説降	Ngọc vàng gấm vóc sai quan thuyết hàng.	
+2463	2459	吏貞𠬠礼貝娘	Lại riêng một lễ với nàng,	
+2464	2460	𠄩𠸜彩女玉鐄𠦳斤	Hai tên thể nữ ngọc vàng nghìn cân.	
+2465	2461	信𠓨㗇畧中軍	Tin vào gửi trước trung quân,	
+2466	2462	徐公貞𪟽𨑮分糊塗	Từ công riêng nghĩ mười phân hồ đồ.	
+2467	2463	𠬠𢬣𨠳鄧基圖	Một tay gây dựng cơ đồ,	
+2468	2464	碑𥹰𣷭楚滝吳縱横	Bây lâu bể Sở sông Ngô tung hoành.	
+2469	2465	抪身󰡲貝朝庭	Bó thân về với triều đình,	
+2470	2466	降臣盧老分𠇮𦋦󰠳	Hàng thần lơ láo phận mình ra đâu?	
+2471	2467	襖襜纀𬗔𥙩饒	Áo xiêm buộc trói lấy nhau,	
+2472	2468	𠓨倫𦋦󱖺公候麻之	Vào luồn ra cúi công hầu mà chi?	
+2473	2469	牢朋貞𠬠边陲	Sao bằng riêng một biên thuỳ,	
+2474	2470	飭尼㐌易爫之特饒	Sức này đã dễ làm gì được nhau!	
+2475	2471	濁𡗶𢭴渃默油	Chọc trời quấy nước mặc dầu,	
+2476	2472	育昂󰅹別𨕭頭󰡏埃	Dọc ngang nào biết trên đầu có ai!	
+2477	2473	娘時实胣信㝵	Nàng thì thật dạ tin người,	
+2478	2474	礼𡗉呐𠮾𦖑𠳒易󰖫	Lễ nhiều nói ngọt nghe lời dễ xiêu.	
+2479	2475	時𠇮𩈘渃𦑃䕯	Thì mình mặt nước cánh bèo,	
+2480	2476	㐌𡗉流落㐌𡗉󰠡屯	Đã nhiều lưu lạc đã nhiều gian truân.	
+2481	2477	平󰅒𠹾㗂王臣	Bằng nay chịu tiếng vương thần.	
+2482	2478	青青塘丐青雲俠之	Thênh thênh đường cái thanh vân hẹp gì!	
+2483	2479	公私院奇𠄩皮	Công tư vẹn cả hai bề,	
+2484	2480	寅夜耒仕料󰡲故鄕	Dần dà rồi sẽ liệu về cố hương.	
+2485	2481	拱𡾵𠇮婦堂堂	Cũng ngôi mệnh phụ đường đường,	
+2486	2482	𦬑囊𠋥󰘚󰌕𠒥媄吒	Nở nang mày mặt rỡ ràng mẹ cha.	
+2487	2483	𨕭爲渃󰡎爲茹	Trên vì nước dưới vì nhà,	
+2488	2484	𠬠󰑼得孝𠄩󰑼得忠	Một là đắc hiếu hai là đắc trung.	
+2489	2485	󰝸欣隻栢𫡉𣳔	Chẳng hơn chiếc bách giữa dòng,	
+2490	2486	𠲖提㳥𫗄駭䧺𦹵花	E dè sóng gió hãi hùng cỏ hoa.	
+2491	2487	因欺盘萡𧵆賒	Nhân khi bàn bạc gần xa,	
+2492	2488	乘机娘買盘𦋦呐𠓨	Thừa cơ nàng mới bàn ra nói vào.	
+2493	2489	浪𥪝圣帝𣼭󰠢	Rằng: “trong Thánh Đế dồi dào,	
+2494	2490	洒𦋦㐌泣渗𠓨㐌溇	Tưới ra đã khắp thấm vào đã sâu.	
+2495	2491	平成功德闭𥹰	Bình thành công đức bấy lâu,	
+2496	2492	埃埃拱隊𨕭頭別包	“Ai ai cũng đội trên đầu biết bao.	
+2497	2493	𡄎自𧻭󰟳兵刀	Ngẫm từ dấy việc binh đao,	
+2498	2494	埬𩩫󰟁定㐌高平頭	Đống xương vô định đã cao bằng đầu.	
+2499	2495	爫之抵㗂󰡲𨍦	Làm chi để tiếng về sau,	
+2500	2496	𠦳𢆥埃󰡏𠸦󰠲亥巢	“Nghìn năm ai có khen đâu hoàng sào!	
+2501	2497	牢平祿重權高	Sao bằng lộc trọng quyền cao,	
+2502	2498	功名埃𢴑𨇒󰅹朱戈	“Công danh ai dắt lối nào cho qua?”	
+2503	2499	𦖑𠳒娘呐𠼦麻	Nghe lời nàng nói mặn mà,	
+2504	2500	󰟨攻徐買阻𦋦世長	Thế công từ mới trở ra thế hàng.	
+2505	2501	整󰀩接使倍傍	Chỉnh nghi tiếp sứ vội vàng,	
+2506	2502	限期束甲决塘觧兵	Hẹn kỳ thúc giáp quyết đường giải binh.	
+2507	2503	信𠳒城下要盟	Tin lời thành hạ yêu minh,	
+2508	2504	𦰟旗󰡣咢𫪹更雉長	Ngọn cờ ngơ ngác trống canh trễ tràng.	
+2509	2505	󰟳矢補庄𪧚床	Việc binh bỏ chẳng giữ giàng,	
+2510	2506	王師𥉰㐌訴詳实虚	Vương sư dòm đã tỏ tường thực hư.	
+2511	2507	胡公决计乘机	Hồ công quyết kế thừa cơ,	
+2512	2508	礼先兵後刻期裏攻	Lễ tiên binh hậu khắc cờ tập công.	
+2513	2509	矫旗招府先峰	Kéo cờ chiêu phủ tiên phong,	
+2514	2510	礼󰀩攔畧搏銅伏娄	Lễ nghi dàn trước bác đồng phục sau.	
+2515	2511	徐公哬𠾿別󰠲	Từ công hờ hững biết đâu?	
+2516	2512	大官礼服𦋦頭㪯轅	Đại quan lễ phục ra đầu cửa viên.	
+2517	2513	胡公暗号陣前	Hồ công ám hiệu trận tiền,	
+2518	2514	𠀧皮發銃𦊚边矯旗	Ba bề phát súng bốn bên kéo cờ.	
+2519	2515	登欺不意庄𪟽	Đang khi bất ý chẳng ngờ,	
+2520	2516	𤞻𤍌欺㐌沙机拱𪬡	Hùm thiêng khi đã sa cơ cũng hèn.	
+2521	2517	死生料𡨌陣前	Tử sinh liều giữa trận tiền,	
+2522	2518	弹苔朱別肝連將軍	Dạn dày cho biết gan liền tướng quân.	
+2523	2519	氣𤍌欺㐌󰡲神	Khí thiêng khi đã về thần,	
+2524	2520	然然群𨅸墫蹎𠓨𫒥	Nhơn nhơn còn đứng chôn chân giữa vòng.	
+2525	2521	猪如𥒥凭如銅	Trơ như đá vững như đồng,	
+2526	2522	埃𢯦庄轉埃𢫝庄移	Ai lay chẳng chuyển ai rung chẳng rời.	
+2527	2523	官軍追殺-𨱽	Quan quân truy sát đuổi dài,	
+2528	2524	𠶑𠶑殺氣𩁶𡗶埃󰎒	Ù ù sát khí ngất trời ai đang.	
+2529	2525	冲壕外壘散塃	Trong hào ngoài luỹ tan hoang,	
+2530	2526	乱軍皮𢴑𢬣娘旦尼	Loạn quân vừa dắt tay nàng đến nơi,	
+2531	2527	冲妄𥏌𥒥排排	Trong vòng tên đá bời bời,	
+2532	2528	体徐群𨅸𡨌𡗶猪猪	Thấy Từ còn đứng giữa trời trơ trơ.	
+2533	2529	哭浪智勇󰡏乘	"Khóc rằng: ""Trí dũng có thừa,"	
+2534	2530	𪽝𦖑𠳒妾旦机会尼	Bởi nghe lời thiếp đến cơ hội này!	
+2535	2531	󰘚󰅹𬂙体饒低	Mặt nào trông thấy nhau đây?	
+2536	2532	時料𤯩𣨰𠬠𣈜貝僥	“Thè liều sống chết một ngày với nhau.”	
+2537	2533	𣳔秋如󰋞干愁	Dòng thu như xối cơn sầu,	
+2538	2534	𢴑𠳒娘拱招頭𠬠边	Dứt lời nàng cũng gieo đầu một bên.	
+2539	2535	𨔍台寃氣相纏	Lạ thay oan khí tương triền!	
+2540	2536	娘皮伏下徐連我𦋦	Nàng vừa phục xuống từ liền ngã ra.	
+2541	2537	官軍几吏㝵戈	Quan quân kẻ lại người qua,	
+2542	2538	㤕娘仕吏域𦋦寅寅	Xót nàng sẽ lại vực ra dần dần.	
+2543	2539	󰝂𠓨旦畧中軍	Đem vào đến trước trung quân,	
+2544	2540	胡公体󰘚慇懃𠳨嘆	Hồ công thấy mặt ân cần hỏi han.	
+2545	2541	浪娘𫵀分紅顔	"Rằng: ""Nàng chút phận hồng nhan,"	
+2546	2542	及干兵革𡗉󰜊拱傷	Gặp cơn binh cách nhiều nàn cũng thương.	
+2547	2543	㐌台成筭庙堂	Đã hay thành toán miếu đường,	
+2548	2544	𢩾功拱󰡏𠳒娘買𢧚	Giúp công cũng có lời nàng mới nên.	
+2549	2545	碑徐事㐌萬全	Bây giờ sự đã vẹn tuyền,	
+2550	2546	默𢚸議妬悶嗔皮󰅹	“Mặc lòng nghĩ đó muốn xin bề nào.”	
+2551	2547	娘強𥮊玉𣻆𩆋	Nàng càng nhỏ ngọc tuôn dào,	
+2552	2548	吸󰡤買𠳚湿高事𢚸	Ngập ngừng mới gởi thấp cao sự lòng.	
+2553	2549	浪徐󰑼𨅸󰠰䧺	"Rằng: ""Từ là đấng anh hùng,"	
+2554	2550	育昂𡗶𢌌尾漨𣷭𣾺	Dọc ngang trời rộng vẫy vùng bể khơi.	
+2555	2551	信碎𢧚过𦖑𠳒	Tin tôi nên quá nghe lời,	
+2556	2552	迻身百戰爫碎朝庭	Đưa thân bách chiến làm tôi triều đình.	
+2557	2553	語󰑼夫貴婦荣	Ngỡ là phu quí phụ vinh,	
+2558	2554	埃𪟽𠬠丿散情𦧘昌	Ai ngờ một phút tan tành thịt xương!	
+2559	2555	𠄼𢆥𡗶𣷭昂藏	Năm năm trời bể ngang tàng.	
+2560	2556	󰝂𠇮𠫾補戰場如空	Đem mình đi bỏ chiến trường như không.	
+2561	2557	窖勸計𥙩爫功	Khéo khuyên kể lấy làm công,	
+2562	2558	計包饒吏𤴬𢚸闭饒	Kể bao nhiêu lại đau lòng bấy nhiêu!	
+2563	2559	察𠇮功𠃣罪𡗉	Xét mình công ít tội nhiều,	
+2564	2560	𤯩乘碎㐌𢧚料𠇮碎	Sống thừa tôi đã nên liều mình tôi.	
+2565	2561	嗔朱浅土𠬠堆	Xin cho thiển thổ một doi,	
+2566	2562	哙󰑼答底𥙩㝵死生	“Gọi là đắp để lấy người tử sinh.”	
+2567	2563	胡公𦖑呐傷情	Hồ công nghe nói thương tình,	
+2568	2564	傳朱藁葬遺形边滝	Truyền cho kiểu táng di hình bên sông.	
+2569	2565	冲軍𨷑席賀功	Trong quân mở tiệc hạ công,	
+2570	2566	𠮿嗃絲竹会同軍官	Xôn xao tơ trúc hội đồng quân quan.	
+2571	2567	扒娘侍晏󰡎幔	Bắt nàng thị yến dưới màn,	
+2572	2568	󰇥醝吏押紊弹日奏	Dở say lại ép vặn đàn nhặt tâu.	
+2573	2569	𠬠宮𫗄悴湄愁	Một cung gió tủi mưa sầu,	
+2574	2570	𦊚宮㳶𧖱𠄼頭𦰟𢬣	Bốn cung nhỏ máu năm đầu ngón tay.	
+2575	2571	蟡吟猿唿󰅹󰟴	Ve ngâm vượn hót nào tầy,	
+2576	2572	律𦖻胡拱𤶑眉淶珠	Lọt tai hồ cũng nhăn mày rơi châu.	
+2577	2573	𠳨浪尼曲扵󰠲	"Hỏi rằng: ""Này khúc ở đâu?"	
+2578	2574	𦖑𦋦𬮙怨𠦳愁𡗋台	Nghe ra muôn oán nghìn sầu lắm thay!	
+2579	2575	䜹浪萡分曲尼	Thưa rằng: “bạc phận khúc này,	
+2580	2576	譜𠓨弹󰀎仍𣈜群𦭟	Phổ vào đàn ấy những ngày còn thơ.	
+2581	2577	宮弹𢫘仍𣈜初	Cung đàn lựa những ngày xưa.	
+2582	2578	麻𦎛萡𠇮悲除󰑼低	Mà gương bạc mệnh bây giờ là đây!	
+2583	2579	𦖑強󰠐󰠐強醝	Nghe càng đắm đắm càng say,	
+2584	2580	𨔍朱󰘚铁拱𬏝爲情	Lạ cho mặt sắt cũng ngây vì tình!	
+2585	2581	𠰺浪香火𠀧生	"Dạy rằng: ""Hương lửa ba sinh."	
+2586	2582	𦀊鸞嗔綏琹冷朱埃	Dây loan xin nối cầm lành cho ai.	
+2587	2583	䜹浪㤕分落𩑛	"Thưa rằng: ""xót phận lạc loài."	
+2588	2584	𥪞𠇮𢪀㐌󰡏㝵托寃	Trong mình nghĩ đã có người thác oan.	
+2589	2585	群之女𦑃花殘	Còn chi nữa cánh hoa tàn,	
+2590	2586	絲𢚸㐌𢴑𦀊弹小憐	Tơ lòng đã dứt dây đàn Tiểu Lân.	
+2591	2587	𢌌朱群𤗖紅裙	“Rộng cho còn mảnh hồng quần,	
+2592	2588	唏殘特体㭲枌󰑼埋	Hơi tàn được thấy gốc phần là may.	
+2593	2589	賀功𡃹㐌过醝	Hạ công chén đã quá say,	
+2594	2590	胡公旦六𠓇𣈜𢖵𦋦	Hồ công đến lúc rạng ngày nhớ ra.	
+2595	2591	𢪀𠇮方靣国家	Nghĩ mình phương diện quốc gia,	
+2596	2592	官𨕭𥄮𫴋𠊛些𬂙𠓨	Quan trên nhắm xuống người ta trông vào.	
+2597	2593	沛從𦝄𫗄咍牢	Phải tuồng trăng gió hay sao.	
+2598	2594	事尼別併世󰅹特低	Sự này biết tính thế nào được đây?	
+2599	2595	早衙皮𣇜𠓇𣈜	Tảo nha vừa buổi sáng ngày,	
+2600	2596	决情公買断𣦍𠬠排	Quyết tình CÔNG mới đoán ngay một bài.	
+2601	2597	令官埃敢嘆𠳒	Lệnh quan ai dám han lời,	
+2602	2598	押情買擀朱㝵土官	Ép tình là gán cho người thổ quan.	
+2603	2599	𪪳絲实𠰚𥒥端	Ông tơ thật nhẽ đa đoan!	
+2604	2600	車絲渚󱋙撝乾撝千	Xe tơ chửa khéo: vơ càn vơ xiên!	
+2605	2601	󰖛花押𬆅𫴋船	Kiệu hoa áp thẳng xuống thuyền,	
+2606	2602	𦲿幔𢷀湿𦰟畑挑高	Lá màn rủ thấp ngọn đèn khêu cao.	
+2607	2603	娘強塢柳派桃	Nàng càng ủ liễu phai đào,	
+2608	2604	𤾓分󰅹󰡏分󰅹分鮮	Trăm phần nào có phần nào phần tươi?	
+2609	2605	停身吉拉㳥𣼯	Đành thân cát dập sóng vùi,	
+2610	2606	刼功吒媄舌𠁀聰明	Cướp công cha mẹ thiệt đời thông minh.	
+2611	2607	蹎𡗶󰘚𣷭泠汀	Chân trời mặt biển lênh đênh,	
+2612	2608	埝昌別改死生准󰅹	Nắm xương biết gửi tử sinh chốn nào?	
+2613	2609	緣󰠲埃𢴑絲桃	Duyên đâu ai dứt tơ đào,	
+2614	2610	女󰠲埃㐌𢴑𠓨羡𢬣	Nợ đâu ai đã dắt vào tạn tay?	
+2615	2611	身牢身旦势尼	Thân sao thân đến thế này?	
+2616	2612	群𣈜󰅹拱餘𣈜𧘇催	Còn ngày nào cũng dư ngày ấy thôi.	
+2617	2613	㐌空別𤯩󰑼𢝙	Đã không biết sống là vui,	
+2618	2614	𢙇身󰅹別舌催󰑼傷	Hoài thân nào biết thiệt thòi là thương.	
+2619	2615	󰓳𠇮荄䔲𤾓塘	Một mình cay đắng trăm đường,	
+2620	2616	催時󰞺玉散鐄時催	Thôi thì nát ngọc tan vàng thì thôi.	
+2621	2617	󰡟𦎛㐌唅𡽫兑	Mảnh gương đã ngậm non Đoài,	
+2622	2618	𠬠𠇮𨻫仍𨅸𡎢渚衝	Một mình luống những đứng ngồi chưa xong.	
+2623	2619	潮󰠲浽㗂同同	Triều đâu nổi tiếng đùng đùng,	
+2624	2620	𠳨𦋦買別浪滝钱塘	Hỏi ra mới biết rằng sông Tiền Đường,	
+2625	2621	𢖵𠳒神夢𤑟𤉜	Nhớ lời thần mộng rõ ràng,	
+2626	2622	尼催歇刼断膓󰑼低	Này thôi hết kiếp đoạn trường là đây!	
+2627	2623	淡仙娘𠰚朱咍	“Đạm Tiên nàng nhẽ cho hay!	
+2628	2624	限些時待𫴋尼逴些	“Hẹn ta thì đợi dưới này rước ta.”	
+2629	2625	󰡎畑産幅笺花	Dưới đèn sẵn bức tiên hoa,	
+2630	2626	𠬠篇絶笔哙󰑼底𨍦	Một thiên tuyệt bút gọi là để sau.	
+2631	2627	𫔳蓬倍托簾珠	Cửa bồng vội thác rèm châu,	
+2632	2628	𡗶高𣷭弄蔑牟包󰑼	Trời cao bể rộng một màu bao la.	
+2633	2629	浪徐公厚待些	"Rằng: ""Từ Công hậu đãi ta,"	
+2634	2630	𡮍爲󰟳渃麻𦋦負𢚸	Chút vì việc nước mà ra phụ lòng.	
+2635	2631	折𫯳麻吏𥙩𫯳	Giết chồng mà lại lấy chồng,	
+2636	2632	󰘚󰅹麻吏𨅸𥪝𡎝𠁀	“Mặt nào mà lại đứng trong cõi đời?	
+2637	2633	催時𠬠托朱耒	“Thôi thì một thác cho rồi,	
+2638	2634	󰌺𢚸付默𨕭𡗶󰡎滝	Tấm lòng phó mặc trên trời, dưới sông.	
+2639	2635	𬂙潙昆渃溟濛	Trông vời con nước mênh mông,	
+2640	2636	󰝂𠇮招𫴋𡨌𣳔長江	Đem mình gieo xuống giữa dòng Trường Giang.	
+2641	2637	土官蹺𣾼倍鐄	Thổ quan theo vớt vội vàng,	
+2642	2638	時它󰋖玉沉香㐌耒	Thì đà đắm ngọc chìm hương đã rồi,	
+2643	2639	傷台拱𠬠身㝵	Thương thay cũng một thân người,	
+2644	2640	窖台恾𥙩色才爫之	Hại thay mang lấy sắc tài làm chi!	
+2645	2641	仍󰑼寃苦流󰡞	Những là oan khổ lưu ly,	
+2646	2642	除朱歇刼群之󰑼身	Chờ cho hết kiếp còn gì là thân!	
+2647	2643	𨑮𠄻𢆥闭饒吝	Mười lăm năm bấy nhiêu lần,	
+2648	2644	爫𦎛朱客紅裙此𤐝	Làm gương cho khách hồng quần thử soi!	
+2649	2645	𠁀㝵旦势時催	Đời người đến thế thì thôi,	
+2650	2646	𥪝机陽極陰回坤台	Trong cơ âm cực dương hồi khôn hay.	
+2651	2647	󰋇㝵為󰒂初󰅒	Mấy người vì nghĩa xưa nay,	
+2652	2648	𡗶爫之旦𥹰𣈜強傷	Trời làm chi đến lâu ngày càng thương!	
+2653	2649	󰔼緣自節啫娘	Giác Duyên từ tiết giã nàng,	
+2654	2650	撩䕯掛𫌇𢌌塘雲遊	Treo bầu quảy níp rộng đường vân du.	
+2655	2651	及妑三合道姑	Gặp bà tam hợp đạo cô,	
+2656	2652	從容𠳨歇𡮈蘇事娘	Thong dong hỏi hết nhỏ to sự nàng:	
+2657	2653	㝵牢孝󰒂覩塘	Người sao hiếu nghĩa đủ đường,	
+2658	2654	刼牢秩仍断膓世催	Kiếp sao rặt những đoạn trường thế thôi?	
+2659	2655	師浪福禍道𡗶	"Sư rằng: ""Phúc hoạ đạo trời,"	
+2660	2656	桧源拱扵𢚸㝵麻𦋦	Cỗi nguồn cũng ở lòng người mà ra.	
+2661	2657	固𡗶麻拱在些	Có trời mà cũng tại ta,	
+2662	2658	修󰑼桧福情󰑼𦀊寃	Tu là cỗi phúc tình là dây oan.	
+2663	2659	翠翹色稍坤頑	Thuý Kiều sắo sảo khôn ngoan,	
+2664	2660	󰟁緣󰑼分紅顔㐌停	Vô duyên là phận hồng nhan đã đành.	
+2665	2661	吏恾𥙩𠬠𡦂情	Lại mang lấy một chữ tình,	
+2666	2662	墟墟𠇮𢯜𥙩𠇮𠓨冲	Khư khư mình buộc lấy mình vào trong.	
+2667	2663	丕𢧚仍准從容	“Vậy nên những chốn thong dong,	
+2668	2664	扵空安稳𡎢空凭鐄	Ở không yên ổn ngồi không vững vàng.	
+2669	2665	麻󰈆𨇒鬼󰝡塘	“ma giủi lối quỷ đem đường,	
+2670	2666	吏尋仍性断膓麻𠫾	“Lại tìm những chốn đoạn trường mà đi.	
+2671	2667	歇󰜊意旦󰜊箕	Hết nan ấy đến nạn kia,	
+2672	2668	青楼𠄩𦀎青衣𠄩吝	Thanh lâu hai lượt thanh y hai lần.	
+2673	2669	𡧲妄槊鄧鎌陳	Giữa vòng giáo dựng gươm trần,	
+2674	2670	掑𪘵𤞻𤢿改身碎隊	Kề răng hùm sói gửi thân tôi đòi.	
+2675	2671	𡨌妄渃𣲆㳥𣼭	“Giữa vòng nước dẫy sóng giồi,	
+2676	2672	畧頷𧏵󰠩招𠇮水星	“Trước hàm rồng cá gieo mồi thủy tinh.	
+2677	2673	寃箕蹺買貝情	Oan kia theo mãi với tình,	
+2678	2674	𠬠𠇮𠇮別𠬠𠇮𠇮咍	Một mình mình biết một mình mình hay.	
+2679	2675	朱爫𤯩墮托苔	“Làm cho sống đoạ thác đày,	
+2680	2676	断膓朱歇刼尼買催	Đoạn trường cho hết kiếp này mới thôi.	
+2681	2677	󰔼緣𦖑呐𣳔涞	Giác Duyên nghe nói rụng rời:	
+2682	2678	𠬠𠁀娘𠰚傷喂群之	Một đời nàng nhẽ thương ôi còn gì!	
+2683	2679	師浪双󰝸兮之	"Sư rằng: ""Song chẳng hề chi,"	
+2684	2680	業緣斤吏𢩮𠫾群𡗉	Nghiệp duyên cân lại nhắc đi còn nhiều.	
+2685	2681	察𥪝罪業翠翹	Xét trong tội nghiệp thuý kiều,	
+2686	2682	默調情爱塊調邪淫	Mắc điều tình ái khỏi điều tà dâm.	
+2687	2683	𥙩情深者情深	“Kấy tình thâm giả tình thâm,	
+2688	2684	半𠇮㐌動孝心旦𡗶	Bán mình đã động hiếu tâm đến trời.	
+2689	2685	害𠬠㝵救𠬠㝵	“Hại một người cứu muôn người,	
+2690	2686	別塘轻重別𠳒沛庄	Biết đường khinh trọng biết lời phải chăng.	
+2691	2687	所功󰆙󰀎埃平	Thửa công đức ấy ai bằng?	
+2692	2688	夙愆㐌𣳮凌凌泟耒	Túc khiên đã rửa lâng lâng sạch rồi.	
+2693	2689	欺𢧚𡗶拱朝㝵	Khi nên trời cũng chiều người,	
+2694	2690	珥讓女畧填倍緣娄	Nhẹ nhàng nợ trước đền bồi duyên sau.	
+2695	2691	󰔼緣油𢖵󰒂饒	Giác Duyên dù nhớ nghĩa nhau,	
+2696	2692	钱塘旦𠬠𥯤𦰤逴㝵	“Tiền Đường thả một bè lau rước người.	
+2697	2693	畧娄朱院𠬠𠳒	Trước sau cho vẹn một lời,	
+2698	2694	緣些麻拱福𡗶之空	Duyên ta mà cũng phúc trời chi không!	
+2699	2695	󰔼緣𦖑呐𢜠𢚸	Giác Duyên nghe nói mừng lòng,	
+2700	2696	𡑝󰑼尋趣边滝钱塘	Lân la tìm thú bên sông Tiền Đường.	
+2701	2697	打棦笘𧂭草堂	Đánh tranh chụm nóc thảo đường,	
+2702	2698	蔑間渃碧𫡮鐄支堆	Một gian nước biếc mây vàng chia đôi.	
+2703	2699	𠾔𢆥鱼父𠄩㝵	Thuê năm ngư phủ hai người,	
+2704	2700	㨂船直𣷷結𥾒扛滝	Đóng thuyền chực bến kết chài giăng sông.	
+2705	2701	𠬠𢚸庄管󰋇功	Một lòng chẳng quảng mấy công,	
+2706	2702	窖𥪝及𫽻拱𥪝轉運	Khéo trong gặp gỡ cũng trong chuyển vần!	
+2707	2703	翹自招𫴋溋銀	Kiều từ gieo xuống duềnh ngân,	
+2708	2704	渃𣵶俸㐌㵢寅羡尼	Nước xuôi bỗng đã trôi dần tạn nơi.	
+2709	2705	魚𪪳𢹣䋥𢵼㝵	Ngư ông kéo lưới vớt người,	
+2710	2706	𡄎𠳒三合𤑟𨑮庄吪	Gẫm lời tam hợp rõ mười chẳng ngoa.	
+2711	2707	𨕭枚洌𣹕襖󰑼	Trên mai lướt sướt áo là,	
+2712	2708	雖滛唏渃渚𤍶䏾𦎛	Tuy dầm hơi nước chưa loà bóng gương.	
+2713	2709	󰔼緣𥚆实󰘚娘	Giác duyên nhìn thật mặt nàng,	
+2714	2710	娘群帖帖聀鐄渚泒	Nàng còn thiếp thiếp giấc vàng chưa phai.	
+2715	2711	𢠩恾魄桂魂梅	Mơ màng phách quế hồn mai,	
+2716	2712	淡仙脱㐌体㝵𣈜初	Đạm Tiên thoắt lại thấy người ngày xưa.	
+2717	2713	浪碎㐌󰡏𢚸徐	Rằng: “tôi đã có lòng chờ,	
+2718	2714	秩功㐌󰋇𢆥乘扵低	“Mất công đã mấy năm thừa ở đây.	
+2719	2715	姉牢分蒙󱉎𠫅	“Chị sao phận mỏng đức dày,	
+2720	2716	刼尼供丕𢚸尼易埃	Kiếp này cũng vậy lòng này dễ ai!	
+2721	2717	𬌓誠㐌透旦𡗶	Tấm thành đã thấu đến trời,	
+2722	2718	半𠇮󰑼孝救㝵󰑼仁	Bán mình là hiếu cứu người là nhân	
+2723	2719	𠬠𠇮爲渃爲民	“Một mình vì nước vì dân.	
+2724	2720	陽功拮𠬠銅斤㐌𫅷	“Dương công cất một đồng cân đã già.	
+2725	2721	断膓𢼂捽𠸜𦋦	Đoạn trường sổ rút tên ra,	
+2726	2722	断膓䜹沛迎麻者饒	“Đoạn trường thơ phải nghênh mà giả nhau.	
+2727	2723	群𡗉享受󰡲耧	“Còn nhiều hưởng thụ về lâu,	
+2728	2724	緣初𧷺陣福𨍦𣼭𩆋	“Duyên xưa tròn trặn phúc sau dồi dào.”	
+2729	2725	娘群魚󰡢別牢	Nàng còn ngơ ngẩn biết sao,	
+2730	2726	濯泉𦖑㗂哙𠓨边𦖻	Trạc tuyền! Nghe tiếng gọi vào bên tai.	
+2731	2727	秩𠇮脱醒聀枚	Giật mình thoắt tỉnh giấc mai,	
+2732	2728	氷傾󰅹㐌別埃麻𥚆	Bâng khuâng nào đã biết ai mà nhìn.	
+2733	2729	冲船󰅹体淡仙	Trong thuyền nào thấy Đạm Tiên?	
+2734	2730	边𠇮只体󰔼緣𡎢掑	Bên mình chỉ thấy Giác Duyên ngồi kề.	
+2735	2731	体饒𢜠󰌕𤾓皮	Thấy nhau mừng rỡ trăm bề,	
+2736	2732	扽船買逴娘󰡲草蘆	Dọn thuyền mới rước nàng về thảo lư.	
+2737	2733	𠬠茹終乍󰉚𬁑	Một nhà chung chạ sớm trưa,	
+2738	2734	𫗄𦝄沫󰘚㙁𦯬斎𢚸	Gió trăng mát mặt muối dưa chay lòng.	
+2739	2735	𦊛皮八𠯪溟濛	Tư bề bát ngát mênh mông,	
+2740	2736	朝𤼸𣋚𣌋𫡮竜畧娄	Triều dâng hôm sớm mây lồng trước sau.	
+2741	2737	󰜊初淬泟漏漏	Nạn xưa trút sạch làu làu,	
+2742	2738	緣初渚易別󰠲准尼	Duyên xưa chưa dễ biết đâu chốn này.	
+2743	2739	浽娘灾󰜊㐌苔	Nỗi nàng tai nạn đã đầy,	
+2744	2740	浽払金重闭迡買傷	Nỗi chàng Kim Trọng bấy chầy mới thương.	
+2745	2741	自𣈜𬮙埮持䘮	Từ ngày muôn dặm phù tang,	
+2746	2742	姅𢆥扵坦遼楊吏茹	Nửa năm ở đất Liêu Dương lại nhà.	
+2747	2743	倍𨖅園翠𢲛󰑼	Vội sang vườn thuý dò la,	
+2748	2744	𥚆風景󱀄󰅒它恪初	Nhìn phong cảnh cũ nay đà khác xưa.	
+2749	2745	苔園𦹵木𦰤䜹	Đầy vườn cỏ mọc lau thưa,	
+2750	2746	窻𦝄瓊𡎝壁湄也淶	Song trăng quạnh quẽ vách mưa rã rời.	
+2751	2747	畧娄󰅹体䏾㝵	Trước sau nào thấy bóng người,	
+2752	2748	花桃𢆥外群唭𫗄東	Hoa đào năm ngoái còn cười gió đông.	
+2753	2749	士󰡴燕冷󰜑空	Xập xè én lạnh lầu không,	
+2754	2750	𦹵𬅉󰘚坦𦼔封𨁪𩌂	Cỏ lan mặt đất rêu phong dấu giày.	
+2755	2751	𡳳墻核㭲木苔	Cuối tường gai góc mọc đầy,	
+2756	2752	𠫾󰡲尼仍𫮇尼𢆥㧅	Đi về này những lối này năm xưa.	
+2757	2753	冬觥冷眼如詞	Chung quanh lạnh nhẵn như tờ,	
+2758	2754	浽念心事悲除𠳨埃	Nỗi niềm tâm sự bây giờ hỏi ai?	
+2759	2755	郎盈󰡏几𨖅󱉁	Láng giềng có kẻ sang chơi,	
+2760	2756	燐󰑼仕𠳨𠬠𠄩事情	Lân la sẽ hỏi một hai sự tình.	
+2761	2757	𠳨翁翁默訟庭	Hỏi ông ông mắc tụng đình,	
+2762	2758	𠳨娘娘㐌半𠇮贖吒	Hỏi nàng nàng đã bán mình chuộc cha.	
+2763	2759	𠳨茹茹㐌移賒	Hỏi nhà nhà đã dời xa,	
+2764	2760	𠳨払王󰞹拱󰑼翠雲	Hỏi chàng Vương Quan cùng là Thuý Vân.	
+2765	2761	調尼沙卒庫巾	Đều nay sa sút khó khăn,	
+2766	2762	税埋半曰劍咹吝回	Thuê may bán viết kiếm ăn lần hôi.	
+2767	2763	調󰠲𩂶打𦝄𡗶	Điều đâu sét đánh lưng trời,	
+2768	2764	脱𦖑払脱拥移掣包	Thoạt nghe chàng thoắt rụng rời xiết bao.	
+2769	2765	倍嘆移住尼󰅹	Vội han di trú nơi nao,	
+2770	2766	打塘払買尋𠓨羡尼	Đánh đường chàng mới tìm vào tạn nơi.	
+2771	2767	茹棦壁坦左哉	Nhà tranh vách đất tả tơi,	
+2772	2768	𦰤撩簾󰞺竹掑𤗹䜹	Lau treo rèm nát trúc gài phên thưa.	
+2773	2769	𠬠𡑝坦𦹵滛湄	Một sân đất cỏ dầm mưa,	
+2774	2770	強嗷喭浽強魚󰡢󰟯	Càng ngao ngán nỗi càng ngơ ngẩn dường.	
+2775	2771	打料𨖲㗂外墻	Đánh liều lên tiếng ngoài tường.	
+2776	2772	払王𦖑㗂倍傍𧼋𦋦	Chàng Vương nghe tiếng vội vàng chạy ra.	
+2777	2773	𢴑𢬣倍逴𠓨茹	Dắt tay vội rước vào nhà,	
+2778	2774	𠃅楼員外𪪳󰜏𦋦𣦍	Mé sau viên ngoại ông bà ra ngay.	
+2779	2775	哭嘆計歇念西	Khóc than kể hết niềm tây:	
+2780	2776	払喂別浽渃尼朱渚	Chàng ôi biết nỗi nước này cho chưa?	
+2781	2777	翹兒分蒙如詞	Kiều nhi phận mỏng như tờ,	
+2782	2778	𠬠𠳒㐌󰏀󰖥絲貝払	Một lời đã lỗi tóc tơ với chàng.	
+2783	2779	及干家变𨔍󰟯	Gặp cơn gia biến lạ dường,	
+2784	2780	半𠇮奴沛尋塘救吒	Bán mình nó phải tìm đường cứu cha.	
+2785	2781	用孕欺𨀈蹎𦋦	Dùng dằng khi bước chân ra,	
+2786	2782	極𤾓𠦳浽吲𠀧𦊚吝	Cực trăm nghìn nỗi dặn ba bốn lần.	
+2787	2783	律𠳒󰠱貝郎君	Trót lời nặng với lang quân,	
+2788	2784	摱昆㛪奴翠雲咍𠳒	Mượn con em nó Thuý Vân thay lời.	
+2789	2785	哙󰑼者󰡑󰒂㝵	Gọi là giả chút nghĩa người,	
+2790	2786	愁尼弋弋𬮙𠁀渚悁	Sầu này dặc dặc muôn đời chưa quên.	
+2791	2787	刼尼緣㐌負緣	Kiếp này duyên đã phụ duyên,	
+2792	2788	夜臺群別仕填耒生	“Dạ đài còn biết sẽ đền lai sinh.	
+2793	2789	󰋇𠳒記註叮嚀	Mấy lời ký chú đinh ninh,	
+2794	2790	𥱬𢚸低胣拮𠇮𦋦𠫾	Ghi lòng để dạ cất mình ra đi.	
+2795	2791	分牢泊󰋇娇兒	Phận sao bạc mấy kiều nhi!	
+2796	2792	払金󰡲妬昆時扵󰠲	“Chàng kim về đó con thì ở đâu?”	
+2797	2793	𪪳婆強呐強𤴬	Ông bà càng nói càng đau,	
+2798	2794	払強𦖑呐強油如𦯬	Chàng càng nghe nói càng rầu như dưa.	
+2799	2795	物𠇮咆𫗄𣻆湄	Vật mình gào gió tuôn mưa,	
+2800	2796	滛提湥玉引蜍魂梅	Dầm dề giọt ngọc thẫn thờ hồn mai.	
+2801	2797	𤴬隊段𤴪隊催	Đau đòi đoạn ngất đòi thôi,	
+2802	2798	醒𦋦吏哭哭耒吏迷	Tỉnh ra lại khóc khóc rồi lại mê.	
+2803	2799	体払𤴬浽别󰡞	Thấy chàng đau nỗi biệt ly,	
+2804	2800	忍𪟽𪪳買撫󰡲吏-	Nhịn ngừng ông mới vỗ về tới khuyên:	
+2805	2801	碑徐板㐌㨂船	“Bây giờ ván đã đóng thuyền,	
+2806	2802	㐌停分泊坤填情鍾	Đã đành phận bạc khôn đền tình chung.	
+2807	2803	过傷𡮍󰒂岹蓬	Quá thương chút nghĩa đèo bòng.	
+2808	2804	𠦳鐄身𧘇時哄補牢	“Nghìn vàng thân ấy thì hòng bỏ sao?”	
+2809	2805	𠴗停勸觧𤾓朝	Dỗ dành khuyên giải trăm chiều,	
+2810	2806	󰌕煩坤摺強挑䋦煩	Lửa phiền khôn dập càng khêu mối phiền.	
+2811	2807	誓初󰇥旦金環	Thề xưa giở đến kim hoàn,	
+2812	2808	𧵑初吏󰇥旦弹貝香	Của xưa lại giở đến đàn đến hương.	
+2813	2809	生強𬂙体強傷	Sinh càng trông thấy càng thương,	
+2814	2810	肝強息𣋁𫆧強㤕車	Gan càng tức tối ruột càng xót xa.	
+2815	2811	浪碎卒过真𦋦	Rằng: “Tôi trót quá chân ra,	
+2816	2812	底朱旦浽㵢花戞䕯	Để cho đến nỗi trôi hoa dạt bèo.	
+2817	2813	拱饒誓説㐌𡗉	Cùng nhau thề thốt đã nhiều	
+2818	2814	仍調鐄𥒥沛調呐空	Những điều vàng đá phải điều nói không!	
+2819	2815	渚𧜖𫋻拱𡞕𫯳	Chưa chăn gối cũng vợ chồng,	
+2820	2816	𢚸󰅹麻女𢴑𢚸朱當	“Lòng nào mà nỡ dứt lòng cho đang.	
+2821	2817	包饒𧵑󰋇𣈜塘	Bao nhiêu của mấy ngày đường,	
+2822	2818	群碎碎𠬠吸娘買催	Còn tôi tôi một gặp nàng mới thôi.	
+2823	2819	浽傷呐󰝸歇𠳒	Nỗi thương nói chẳng hết lời,	
+2824	2820	謝辞生買湥洡跙𦋦	Tạ từ sinh mới sụt sùi trở ra.	
+2825	2821	倍󰡲所准園花	Vội về sửa chốn vườn hoa,	
+2826	2822	連𠶆員外𪪳󰜏拱𨖅	Rước mời viên ngoại ông bà cùng sang.	
+2827	2823	晨昏針拙礼常	Thần hôn chăm chút lễ thường,	
+2828	2824	养親台𬌓𢚸娘𣈜初	Dưỡng thân thay tấm lòng nàng ngày xưa.	
+2829	2825	叮咛埋湥劄詩	Đinh ninh mài lệ chép thơ,	
+2830	2826	割㝵尋隊迻詞𠴍㖇	Cắt người tìm tõi đưa tờ nhắn nhe.	
+2831	2827	別包功摱𧵑税	Biết bao công mượn của thuê,	
+2832	2828	臨淄󰋇度𠫾󰡲埮𣾺	Lâm Tri mấy độ đi về dặm khơi.	
+2833	2829	㝵𠬠尼𠳨𠬠尼	Người một nơi hỏi một nơi,	
+2834	2830	溟濛󰅹別𣷭𡗶尼󰅹	Mênh mông nào biết bể trời nơi nao?	
+2835	2831	生強惨切渴滈	Sinh càng thảm thiết khát khao,	
+2836	2832	如燶肝鉄如鉋𢚸𣘈	Như nung gan sắt như bào lòng son.	
+2837	2833	𫆧蟳𣈜𠬠𤉗𤈊	Ruột tằm ngày một héo don.	
+2838	2834	雪霜𣈜𠬠耗𤷱𠇮蟡	Tuyết sương ngày một hao mòn hình ve.	
+2839	2835	矧䜹六醒六迷	Thẩn thơ lúc tỉnh lúc mê,	
+2840	2836	𧖱蹺渃𬑉魂󰡞占包	Máu theo nước mắt hồn lìa chiêm bao.	
+2841	2837	椿萱𢗼𢜝掣包	Xuân huyên lo sợ xiết bao,	
+2842	2838	过𦋦欺旦世󰅹麻咍	Quá ra khi đến thế nào mà hay!	
+2843	2839	倍鐄懺所𪮙𣈜	Vội vàng sắm sửa chọn ngày,	
+2844	2840	緣雲󰉚㐌併𦀊朱払	Duyên vân sớm đã tính dây cho chàng.	
+2845	2841	㝵窈窕几文章	Người yểu điệu kẻ văn chương,	
+2846	2842	𤳇才𡛔色春登及時	Trai tài gái sắc xuân đương KỊP thì.	
+2847	2843	唒浪𢝙𡦂手歸	Dẫu rằng vui chữ vu quy,	
+2848	2844	𢝙尼㐌拮愁箕特󰅹	Vui này đã cất sầu kia được nào!	
+2849	2845	欺咹扵六𦋦𠓨	Khi ăn ở lúc ra vào,	
+2850	2846	強欧緣買強𩆋情初	Càng âu duyên mới càng dào tình xưa.	
+2851	2847	浽娘女旦包徐	Nỗi nàng nhớ đến bao giờ,	
+2852	2848	𣻆珠隊陣紆絲𤾓妄	Tuôn châu đòi trận vò tơ trăm vòng.	
+2853	2849	󰡏欺永𨤔香房	Có khi vắng vẻ hương phòng,	
+2854	2850	炪炉香󰇥泛桐𣈜初	Đốt lò hương giở phím đồng ngày xưa.	
+2855	2851	𢯏𢴾油󰁹㗂絲	Bẻ bai rẩu rĩ tiếng tơ,	
+2856	2852	沉󰆟𤁕𤌋𫗄迻𢯦簾	Trầm bay nhạt khói gió đưa lay rèm	
+2857	2853	󰟯如边屋𫏾㙴	Dường như bên chái trước thềm,	
+2858	2854	㗂嬌同望䏾襜𢠩恾	Tiếng Kiều đồng vọng bóng xiêm mơ màng.	
+2859	2855	𪽝𢚸󰗘𥒥𥱬鐄	Bởi lòng tạc đá ghi vàng,	
+2860	2856	想娘𢧚吏体娘󰡲低	Tưởng nàng nên lại thấy nàng về đây.	
+2861	2857	仍󰑼煩闷店𣈜	Những là phiền muộn đêm ngày,	
+2862	2858	春秋別㐌对咍󰋇吝	Xuân thu biết đã đổi thay mấy lần?	
+2863	2859	制科及会塲文	Chế khoa gặp hội trường văn,	
+2864	2860	王金拱占榜春𠬠𣈜	Vương Kim cùng chiếm bảng xuân một ngày.	
+2865	2861	𫔳𡗶𢌌𨷑塘𫡮	Cửa trời rộng mở đường mây,	
+2866	2862	花嘲𡉦杏香𠖤埮枌	Hoa chào ngõ hạnh hương bay dặm phần.	
+2867	2863	払王女旦𧵆賒	Chàng Vương nhớ đến xa gần,	
+2868	2864	𨖅茹終老謝恩周旋	Sang nhà Chung lão tạ ơn chu tuyền.	
+2869	2865	情初恩者󰒂填	Tình xưa ơn giải nghĩa đền,	
+2870	2866	加親卞買結緣朱陳	Gia thân bèn mới kết duyên Châu Trần.	
+2871	2867	払強珥𨀈青雲	Chàng càng nhẹ bước thanh vân,	
+2872	2868	浽娘強𪟽賒𧵆强傷	Nỗi nàng càng nghĩ xa gần càng thương.	
+2873	2869	意埃吲玉誓鐄	Ấy ai dặn ngọc thề vàng,	
+2874	2870	碑徐金馬玉堂貝埃	Bây giờ Kim mã Ngọc đường với ai?	
+2875	2871	𦰟䕯蹎㳥落𩑛	Ngọn bèo chân sóng lạc loài,	
+2876	2872	𢪀𠇮荣顕傷㝵流󰡞	Nghĩ mình vinh hiển thương người lưu ly.	
+2877	2873	󰂅𦋦外任臨淄	Vâng ra ngoại nhậm Lâm Tri,	
+2878	2874	䦕山𠦳埮妻兒𠬠团	Quan sơn nghìn DẶM thê nhi một đoàn.	
+2879	2875	琹堂𣈜𣎃清𫔮	Cầm đường ngày tháng thanh nhàn,	
+2880	2876	󰉚𣅘㗂䳽㗂弹逍遙	Sớm khuya tiếng hạc tiếng đàn tiêu dao.	
+2881	2877	房春帳𢷀花桃	Phòng xuân trướng rủ hoa đào,	
+2882	2878	娘雲𦣰俸占包体娘	Nàng Vân nằm bỗng chiêm bao thấy nàng.	
+2883	2879	醒𦋦買󰁹拱払	Tỉnh ra mới rỉ cùng chàng,	
+2884	2880	𦖑𠳒払拱𠄩塘信𪟽	Nghe lời chàng cũng hai đường tin nghi.	
+2885	2881	怒臨清貝臨淄	Nọ Lâm Thanh với Lâm Tri,	
+2886	2882	恪饒𠬠𡦂或欺󰡏啉	Khác nhau một chữ hoặc khi có lầm.	
+2887	2883	𥪝机声氣相尋	Trong cơ thanh khí tương tầm,	
+2888	2884	扵低或固佳音庄󰑼	Ở đây hoặc có giai âm chăng là?	
+2889	2885	升堂払買𠳨查	Thăng đường chàng mới hỏi tra,	
+2890	2886	户都󰡏几吏𫅷䜹𨖲	Họ đô có kẻ lại già thưa lên:	
+2891	2887	事尼㐌外十年	“Sự này đã ngoại thập niên,	
+2892	2888	碎它別󰘚別𠸜冷冷	Tôi đà biết mặt biết tên rành rành.	
+2893	2889	秀󰜏拱馬監生	Tú bà cùng Mã giám sinh,	
+2894	2890	𠫾摸㝵扵北京迻󰡲	đi mua người ở Bắc Kinh đưa về.	
+2895	2891	翠翹才色埃皮	Thuý Kiều tài sắc ai bì!	
+2896	2892	󰡏芸弹吏覩芸文䜹	Có nghề đàn lại đủ nghề văn thơ.	
+2897	2893	坚貞拯沛肝皮	Kiên trinh chẳng phải gan vừa,	
+2898	2894	料𠇮世𧘇沛欺世箕	“Liều mình thế ấy phải lừa thế kia.	
+2899	2895	風塵𠹾㐌𠲖痆	Phong trần chịu đã ê chề,	
+2900	2896	𦀊緣𡢐吏嫁󰡲束郎	Dây duyên sau lại gả về Thúc lang.	
+2901	2897	沛𢬣𡞕奇負傍	Phải tay vợ cả phũ phàng,	
+2902	2898	扒󰡲無錫筭塘𢯏花	Bắt về Vô Tích toan đường bẻ hoa.	
+2903	2899	𢴑𠇮娘沛遁𦋦	Dứt mình nàng phải trốn ra,	
+2904	2900	󰝸埋吏及𠬠茹泊箕	Chẳng may lại gặp một nhà Bạc kia.	
+2905	2901	脱奔𧗱脱半𠫾	Thoắt buôn về thoắt bán đi,	
+2906	2902	𫡮㵢䕯浽少之󰑼尼	Mây trôi bèo nổi thiếu gì là nơi!	
+2907	2903	俸󰠲吏及󰜋㝵	Bỗng đâu lại gặp một người,	
+2908	2904	欣㝵知勇迎𡗶威灵	“Hơn người trí dũng nghiêng trời uy linh.	
+2909	2905	𥪝𢬣𬮙萬精兵	“Trong tay muôn vạn tinh binh,	
+2910	2906	𢹣󰡲埬秩𠬠城臨淄	Kéo về đóng chật một thành Lâm Tri.	
+2911	2907	󰖥絲各跡每期	Tóc tơ các tích mọi khi,	
+2912	2908	怨時者怨恩時者恩	“Oán thì giả oán ân thì giả ân.	
+2913	2909	㐌𢧚󰡏󰒂󰡏仁	Đã nên có nghĩa có nhân,	
+2914	2910	畧娄論院賒𧵆𬢱𠸦	Trước sau trọn vẹn xa gần ngợi khen.	
+2915	2911	渚詳特户特𠸜	Chưa tường được họ được tên,	
+2916	2912	事尼𠳨束生員買詳	Sự này hỏi Thúc Sinh viên mới tường.	
+2917	2913	𦖑𠳒都呐𤑟𤉜	Nghe lời đô nói rõ ràng,	
+2918	2914	卽時迎帖𨑮払束生	Tức thì đưa thiếp mời chàng Thúc Sinh.	
+2919	2915	浽娘𠳨歇分明	Nỗi nàng hỏi hết phân minh,	
+2920	2916	𫯳昆󰠲些姓名󰑼之	Chồng con đâu tá tính danh là gì.	
+2921	2917	束浪及六流󰡞	Thúc rằng: “gặp lúc lưu ly,	
+2922	2918	冲軍碎𠳨少之󰖥絲	“Trong quân tôi hỏi thiếu gì tóc tơ.	
+2923	2919	大王𠸜海户徐	Đại vương tên Hải họ Từ,	
+2924	2920	打悁𤾓陣飭餘𬮙㝵	Đánh quen trăm trận sức dư muôn người.	
+2925	2921	﨤娘時扵󰅥台	Gặp nàng ngày ở châu thai,	
+2926	2922	𨔍之囯色天才沛緣	Lạ gì quốc sắc thiên tài phải duyên.	
+2927	2923	浘漨𥪝闭饒年	Vẫy vùng trong bấy nhiêu niên,	
+2928	2924	爫𢧚動地󰟹天同同	Làm nên động địa kinh thiên đùng đùng.	
+2929	2925	大軍屯埬𡎝東	Đại quân đồn đóng cõi đông,	
+2930	2926	󰡲𨍦庄別雲夢爫牢	Về sau chẳng biết vân mồng làm sao?	
+2931	2927	𦖑詳梗𦰟消耗	Nghe tường ngành ngọn tiêu hao,	
+2932	2928	𢚸貞払𡏡劳刀󰡪蜍	Lòng riêng chàng luống lao đao thẫn thờ.	
+2933	2929	㤕台隻𦲿𠀧爲	Xót thay chiếc lá bơ vơ,	
+2934	2930	刼尘別𢷀包徐朱垂	Kiếp trần biết rũ bao giờ cho xong?	
+2935	2931	花㵢渃渃𣵶𣳔	Hoa trôi nước, nước xuôi dòng,	
+2936	2932	㤕身沉浽𤴬𢚸合散	Xót thân chìm nổi đau lòng hợp tan!	
+2937	2933	𠳒初㐌󰏀󰗾萬	Lời xưa đã lỗi muôn vàn,	
+2938	2934	𤗖𦎛群妬泛弹群低	Mảnh gương còn đó phím đàn còn đây.	
+2939	2935	弹琴窖謹魚𦀊	Đàn cầm khéo ngẩn ngơ dây,	
+2940	2936	󰌎香別古刼尼女催	Lửa hương biết có kiếp này nữa thôi?	
+2941	2937	萍蓬群㤕賒吹	Bình bồng còn chút xa xôi,	
+2942	2938	󰞈鍾牢女咹𡎢朱安	Đỉnh chung sao nỡ ăn ngồi cho an!	
+2943	2939	㕸蒙撩印辞官	Rắp mong treo ấn từ quan,	
+2944	2940	󰋇滝拱󰋞󰋇岸拱坡	Mấy sông cũng lội mấy ngàn cũng pha.	
+2945	2941	𤄱𠇮𥪝󰠨干戈	Dấn mình trong áng can qua,	
+2946	2942	𠓨生𦋦死禍󰑼体饒	Vào sinh ra tử hoạ là thấy nhau.	
+2947	2943	𢪀調𡗶沱域溇	Nghĩ điều trời thẳm vực sâu,	
+2948	2944	䏾𪀄沁󰠩別󰠲麻𥚆	Bóng chim tăm cá biết đâu mà nhìn!	
+2949	2945	仙󰑼赧那待信	Những là nấn ná đợi tin,	
+2950	2946	𪱆湄別㐌󰋇畨対移	Nắng mưa biết đã mấy phen đổi dời?	
+2951	2947	𠄼𫡮俸体詔𡗶	Năm mây bỗng thấy chiếu trời,	
+2952	2948	欽頒勅旨旦尼伶伶	Khâm ban sắc chỉ đến nơi rành rành:	
+2953	2949	金時改任南平	Kim thì cải nhậm nam bình,	
+2954	2950	払王拱改任城淮陽	Chàng Vương cũng cải nhậm thành Hoài Dương.	
+2955	2951	懺生車馭倍鐄	Sắm xanh xe ngựa vội vàng,	
+2956	2952	𠄩茹拱順𠬠塘赴官	Hai nhà cũng thuận một đường phó quan.	
+2957	2953	侈𦖑势賊㐌散	Xảy nghe thế giặc đã tan,	
+2958	2954	㳥淹福建󰌎殘浙江	Sóng êm Phúc Kiến lửa tàn Chiết Giang.	
+2959	2955	特信金買𫫵王	Được tin Kim mới rủ Vương.	
+2960	2956	便塘拱吏尋娘搂㧅	Tiện đường cùng lại tìm nàng sau xưa.	
+2961	2957	杭󰅥旦妬碑徐	Hàng Châu đến đó bây giờ,	
+2962	2958	实信𠳨特󰖥絲伶伶	Thật tin hỏi được tóc tơ rành rành.	
+2963	2959	浪𣈜󰉚怒交兵	"Rằng: ""Ngày hôm nọ giao binh,"	
+2964	2960	失机徐㐌收灵陣前	Thất cơ từ đã thu linh trận tiền.	
+2965	2961	娘娇功奇庄填	Nàng Kiều công cả chẳng đền,	
+2966	2962	令軍吏扒押緣土酋	Lệnh quân lại bắt ép duyên thổ tù.	
+2967	2963	娘它招玉沉珠	Nàng đà gieo ngọc chìm châu,	
+2968	2964	滝錢塘妬意墓紅顔	Sông Tiền Đường đó ấy mồ hồng nhan.	
+2969	2965	傷喂空合麻散	Thương ôi! Không hợp mà tan,	
+2970	2966	𠬠茹荣顕貞寃𠬠娘	Một nhà vinh hiển riêng oan một nàng!	
+2971	2967	招魂設位礼常	Chiêu hồn thiết vị lễ thường,	
+2972	2968	觧寃立𠬠𡊨場边滝	Giải oan lập một đàn tràng bên sông.	
+2973	2969	𦰟潮𡽫泊重重	Ngọn triều non bạc trùng trùng,	
+2974	2970	渭𬂙群想𦑃鴻𣅶招	Vời trông còn tưởng cánh hồng lúc gieo.	
+2975	2971	情深变惨𨔍調	Tình thâm biển thảm lạ điều,	
+2976	2972	󰅹魂精󰡲別蹺准󰅹	Nào hồn tinh vệ biết theo chốn nào?	
+2977	2973	机緣󰠲俸𨔍𫳵	Cơ duyên đâu bỗng lạ sao,	
+2978	2974	󰔼緣󰠲俸尋𠓨旦巴	Giác Duyên đâu bỗng tìm vào đến nơi.	
+2979	2975	𬂙𨖲灵位𡦂排	Trông lên linh vị chữ bài,	
+2980	2976	秩󰟹買𠳨仍㝵󰠲些	Chợt kinh mới hỏi: “những người đâu ta?	
+2981	2977	貝娘親戚𧵆賒	Với nàng thân thích gần xa,	
+2982	2978	㝵群牢俸爫魔哭㝵	“Người còn sao bỗng làm ma khóc người?”	
+2983	2979	𦖑信如楽𣳔涞	Nghe tin ngơ ngác rụng rời,	
+2984	2980	森觥計户遁𠳒𠳨查	Xúm quanh kể họ rộn lời hỏi tra:	
+2985	2981	尼𫯳尼媄尼吒	Này chồng này mẹ này cha,	
+2986	2982	尼󰑼㛪𫆧尼󰑼㛪妯	Này là em ruột này là em dâu.	
+2987	2983	实信𦖑㐌闭𥹰	Thật tin nghe đã bấy lâu,	
+2988	2984	法師𠰺世事󰠲𨔍󰟯	Pháp sư dạy thế sự đâu lạ dường!	
+2989	2985	師浪固果貝娘	Sư rằng: “Nhân quả với nàng,	
+2990	2986	臨淄𣇜畧錢塘𣇜娄	Lâm Tri buổi trước Tiền Đường buổi sau.	
+2991	2987	欺娘招玉底溇	“Khi nàng gieo ngọc đáy sâu,	
+2992	2988	迍蹺碎㐌及僥逴𧗱	“Đón theo tôi đã gặp nhau rước về.	
+2993	2989	共僥娘𫔳菩提	Cùng nhau nương cửa Bồ đề,	
+2994	2990	草庵妬拱𧵆掑庄賒	Thảo am đó cũng gần kề chẳng xa.	
+2995	2991	𫢋前㝵泊鄰󰑼	Phật tiền ngày bạc lân la,	
+2996	2992	󰠐󰠐娘共𢖵茹坤亏	Đăm đăm nàng cũng nhớ nhà khôn khuây.	
+2997	2993	𦖑信𦬑𩈘󰘉眉	Nghe tin nở mặt mở mày,	
+2998	2994	𢜠󰅹吏过𢜠尼女庄	Mừng nào lại quá mừng này nữa chăng?	
+2999	2995	自番隻𦲿󰡞棱	Từ phen chiếc lá lìa rừng,	
+3000	2996	𠽄尋𨻫仍料澄渃𩄲	Thăm tìm luống những liệu chừng nước mây.	
+3001	2997	𤑟𤉜花拥香𠖤	Rõ ràng hoa rụng hương bay,	
+3002	2998	刼娄和体刼尼罕催	Kiếp sau hoạ thấy kiếp này hẳn thôi.	
+3003	2999	冥陽堆我聀耒	Minh dương đôi ngả chắc rồi.	
+3004	3000	𡎝尘麻吏体㝵九原	Cõi trần mà lại thấy người Cửu Nguyên.	
+3005	3001	𢮿僥𥛉謝󰔼緣	Quây nhau lạy tạ Giác Duyên,	
+3006	3002	步行𠬠屡蹺連𠬠欺	Bộ hành một lũ theo liền một khi.	
+3007	3003	坡𦰤拍𦹵尋𠫾	Pha lau vạch cỏ tìm đi,	
+3008	3004	情深𨻫唉狐𪟽姅分	Tình thâm luống hãy hồ nghi nửa phần.	
+3009	3005	觥孤蹺𦄂江津	Quanh co theo dải giang tân,	
+3010	3006	塊棱牢㐌細𡑝𫢋堂	Khỏi rừng lau đã tới sân phật đường.	
+3011	3007	󰔼緣蓮㗂哙娘	Giác Duyên lên tiếng gọi nàng,	
+3012	3008	房中倍遣蓮鐄𨀈𦋦	Phòng trong vội khiến sen vàng bước ra.	
+3013	3009	𥚆𫀅󰖆󰘚𠬠茹	Nhìn xem đủ mặt một nhà,	
+3014	3010	椿𫅷群跬萱𫅷群鮮	Xuân già còn khoẻ huyên già còn tươi.	
+3015	3011	𠄩㛪方長和𠄩	Hai em phương trưởng hoà hai,	
+3016	3012	怒払金妬󰑼㝵𣈜初	Nọ chàng Kim đó là người ngày xưa!	
+3017	3013	想悲除󰑼包除	Tưởng bây giờ là bao giờ,	
+3018	3014	𤑟𤉜𨷑𬑉群𪟽占包	Rõ ràng mở mắt còn ngờ chiêm bao.	
+3019	3015	湥洡咱説卷袍	Sụt sùi thánh thót quẹn bào,	
+3020	3016	𢜠𢜠𢜝𢜝掣包󰑼情	Mừng mừng sợ sợ xiết bao là tình.	
+3021	3017	萱𫅷󰡎檜招𠇮	Huyên già dưới gối gieo mình,	
+3022	3018	哭嘆𠇮計事𠇮頭𡳪	Khóc than mình kể sự mình đầu đuôi:	
+3023	3019	自昆流洛圭㝵	Từ con lưu lạc quê người,	
+3024	3020	䕯㵢㳥撫祝𨑮𠄼𢆥	“Bèo trôi sóng vỗ chốc mười năm năm.	
+3025	3021	併浪滝渃㵧淋	Tính rằng sông nước cát lầm,	
+3026	3022	刼尼埃吏群扲及低	“Kiếp này ai lại còn cầm gặp đây!”	
+3027	3023	𪪳󰜏𬂙󰘚𢭂𢬣	Ông bà trông mặt cầm tay,	
+3028	3024	容光庄恪之𣈗𨀈𦋦	Dung quang chẳng khác chi ngày bước ra.	
+3029	3025	闭迡𤋵月油花	Bấy chầy dãi nguyệt dầu hoa,	
+3030	3026	𨑮分春固𤷍𠀧𦊚分	Mười phần xuân có gầy ba bốn phần.	
+3031	3027	浽𢜠𪪳𥙩之斤	Nỗi mừng ông lấy chi cân?	
+3032	3028	𠳒散合傳賒𧵆少󰠲	Lời tan hợp chuyện xa gần thiếu đâu.	
+3033	3029	𠄩㛪𠳨𫏾嘆𨍦	Hai em hỏi trước han sau,	
+3034	3030	𨅸𬂙娘㐌阻愁爫鮮	Đứng trông nàng đã trở sầu làm tươi.	
+3035	3031	𢮿僥𥛉𫏾𫢋臺	Quây nhau lạy trước Phật đài,	
+3036	3032	再生陳謝𢚸㝵慈悲	Tái sinh trần tạ lòng người từ bi.	
+3037	3033	轎花𠽖󰡧卽時	Kiệu hoa giục rước tức thì,	
+3038	3034	王翁𠰺󰡧拱𧗱𠬠尼	Vương Ông dạy rước cùng về một nơi.	
+3039	3035	娘浪𡮍分花涞	"Nàng rằng: ""Chút phận hoa rơi."	
+3040	3036	姅𠁀唸󰠵每味䔲𠹽	Nửa đời nếm trải mọi mùi đắng cay.	
+3041	3037	併浪󰘚渃蹎𩄲	Tính rằng mặt nước chân mây,	
+3042	3038	𢚸󰅹群想固𣈙女空	Lòng nào còn tưởng có rày nữa không?	
+3043	3039	󰣡𣈙再世相逢	“Thì rày tái thế tương phùng,	
+3044	3040	渴󰋫㐌妥𬌓𢚸𥹰󰅒	Khát khao đã thoả tấm lòng lâu nay.	
+3045	3041	㐌󰝂𨉟補庵𩄲	Đã đem mình bỏ am mây,	
+3046	3042	歲尼改貝𦹵𣘃拱皮	Tuổi này gửi với cỏ cây cũng vừa.	
+3047	3043	味禅㐌𤊰㙁𦯬	Mùi thiền đã bén muối dưa,	
+3048	3044	牟禅咹默㐌於𣘽𣙩	Màu thiền ăn mặc đã ưa nâu sồng.	
+3049	3045	事𠁀㐌𤎕󰌎𢚸	“Sự đời đã tắt lửa lòng,	
+3050	3046	群𢫔𠓨准𡏧紅爫之	“Còn chen vào chốn bụi hồng làm chi!	
+3051	3047	󰇥揚󰅹固咍之	Dở dang nào có hay gì,	
+3052	3048	㐌脩脩律戈時時催	Đã tu tu trót qua thì thì thôi!	
+3053	3049	重生恩𥘀𣷭𡗶	Trùng sinh ơn nặng bể trời,	
+3054	3050	𢚸󰅹女𢴑󰒂𠊛𦋦𠫾	Lòng nào nỡ dứt nghĩa người ra đi?	
+3055	3051	翁浪彼此壹時	"Ông rằng: ""Bỉ thử nhất thì,"	
+3056	3052	修行時拱沛欺從權	Tu hành thì cũng phải khi tòng quyền.	
+3057	3053	沛調求𫢋求仙	Phải điều cầu phật cầu tiên,	
+3058	3054	情箕孝怒埃填朱低	“Tình kia hiếu nọ ai đền cho đây?	
+3059	3055	度生汝󰆙高𠫅	Độ sinh nhờ đức cao dày,	
+3060	3056	立庵耒仕𨖲柴於終	“Lập am rồi sẽ lên thầy ở chung.”	
+3061	3057	𦖑𠳒娘㐌朝𢚸	Nghe lời nàng đã chiều lòng,	
+3062	3058	啫師啫景調拱𨀈𦋦	Giã sư giã cảnh đều cùng bước ra.	
+3063	3059	蔑團𧗱𦤾官衙	Một đoàn về đến quan nha,	
+3064	3060	團圓倍𨷑席花𢝙圍	Đoàn viên vội mở tiệc hoa vui vầy.	
+3065	3061	藏藏𡃹菊󰇥醝	Tàng tàng chén cúc dở say,	
+3066	3062	𨅸𨖲雲買𤋵排蔑𠄩	Đứng lên vân mới giãi bày một hai.	
+3067	3063	浪𥪞作合機𡗶	"Rằng: ""Trong tác hợp cơ trời,"	
+3068	3064	𠄩邊𠳖󰡙󰓳𠳒結交	“Hai bên gặp gỡ một lời kết giao.	
+3069	3065	吸汗平地𣷭濤	Gặp cơn bình địa ba đào,	
+3070	3066	丕󰝂緣姉󰡧𠓨朱㛪	Vậy đem duyên chị rước vào cho em.	
+3071	3067	拱纙分改緣金	Cũng là phận cải duyên kim,	
+3072	3068	拱羅𧖱沚𫆧𦡙䐗𣋀	Cũng là máu chảy ruột mềm chớ sao?	
+3073	3069	仍羅𣈙約埋𬇚	Những là rày ước mai ao,	
+3074	3070	󰁰𠄼𢆥意別包饒情	“Mười năm năm ấy biết bao nhiêu tình!	
+3075	3071	悲除𦎛󰡋吏𬙽	Bây giờ gương vỡ lại lành,	
+3076	3072	囷灵攎𤀓㐌溋固尼	Khuôn thiêng lừa lọc đã dành có nơi.	
+3077	3073	群緣埋吏群𠊛	Còn duyên may lại còn người,	
+3078	3074	群暈𦝄泊群𠳒願初	Còn vừng trăng bạc còn lời nguyền xưa.	
+3079	3075	菓梅𠀧𬙞欺皮	“Quả mai ba bảy khi vừa,	
+3080	3076	桃𡽫𣋽料車絲𠳖時	Đào non sớm liệu xe tơ kịp thì.	
+3081	3077	𢴑𠳒娘倍拔𠫾	Dứt lời nàng vội gạt đi:	
+3082	3078	事𬮙𠄼󱀄計之碑除	“Sự muôn năm cũ kể chi bây giờ?	
+3083	3079	𠬠𠳒雖固約初	Một lời tuy có ước xưa,	
+3084	3080	察𠇮𤋵𫗄油湄㐌𡗉	“Xét mình dãi gió dầu mưa đã nhiều.	
+3085	3081	呐強虎𢢆𤾓朝	Nói càng hổ thẹn trăm chiều,	
+3086	3082	時朱𦰟渃水潮沚吹	“Thè cho ngọn nước thuỷ triều chảy xuôi.”	
+3087	3083	払浪呐拱𨔍代	"Chàng rằng: ""Nói cũng lạ đời,"	
+3088	3084	酉𢚸箕丕群𠳒𧘇牢	Dẫu lòng kia vậy còn lời ấy sao?	
+3089	3085	𠬠𠳒㐌率深交	Một lời đã trót thâm giao,	
+3090	3086	󰡎𡗶固坦蓮高固𡗶	“Dưới trời có đất trên cao có trời.	
+3091	3087	唒浪物対牢移	“Dẫu rằng vật đổi sao dời,	
+3092	3088	死生共𪧚𥙩𠳒死生	Tử sinh cũng giữ lấy lời tử sinh.	
+3093	3089	緣箕固負之𠇮	“Duyên kia có phụ chi mình,	
+3094	3090	麻筭支梗鍾情爫𠄩	Mà toan chia gánh chung tình làm hai?	
+3095	3091	娘浪家室緣諧	"Nàng rằng: ""Gia thất duyên hài."	
+3096	3092	㤕𢚸恩愛埃埃拱𢚸	“Xót lòng ân ái ai ai cũng lòng.	
+3097	3093	𢪀浪冲事𡞕𫯳	“Nghĩ rằng trong sự vợ chồng,	
+3098	3094	花𦹳封𦝄妄𧷺𧷺𦎛	“hoa thơm phong [nhị] trăng vòng tròn gương.	
+3099	3095	𪧚貞登價𠦳鐄	“Chữ trinh đáng giá nghìn vàng,	
+3100	3096	𤒘花庄𢢆貝払枚初	“Đuốc hoa chẳng thẹn với chàng mai xưa.	
+3101	3097	妾自遇变旦徐	Thiếp từ ngộ biến đến giờ,	
+3102	3098	蜂戈𧊉吏㐌乘醜車	Ong qua bướm lại đã thừa xấu xa.	
+3103	3099	閉迡𩙌匝湄沙	“Bấy chầy gió táp mưa sa,	
+3104	3100	󰋇𦝄共鈌󰋇花拱殘	“Mấy trăng cũng khuyết mấy hoa cũng tàn.	
+3105	3101	群之󰑼丐紅顔	Còn chi là cái hồng nhan,	
+3106	3102	㐌󰡶身世群筭浽󰅹	Đã xong thân thế còn toan nỗi nào?	
+3107	3103	𢪀𠇮庄虎𠇮牢	Nghĩ mình chẳng hổ mình sao?	
+3108	3104	敢󰝡尘垢預𠓨布荆	Dám đem trần cấu dự vào bố kinh!	
+3109	3105	㐌咍払󰠱爲情	Đã hay chàng nặng vì tình,	
+3110	3106	󱔲花畑庄󰠪𠇮𡗋𠱋	“Trông hoa đèn chẳng tủi mình lắm ru!	
+3111	3107	自𣈙怯𫔳房秋	Từ rày khép cửa phòng thu,	
+3112	3108	庄脩時共󰑼修󰑼󰑼	“Chẳng tu thì cũng là tu mới là.	
+3113	3109	如娘𥙩孝爫貞	“Chàng dù nghĩ đến gần xa,	
+3114	3110	払油疑旦𧵆車	Đem tình cầm sắt đổi ra cầm cờ.	
+3115	3111	󰝡情琹瑟対𦋦琹掑	Nói chi kết tóc xe tơ,	
+3116	3112	呐之結󰖥車絲	“Đã buồn cả bụng mà nhơ cả đời.”	
+3117	3113	㐌盆奇䏾麻洳奇代	Chàng rằng: “Khéo nói nên lời,	
+3118	3114	払浪窖呐𢧚𠳒	Mà trong nhẽ phải có người có ta.	
+3119	3115	麻冲𥙧沛固㝵固些	Xưa nay trong đạo đàn bà,	
+3120	3116	初󰅒冲道弹󰜏	Chữ trinh kia cũng có ba bảy đường.	
+3121	3117	𪧚貞箕共固𠀧𬙞󰟯	Có khi biến có khi thường,	
+3122	3118	固欺变固欺常	Có quyền nào phải một đường chấp kinh.	
+3123	3119	固權󰅹沛𠬠唐执經	Như nàng lấy hiếu làm trinh,	
+3124	3120	蓓󰅹朱濁特𠇮𧘇爲	Bụi nào cho đục được mình ấy vay?	
+3125	3121	𡗶群底固歆󰅒	“Trời còn để có hôm nay,	
+3126	3122	散霜別午盎𫡮𡨌𡗶	“Tan sương biết ngõ áng mây giữa trời.	
+3127	3123	花殘麻吏添鮮	Hoa tàn mà lại thêm tươi,	
+3128	3124	𦝄殘麻吏欣𨑮𠄻初	“Trăng tàn mà lại hơn mười rằm xưa.	
+3129	3125	固調之女麻𪟽	Có điều chi nữa mà ngờ,	
+3130	3126	客戈塘底𠾿哬払羊	“Khách qua đường để hững hờ chàng Tiêu!”	
+3131	3127	𦖑払呐㐌歇調	Nghe chàng nói đã hết điều,	
+3132	3128	𠄩親時共决蹺𠬠排	Hai thân thì cũng quyết theo một bài.	
+3133	3129	歇𠳒坤𥙧咥𠳒	Hết lời khôn nhẽ chối lời,	
+3134	3130	󰣂頭娘仍𥐆𨱽咀嘆	Cúi đầu nàng những vắn dài thở than.	
+3135	3131	茹皮𨷑席團圓	Nhà vừa mở tiệc đoàn viên,	
+3136	3132	花𤐝𦰟𤒘紅杆幅󰑼	Hoa soi ngọn đuốc hồng chen bức là.	
+3137	3133	共僥交𥛉𠬠茹	Cùng nhau giao lạy một nhà,	
+3138	3134	礼它𨇜礼堆󰑼𨇜堆	Lễ đà đủ lễ đôi là đủ đôi.	
+3139	3135	洞房迢迭󱋓瑁	Động phòng dìu dặt chén mồi,	
+3140	3136	氷傾緣買吟𠿯情初	Bâng khuâng duyên mới ngậm ngùi tình xưa.	
+3141	3137	仍自蓮𡉦桃絲	Những từ sen ngó đào tơ,	
+3142	3138	𨑮𠄼𢆥買悲除󰑼低	Mười năm năm mới bây giờ là đây.	
+3143	3139	情緣意合散尼	Tình duyên ấy hợp tan này,	
+3144	3140	悲勸󰋇浽𣎀尼𦝄高	Bi hoan mấy nỗi đêm chầy trăng cao.	
+3145	3141	更𣅘幅錦𢷀幍	Canh khuya bức gấm rủ thao,	
+3146	3142	󰡎畑訴󰒂𦟐桃添春	Dưới đèn tỏ nghĩa má đào thêm xuân.	
+3147	3143	情人吏及情人	Tình nhân lại gặp tình nhân,	
+3148	3144	花初蜂󱀄󰋇分重情	Hoa xưa ong cũ mấy phân chung tình!	
+3149	3145	娘浪分妾㐌仃	"Nàng rằng: ""Phận thiếp đã đành,"	
+3150	3146	固爫之女丐𠇮補𠫾	Có làm chi nữa cái mình bỏ đi!	
+3151	3147	𢪀払󰒂󱀄情記	Nghĩ chàng nghĩa cũ tình ghi,	
+3152	3148	朝𢚸哙固唱隨𡮨枚	Chiều lòng gọi có xướng tuỳ mảy may.	
+3153	3149	貞𢚸㐌𢢆𡗋咍	Riêng lòng đã thẹn lắm thay,	
+3154	3150	共㐌󰘚惮眉𠫅苦嵬	Cũng đà mặt dạn mày dày khó coi!	
+3155	3151	仍如欧厌㮠外	“Những như âu yếm vành ngoài,	
+3156	3152	群筭󰡠󰘚貝㝵朱戈	Còn toan mở mặt với người cho qua.	
+3157	3153	吏如仍𫗂㝵些	Lại như những thói người ta,	
+3158	3154	越香󰡎坦𢯏花𡳃務	“Vớt hương dưới đất bẻ hoa cuối mùa.	
+3159	3155	共洳󰇥辱排路	“Giở nhơ giở nhuốc bày trò,	
+3160	3156	群情󰠲女麻𫌵帝催	“Còn tình đâu nữa mà thù đấy thôi!	
+3161	3157	㝵胺些󰡳貝㝵	Người yêu ta xấu với người,	
+3162	3158	胺僥时吏平𨑮負僥	Yêu nhau thì lại bằng mười phụ nhau!	
+3163	3159	𫔳茹油併𧗱娄	Cửa nhà dù tính về sau,	
+3164	3160	時群㛪妬路求姉低	Thì còn em đó lọ cầu chị đây.	
+3165	3161	𡦂貞群𠬠𡮍尼	Chữ trinh còn một chút này,	
+3166	3162	庄扲木凭束𨃐朱散	Chẳng cầm cho vững lại dày cho tan!	
+3167	3163	群𡗉恩󰒂滇滇	“Còn nhiều ân nghĩa chan chan,	
+3168	3164	咍之𡆫丐花殘麻制	“Hay gì vầy cái hoa tàn mà chơi!”	
+3169	3165	払浪哏咘𠬠𠳒	"Chàng rằng: ""Gắn bó một lời,"	
+3170	3166	俸空󰠩渃𪀄𡗶𠴊僥	Bỗng không cá nước chim trời lỡ nhau.	
+3171	3167	㤕㝵流洛闭𥹰	Xót người lưu lạc bấy lâu,	
+3172	3168	想誓説𥘀仍𤴬疸𡗉	“Tưởng thề thốt nặng những đau đớn nhiều.	
+3173	3169	傷僥生死㐌𡗉	“Thương nhau sinh tử đã liều.	
+3174	3170	迻僥群少闭饒󰑼情	“Gặp nhau còn thiếu bấy nhiêu là tình.	
+3175	3171	澄春絲柳群撑	Chừng xuân tơ liễu còn xanh,	
+3176	3172	議渚𬛒脱塊㮠爱恩	“Nghĩ chưa chữa thoát khỏi vành ái ân.	
+3177	3173	𦎛冲庄𡮍蓓尘	Gương trong chẳng chút bụi trần,	
+3178	3174	𠬠𠳒决罕𬮙分敬添	Một lời quyết hẳn muôn phần kính thêm!	
+3179	3175	闭𥹰渧𣷭摸針	Bấy lâu đáy bể mò kim,	
+3180	3176	󰑼𡗉鐄𥒥沛尋𦝄花	Là nhiều vàng đá phải tìm trăng hoa?	
+3181	3177	埃𪟽吏合𠬠茹	Ai ngờ lại họp một nhà,	
+3182	3178	路󰑼𧜖𫋻買𦋦瑟琹	Lọ là chăn gối mới ra sắt cầm!	
+3183	3179	𦖑𠳒所袄掑簪	Nghe lời sửa áo cài trâm,	
+3184	3180	叩頭𥛉謝高深𠦳重	Khấu đầu lạy tạ cao thâm nghìn trùng:	
+3185	3181	身殘𡊨濁恢冲	“Thân tàn dằn đục khơi trong,	
+3186	3182	󰑼洳君子恪𢚸㝵些	Là nhờ quân tử khác lòng người ta.	
+3187	3183	󰋇𠳒心胆𦛌𦚐	“Mấy lời tâm đảm ruột rà.	
+3188	3184	相知󰒂意買󰑼相知	“Tương tri nghĩa ấy mới là tương tri!	
+3189	3185	𨔾𨑤𧝓𦄾少之	“Chở che đùm bọc thiếu gì?	
+3190	3186	𤾓𢆥名節共𧗱店尼	Trăm năm danh tiết cũng về đêm nay.	
+3191	3187	脱催𢬣吏扲𢬣	Thoắt thôi tay lại cầm tay,	
+3192	3188	強𣍩爲󰞺強醝爲情	Càng yêu vì nết càng say vì tình.	
+3193	3189	添𤓢架浽香𤭸	Thêm nến giá nối hương bình,	
+3194	3190	共僥吏祝󱋓瓊交歡	Cùng nhau lại chuốc chén quỳnh giao hoan.	
+3195	3191	情初來𣼽坤寒	Tình xưa lai láng khôn hàn,	
+3196	3192	從容吏𠳨𦰟弹㝵初	Thong dong lại hỏi ngón đàn ngày xưa.	
+3197	3193	娘浪爲󰋇塘絲	"Nàng rằng: ""Vì mấy đường tơ,"	
+3198	3194	𡗋㝵朱旦碑除買催	Lầm người cho đến bây giờ mới thôi.	
+3199	3195	咹󱋔时事㐌耒	Ăn năn thì sự đã rồi,	
+3200	3196	你𢚸㝵󱀄󰂅𠳒𠬠畨	Nể lòng người cũ vâng lời một phen.	
+3201	3197	泛弹迢迭𢬣仙	Phím đàn dìu dặt tay tiên,	
+3202	3198	𤌋沉高𥰊㗂弦𧵆車	Khói trầm cao thấp tiếng huyền gần xa.	
+3203	3199	曲牢漂蔭陽和	Khúc sao đầm ấm dương hoà.	
+3204	3200	意󰑼蝴蝶咍󰑼莊生	Ấy là Hồ điệp hay là Trang sinh?	
+3205	3201	曲󰠲奄爱春情	Khúc đâu êm ái xuân tình,	
+3206	3202	意魂蜀帝咍舍杜鵑	Ấy hồn thục đế hay mình đỗ quyên?	
+3207	3203	冲牢朱㳶溋涓	Trong sao châu nhỏ duềnh quyên!	
+3208	3204	荫牢曷玉蓝田買冬	Ấm sao hạt ngọc Lam Điền mới đông!	
+3209	3205	律𦖻𦖑卒𠄼宫	Lọt tai nghe suốt năm cung,	
+3210	3206	㗂󰅹󰑼庄恼濃𠮿嗃	Tiếng nào là chẳng não nùng xôn xao.	
+3211	3207	払浪譜意𢬣󰅹	"Chàng rằng: ""Phổ ấy tay nào?"	
+3212	3208	初牢愁惨󰅒牢𠸟𡆫	Xưa sao sầu thảm nay sao vui vầy?	
+3213	3209	傷盃𪽝在𢚸尼	“Thương vui bởi tại lòng này,	
+3214	3210	咍󰑼苦尽旦㝵甘来	Hay là khổ tận đến ngày cam lai?	
+3215	3211	娘浪爲𡮍台制	Nàng rằng: “vì chút hay chơi,	
+3216	3212	断膓㗂𧘇害㝵闭𥹰	Đoạn trường tiếng ấy hại người bấy lâu.	
+3217	3213	𠬠畨知己共僥	Một phen tri kỷ cùng nhau,	
+3218	3214	卷𦀊自帝󰡲娄共除	Cuốn dây từ đấy về sau cũng chừa.	
+3219	3215	傳路渚𣴓󰖥絲	Chuyện trò chưa cạn tóc tơ,	
+3220	3216	𬷤㐌嘅創𡗶皮𠓇東	Gà đà gáy sáng trời vừa rạng đông.	
+3221	3217	情貞払吏呐崇	Tình riêng chàng lại nói sòng,	
+3222	3218	𠬠茹埃拱𨔍𨓡𠸦劳	Một nhà ai cũng lạ lùng khen lao.	
+3223	3219	朱咍淑女志高	Cho hay thục nữ chí cao,	
+3224	3220	沛㝵󰉚槾最桃如埃	Phải người sớm mận tối đào như ai?	
+3225	3221	𠄩情院𡳒和𠄩	Hai tình vẹn vẽ hoà hai,	
+3226	3222	庄冲𧜖𧛋共外琴詩	Chẳng trong chăn nệm cũng ngoài cầm thơ.	
+3227	3223	欺󱋓𨢇欺局棋	Khi chén rượu khi cuộc cờ,	
+3228	3224	欺𫀅花𦬑欺除𦝄𨖲	Khi xem hoa nở khi chờ trăng lên.	
+3229	3225	𠀧生㐌菲𨑮願	Ba sinh đã phỉ mười nguyền,	
+3230	3226	緣堆侶共󰑼緣伴排	Duyên đôi lứa cũng là duyên bạn bầy.	
+3231	3227	𢖵𠳒立𠬠庵𫡮	Nhớ lời lập một am mây,	
+3232	3228	差㝵親戚逴柴󰔼緣	Sai người thân thích rước thầy Giác Duyên.	
+3233	3229	旦時㨂𫔳掑杄	Đến thì đóng cửa cài then,	
+3234	3230	𦼔𠆳技額𦹵𨕭𠃅茹	Rêu trùm kẽ ngạch cỏ len mái nhà.	
+3235	3231	師它挴󰡮方車	Sư đà hái thuốc phương xa,	
+3236	3232	𫡮𠖤鶴另別󰑼尋󰠲	Mây bay hạc lánh biết là tìm đâu?	
+3237	3233	󰠱爲史󰒂初娄	Nặng vì chút nghĩa xưa sau,	
+3238	3234	𨕭󰡐拠𪧚香油歆埋	Trên am cứ giữ hương dầu hôm mai.	
+3239	3235	𠬠茹福祿𫡂𠄩	Một nhà phúc lộc gồm hai,	
+3240	3236	千年弋弋官堦吝吝	Hiên niên dặc dặc quan giai lần lần.	
+3241	3237	承家庄歇娘云	Thừa gia chẳng hết nàng Vân:	
+3242	3238	𠬠𣘃樛木𠬠𡑝桂槐	Một cây cù mộc một sân quế hoè.	
+3243	3239	風流富貴埃皮	Phong lưu phú quý ai bì,	
+3244	3240	𡆫春𠬠𫔳底碑𬮙代	Vầy xuân một cửa để bia muôn đời.	
+3245	3241	𡄎咍𬮙事󰑼𡗶	Gẫm hay muôn sự là trời,	
+3246	3242	𡗶箕㐌扒爫㝵固身	Trời kia đã bắt làm người có thân.	
+3247	3243	扒風󰡰沛風󰡰	Bắt phong trần phải phong trần,	
+3248	3244	朱清高買特分清高	Cho thanh cao mới được phần thanh cao.	
+3249	3245	固󰠲偏爲㝵󰅹	Có đâu thiên vị người nào,	
+3250	3246	𡦂才𡦂𠇮𣼭滛奇𠄩	Chữ tài chữ mệnh dồi dào cả hai.	
+3251	3247	固才麻忌之才	Có tài mà cậy chi tài,	
+3252	3248	𡦂才連貝𡦂灾𠬠韻	Chữ tài liền với chữ tai một vần.	
+3253	3249	㐌芒𥙩業𠓨身	Đã mang lấy nghiệp vào thân,	
+3254	3250	共仃責吝𠳒𧵆庄車	Cũng đừng trách lẫn trời gần chẳng xa.	
+3255	3251	善根於在𢚸些	Thiện căn ở tại lòng ta,	
+3256	3252	𡦂心箕買十𠀧𡦂才	Chữ Tâm kia mới bằng ba chữ tài.	
+3257	3253	𠳒圭抇𪭯容𨱽	Lời quê nhặt góp dông dài,	
+3258	3254	謨𠸟共特𠬠𠄽𪔠更	Mua vui cũng được một vài trống canh.	

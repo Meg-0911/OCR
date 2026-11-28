@@ -18,6 +18,7 @@ import type {
   PagePlan,
   TextSources,
   TextReference as UploadedText,
+  QuickStatus, NomSearch, NomDetail,
 } from './types';
 
 export class ApiError extends Error {
@@ -58,6 +59,13 @@ function json(method: string, body: unknown): RequestInit {
   return { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
 }
 export const api = {
+  quickStatus: (book: string, deferred = false) => request<QuickStatus>(`/books/${book}/quick-review?include_deferred=${deferred}`),
+  quickScan: (book: string) => request<QuickStatus['job']>(`/books/${book}/quick-review/scan`, { method: 'POST' }),
+  quickDecide: (book: string, card: string, body: { action: string; fingerprint: string; source?: string; target?: string }) =>
+    request<{ saved: boolean }>(`/books/${book}/quick-review/${card}/decide`, json('POST', body)),
+  quickUndo: (book: string) => request<{ saved: boolean }>(`/books/${book}/quick-review/undo`, { method: 'POST' }),
+  nomSearch: (query: string) => request<NomSearch>(`/nom-dictionary/search?q=${encodeURIComponent(query)}`),
+  nomDetail: (character: string) => request<NomDetail>(`/nom-dictionary/detail?character=${encodeURIComponent(character)}`),
   workspace: () => request<Workspace>('/workspace'),
   pages: (book: string, includeExportBoxes = false) => request<Page[]>(
     `/books/${book}/pages?include_export_boxes=${includeExportBoxes}`,

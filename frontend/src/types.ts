@@ -121,7 +121,7 @@ export type BookSession = {
   workflow_step?: 1 | 2 | 3 | 4;
   book_id?: string;
   page_id?: string | null;
-  view?: 'overview' | 'library' | 'review' | 'alignment' | 'export';
+  view?: 'overview' | 'library' | 'review' | 'alignment' | 'export' | 'quick';
   alignment_page?: string | null;
 };
 export type PagePlan = { page_id: string; category: Category; ocr_skip: boolean };
@@ -196,3 +196,28 @@ export type DictionaryLookup = {
   fallback: boolean;
   notice: string;
 };
+
+export type QuickCard = {
+  id: string; row_id: string; index: number | null; fingerprint: string; stale: boolean;
+  page_number: number; sentence_id: string; reason: string; state: string;
+  source: string; target: string; expected_source: string; expected_target: string; query: string;
+  ranges: { source: [number, number]; target: [number, number] };
+  reference: { position: number; label: string; source: string; target: string; note: string; confidence: number } | null;
+  row: Alignment;
+};
+export type QuickStatus = {
+  can_undo?: boolean;
+  export_error?: string | null;
+  job: { status: 'idle' | 'running' | 'completed' | 'interrupted' | 'failed'; processed?: number;
+    total?: number; matched?: number; corrected?: number; error?: string };
+  counts: Record<string, number>; card: QuickCard | null; dictionary_ready: boolean; is_kieu: boolean;
+};
+export type NomSearch = { ready: boolean; source: string; query: string; url: string;
+  entries: { character: string; summary: string; readings: string[]; url: string }[] };
+export type NomDetail = { character: string; source: string;
+  variants?: { character: string; kind: string; source: string; readings: string[] }[];
+  historical_forms?: { id: string; script_type: string; source: string; image_url: string }[];
+  variants_notice?: string;
+  readings: { pronunciation: string; source: string }[];
+  meanings: { vietnameseMeaning: string; definition: string; source: string; reading?: string }[];
+  examples: { classicalTextExcerpt: string; modernVietnameseTranslation: string; source: string }[] };

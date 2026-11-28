@@ -1,5 +1,17 @@
 # Hướng dẫn sử dụng
 
+## Duyệt nhanh bằng thẻ
+
+1. Cài nguồn Nôm một lần: `.\.venv\Scripts\python.exe -m backend.setup_nom_dictionary`, sau đó khởi động lại ứng dụng.
+2. Chọn **Duyệt nhanh** ở thanh trái, chọn sách và **Quét đối chiếu**. Truyện Kiều dùng `TruyenKieu.txt`; các sách còn lại lấy Quốc ngữ hiện có để tra Nôm Na Việt.
+3. Mỗi thẻ hiện chỗ chưa khớp. Bấm chữ gợi ý để chọn, sửa Quốc ngữ nếu cần, rồi bấm **Đúng · đen**, **Đỏ**, **Thiếu từ điển**, hoặc **Để sau**. Phím tắt lần lượt: `1/→`, `2/←`, `3`, `Space`. Khi đang gõ, phím tắt tạm ngừng.
+   Nếu nguồn có dị thể, mục **Dị thể** hiện các chữ có mã Unicode để chọn thay (ghi rõ Nôm, phồn thể, giản thể). Mục **Dạng chữ tư liệu** hiện ảnh dạng chữ cổ để đối chiếu, bấm ảnh để phóng lớn. Dữ liệu lấy từ Nôm Na Việt và lưu cục bộ; lỗi tải dị thể không làm mất nghĩa đã tra được.
+4. Hai ảnh Nôm và Quốc ngữ lấy từ đúng trang liên kết của cặp, có ghi số trang riêng (Quốc ngữ có thể ở trang sau). Khung xanh là box dòng đã lưu; khung cam là vị trí đang xét, nét đứt nếu ước lượng trong box dòng. Chọn **Chỗ đang xét / Cả dòng / Cả trang** và **1× / 2×** để dò. Nếu chưa có trang Quốc ngữ liên kết, giao diện báo rõ để bạn chọn trong căn chỉnh đầy đủ.
+5. Dòng lệch số chữ hiện nguyên dòng. Chọn chữ Nôm trong dãy nút để chỉ vị trí cần thay, nhập âm muốn tra rồi chọn chữ gợi ý. Dùng **Xem ngữ cảnh** để chuyển sang căn chỉnh đầy đủ.
+6. Bấm **Quay lại** ngay trên nhóm nút duyệt để hoàn tác lần bấm gần nhất (kể cả **Để sau**) và mở lại đúng thẻ đó. Có thể bấm nhiều lần để lùi tiếp; nút mờ khi hết lịch sử. Bật **Xem cả để sau** để xem các thẻ đã hoãn. Mọi quyết định lưu ngay trong SQLite; tệp xuất cập nhật theo đợt sau khoảng 12 giây nghỉ thao tác. Không cần giữ màn hình này mở để quét, nhưng backend cần chạy. Sau lần quét bị ngắt do tắt máy, bấm quét lại; các quyết định đã lưu không mất.
+
+TXT chỉ là bản tham khảo, khác bản chưa chắc OCR sai. Chỉ lỗi thừa đúng một `t` cuối từ từ trang 250 của Truyện Kiều được tự sửa khi bỏ `t` khớp mẫu. Các trang trước đó không áp dụng. Từ điển mới dùng bảng âm Nôm cục bộ và tải thêm nghĩa/ví dụ có nguồn khi có mạng; không dùng Unihan thay thế nếu thiếu từ. Xem [quy tắc và dữ liệu lưu](README.md#đối-chiếu-bán-tự-động).
+
 ## 1. Môi trường
 
 - Windows 10/11, Python 3.13.5 64-bit và Node.js 24.11.1.

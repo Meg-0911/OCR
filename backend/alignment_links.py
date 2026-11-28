@@ -1,5 +1,17 @@
 """Stable character ranges connecting saved pairs to OCR boxes."""
 from copy import deepcopy
+from difflib import SequenceMatcher
+
+
+def matches_export_frame(points, exported):
+    """Sentence exports enclose rotated OCR polygons in an axis-aligned frame."""
+    if points == exported:
+        return True
+    if not points:
+        return False
+    xs, ys = zip(*points)
+    return exported == [[min(xs), min(ys)], [max(xs), min(ys)],
+                        [max(xs), max(ys)], [min(xs), max(ys)]]
 
 
 def ref_text(refs, boxes):
@@ -11,6 +23,24 @@ def ref_text(refs, boxes):
             return None
         parts.append(box['transcription'][ref['start']:ref['end']])
     return ''.join(parts)
+
+
+def is_merged_fragment(row, rows, boxes, original_boxes):
+    """Prove that an old standalone fragment was inserted into a surviving box."""
+    refs = row.get('source_refs', [])
+    if len(refs) != 1 or ref_text(refs, boxes) != row['source']:
+        return False
+    ref = refs[0]
+    current = next(box for box in boxes if box['id'] == ref['box_id'])
+    original = next((box for box in original_boxes if box['id'] == ref['box_id']), None)
+    if not original or current['transcription'][:ref['start']] + current['transcription'][ref['end']:] != original['transcription']:
+        return False
+    return any(owner['id'] != row['id'] and owner['target'].strip()
+               and len(owner['source']) > len(row['source'])
+               and ref_text(owner.get('source_refs', []), boxes) == owner['source']
+               and any(part['box_id'] == ref['box_id'] and part['start'] <= ref['start']
+                       and part['end'] >= ref['end'] for part in owner.get('source_refs', []))
+               for owner in rows)
 
 
 def locate(text, boxes, preferred=None):
@@ -85,8 +115,25 @@ def replace_ranges(boxes, edits):
             continue  # Shared/overlapping phrases require an explicit range, not last-write-wins.
         box = indexed[box_id]
         for start, end, value in reversed(changes):
+            # An edit can cover an entire phrase even when only one glyph changed.
+            # Keep existing judgments on equal characters, including outside the edit.
+            colors = [box.get('review_kind') or 'match'] * len(box['transcription'])
+            for mark in box.get('review_marks', []):
+                colors[mark['start']:mark['end']] = [mark['kind']] * (mark['end'] - mark['start'])
+            replacement_colors = ['unknown'] * len(value)
+            for operation, left, right, new_left, new_right in SequenceMatcher(
+                    None, box['transcription'][start:end], value, autojunk=False).get_opcodes():
+                if operation == 'equal':
+                    replacement_colors[new_left:new_right] = colors[start+left:start+right]
+            colors[start:end] = replacement_colors
             box['transcription'] = box['transcription'][:start] + value + box['transcription'][end:]
-        box.update(review_kind='unknown', review_marks=[])
+            marks = []
+            for index, kind in enumerate(colors):
+                if marks and marks[-1]['kind'] == kind:
+                    marks[-1]['end'] = index + 1
+                else:
+                    marks.append({'start': index, 'end': index + 1, 'kind': kind})
+            box['review_marks'] = marks
         accepted[box_id] = changes
     return result, accepted
 

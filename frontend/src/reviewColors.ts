@@ -51,6 +51,27 @@ function referencedBoxes(row: Alignment, boxes: Box[]): Box[] {
   return result.map((box) => box.transcription).join('') === row.source ? result : [];
 }
 
+function boxesWithSourceMarks(boxes: Box[], rows?: Alignment[]): Box[] {
+  if (!rows?.some(row => row.marks?.length)) return boxes;
+  const result = new Map(boxes.map(box => [box.id, { ...box, review_marks: [...(box.review_marks || [])] }]));
+  for (const row of rows) {
+    // Project only verified code-point ranges; stale line indices cannot color a neighbour.
+    if (!referencedBoxes(row, boxes).length) continue;
+    let offset = 0;
+    for (const ref of row.source_refs || []) {
+      const box = result.get(ref.box_id)!;
+      const size = ref.end - ref.start;
+      for (const mark of row.marks || []) {
+        const start = Math.max(mark.source_start, offset);
+        const end = Math.min(mark.source_end, offset + size);
+        if (start < end) box.review_marks.push({ start: ref.start + start - offset, end: ref.start + end - offset, kind: mark.kind });
+      }
+      offset += size;
+    }
+  }
+  return [...result.values()];
+}
+
 export function targetGlyphReviews(text: string, boxes: Box[], direction: 1 | 2 = 2, rows?: Alignment[]) {
   let groups: Box[][] | undefined;
   if (rows?.length && rows.map((row) => row.target).join('\n') === text) {
@@ -99,6 +120,7 @@ export function reviewColorsForText(
       ...(index < rows.length - 1 ? ['match' as ReviewKind] : []),
     ]);
   }
+  boxes = boxesWithSourceMarks(boxes, rows);
   const characters = Array.from(text);
   const colors: ReviewKind[] = Array(characters.length).fill('match');
   if (side === 'source') {
